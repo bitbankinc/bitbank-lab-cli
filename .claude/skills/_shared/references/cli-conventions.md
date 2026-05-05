@@ -3,6 +3,15 @@
 全 skill 共通の bitbank CLI 呼び出しルール。SKILL.md からは
 `_shared/references/cli-conventions.md` で参照する。
 
+## 起動方法（短縮形と等価形）
+
+- `./install.sh` を一度実行済みなら `bitbank <cmd>` でどのディレクトリからでも
+  起動できる（`npm link` で PATH に通っている）
+- 未実行の環境では `npx tsx cli/index.ts <cmd>` で同じ呼び出しになる
+- 既存 skill 内のコマンド例は `npx tsx cli/index.ts ...` を採用しており、
+  どちらの形でも同じコマンドを実行する。skill が出力する例を `bitbank ...`
+  形式に書き換えても等価
+
 ## 出力フォーマット
 
 - skill から CLI を呼ぶときは **必ず `--format=json`** を付ける

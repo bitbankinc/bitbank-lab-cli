@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# bitbank CLI launcher.
+# Resolves its real location through symlinks (npm link installs a symlink in
+# the global bin) and execs the repo-local tsx so we don't depend on a
+# globally installed tsx.
+set -e
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+ROOT="$(cd "$DIR/.." && pwd)"
+
+TSX="$ROOT/node_modules/.bin/tsx"
+if [ ! -x "$TSX" ]; then
+  echo "Error: $TSX not found. Run './install.sh' or 'npm install' in $ROOT." >&2
+  exit 1
+fi
+
+exec "$TSX" "$ROOT/cli/index.ts" "$@"

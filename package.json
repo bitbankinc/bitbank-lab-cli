@@ -4,7 +4,7 @@
   "description": "bitbank 暗号資産取引所の CLI & Agent Skills スターターキット",
   "type": "module",
   "bin": {
-    "bitbank": "./cli/index.ts"
+    "bitbank": "./bin/bitbank"
   },
   "scripts": {
     "test": "vitest",
