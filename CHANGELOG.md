@@ -12,7 +12,12 @@
   `npm install` 時に警告（または `--engine-strict` 設定下では失敗）するように
   なった。あわせて CI (`.github/workflows/ci.yml`) の Node version も 20 に更新。
 - `typescript` の version range を `^5.9.0-beta` から安定版 `^5.7.0` に変更。
-  pre-release 版は dev tooling の予期せぬ挙動変動を招くため、安定版に固定する。
+  pre-release 版は dev tooling の予期せぬ挙動変動を招くため、安定版系列に
+  切り替える。caret range なので `>=5.7.0 <6.0.0` の範囲で最新の 5.x が
+  解決される（現時点では 5.9.3）。
+- `@types/node` を `^22.0.0` → `^20.0.0` にダウングレード。`engines.node: ">=20"`
+  で宣言した最低サポートラインに型定義を揃え、Node 22 専用 API（`node:sqlite`、
+  ネイティブ `WebSocket` 等）が tsc を通過してしまう不整合を解消する。
 - `--profile=<name>` で読み込まれる `.env.<profile>` ファイルから、
   `BITBANK_*` 以外の env 変数が反映されなくなった。それ以外のキーが
   含まれる場合は stderr に警告を出して無視する。
