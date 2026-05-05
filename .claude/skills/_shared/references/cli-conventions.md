@@ -62,14 +62,22 @@
   ```bash
   npx tsx cli/index.ts paper init --jpy=1000000 --format=json
   npx tsx cli/index.ts paper assets --format=json
+  # 成行
   npx tsx cli/index.ts paper create-order \
     --pair=btc_jpy --side=buy --type=market --amount=0.001 --format=json
+  # 指値（GTC）
+  npx tsx cli/index.ts paper create-order \
+    --pair=btc_jpy --side=buy --type=limit --price=10000000 --amount=0.001 --format=json
+  npx tsx cli/index.ts paper active-orders --format=json
+  npx tsx cli/index.ts paper cancel-order --id=<id> --format=json
+  npx tsx cli/index.ts paper tick --format=json
   npx tsx cli/index.ts paper trade-history --format=json
   npx tsx cli/index.ts paper reset --confirm --format=json
   ```
 
-- MVP では成行（`--type=market`）のみ対応。指値・ストップ等は未実装
+- 成行は ticker last 価格で即時 fill。指値は `openOrders` に積み、`paper tick` または lazy tick（assets / trade-history / active-orders / create-order 呼出時に裏で実行）で 1m 足を遡って fill を解決する
 - `paper reset` は state の誤削除を防ぐため `--confirm` 必須
+- 指値は部分約定・ストップ・OCO 未対応（GTC のみ）
 
 ## shell 補完
 
