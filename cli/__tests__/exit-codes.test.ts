@@ -21,8 +21,12 @@ describe("apiErrorExitCode", () => {
     expect(apiErrorExitCode(20003)).toBe(EXIT.AUTH);
   });
 
-  it("returns RATE_LIMIT for 60001", () => {
-    expect(apiErrorExitCode(60001)).toBe(EXIT.RATE_LIMIT);
+  it("returns RATE_LIMIT for 10009 (frequency warning)", () => {
+    expect(apiErrorExitCode(10009)).toBe(EXIT.RATE_LIMIT);
+  });
+
+  it("returns GENERAL for 60001 (insufficient amount, not rate limit)", () => {
+    expect(apiErrorExitCode(60001)).toBe(EXIT.GENERAL);
   });
 
   it("returns PARAM for 30001-40001", () => {

@@ -7,6 +7,30 @@
 
 ### Breaking Changes
 
+- API エラーコード `60001` の取り扱いを訂正。公式 errors.md と突き合わせた
+  結果、これは "Insufficient amount"（残高不足）であり、レート制限ではない
+  ことが判明したため:
+  - エラーメッセージを「レート制限」→「残高不足」に変更
+  - `apiErrorExitCode(60001)` の戻り値を `EXIT.RATE_LIMIT (3)` →
+    `EXIT.GENERAL (1)` に変更
+  - `cli/http-core.ts` における 60001 受信時の自動リトライを廃止
+    （残高不足はリトライしても解決しないため）
+  60001 の exit code に依存していた呼び出し側がある場合は要見直し。
+  本物のレート制限は HTTP 429 で返るため、こちらは従来通り `shouldRetry` で
+  リトライ・`EXIT.RATE_LIMIT` で分類される。
+- API エラーコード `10009`（"You sent requests too frequently. Retry later."）
+  を新規ハンドル。`apiErrorExitCode(10009)` は `EXIT.RATE_LIMIT` を返す。
+  ただし HTTP 429 と異なり自動リトライ対象にはしない（公式は HTTP 429 を
+  プライマリ rate-limit パスとしているため）。
+- 公式 errors.md と整合させるため、以下のエラーコードの和訳を訂正:
+  `20003`「APIキー権限不足」→「ACCESS-KEY が見つかりません」、
+  `30001`「注文数量不正」→「order-quantity 未指定」、
+  `30006`「注文数量下限」→「order-id 未指定」、
+  `30007`「注文数量上限」→「order-id 配列未指定」、
+  `30012`「残高不足」→「order-price 未指定」、
+  `40001`「不正なパラメータ」→「order-quantity が不正」、
+  `50009`「注文不可（サーキットブレーカー）」→「注文が見つかりません」。
+  あわせて `30009`「asset 未指定」を新規追加。
 - `engines.node` を `>=18` から `>=20` に引き上げ。Node 18 は 2025-04 に EOL を
   迎えており、セキュリティパッチの供給対象外となるため。Node 20 未満の環境では
   `npm install` 時に警告（または `--engine-strict` 設定下では失敗）するように
