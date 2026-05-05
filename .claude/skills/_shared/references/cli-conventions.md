@@ -15,8 +15,11 @@
   `{ success: false, error: { code, message } }` を返す
 - skill 側は **必ず `success` フィールドを先に確認**してから `data` を読む
 - `success: false` の場合、`error.code` でハンドリングを分岐できる
-  （例: 60001 = 認証情報不足、10009 = レート制限）。エラーコードは
+  （例: 60001 = 残高不足、10009 = レート制限）。エラーコードは
   bitbank 公式 [errors.md](https://github.com/bitbankinc/bitbank-api-docs/blob/master/errors.md) を参照
+- skill 側のリトライ戦略・カテゴリ別ハンドリングは
+  [`error-catalog.md`](./error-catalog.md) に集約。
+  「rate_limit はどう待つか」「POST はなぜ自動再送しないか」等はここを見る
 
 ## 認証
 
