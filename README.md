@@ -49,8 +49,6 @@ bitbank candles btc_jpy --type=1day --format=table
 ```bash
 npm install
 npx tsx cli/index.ts ticker btc_jpy
-# または
-npx bitbank ticker btc_jpy
 ```
 
 ## セットアップ
