@@ -1,5 +1,5 @@
 // 100行超: pair/type/date/range の入力検証 + 単発取得・自動マージ・範囲取得のディスパッチを 1 ファイルに集約
-import { YEARLY_TYPES, shiftDate, todayDate } from "../../date-utils.js";
+import { ROWS_PER_SEGMENT, YEARLY_TYPES, shiftDate, todayDate } from "../../date-utils.js";
 import type { HttpOptions } from "../../http.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
@@ -10,7 +10,8 @@ export type { Candle };
 export { VALID_TYPES } from "./candles-fetch.js";
 export { shiftDate } from "../../date-utils.js";
 
-const MAX_FETCHES = 3; // --date 未指定時に自動取得する過去日数の上限
+const BATCH_SIZE = 10; // candles-range と同じ並列数（throttle.ts の lowWaterMark 配慮）
+const HARD_MAX_SEGMENTS = 100; // --limit が極端に大きい場合の暴走防止
 function validateType(type: string | undefined): string | null {
   if (!type || !VALID_TYPES.includes(type as (typeof VALID_TYPES)[number])) return null;
   return type;
@@ -38,6 +39,16 @@ type CandlesArgs = {
   noCache?: boolean;
 };
 
+function olderDates(dateStr: string, type: string, count: number): string[] {
+  const dates: string[] = [];
+  let d = dateStr;
+  for (let i = 0; i < count; i++) {
+    d = shiftDate(d, -1, type);
+    dates.push(d);
+  }
+  return dates;
+}
+
 async function fetchAutoMerge(
   pair: string,
   type: string,
@@ -47,19 +58,28 @@ async function fetchAutoMerge(
   opts?: HttpOptions,
   noCache?: boolean,
 ): Promise<Result<Candle[]>> {
-  const chunks: Candle[][] = [firstData];
-  let currentDate = dateStr;
-  let fetches = 1;
-  let total = firstData.length;
-  while (total < limit && fetches < MAX_FETCHES) {
-    currentDate = shiftDate(currentDate, -1, type);
-    const prev = await fetchOne(pair, type, currentDate, opts, noCache);
-    if (!prev.success) break;
-    chunks.unshift(prev.data);
-    total += prev.data.length;
-    fetches++;
+  const perSegment = ROWS_PER_SEGMENT[type] ?? Math.max(firstData.length, 1);
+  const remaining = Math.max(0, limit - firstData.length);
+  const needed = Math.min(Math.ceil(remaining / perSegment), HARD_MAX_SEGMENTS);
+  if (needed === 0) return { success: true, data: firstData.slice(-limit) };
+  const dates = olderDates(dateStr, type, needed);
+  const olderChunks: Candle[][] = new Array(dates.length);
+  for (let i = 0; i < dates.length; i += BATCH_SIZE) {
+    const batch = dates.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(batch.map((d) => fetchOne(pair, type, d, opts, noCache)));
+    let stop = false;
+    for (let j = 0; j < results.length; j++) {
+      const r = results[j];
+      if (!r.success) {
+        stop = true;
+        break;
+      }
+      olderChunks[i + j] = r.data;
+    }
+    if (stop) break;
   }
-  const allRows = chunks.length === 1 ? chunks[0] : ([] as Candle[]).concat(...chunks);
+  const ordered = olderChunks.filter(Boolean).reverse();
+  const allRows = ([] as Candle[]).concat(...ordered, firstData);
   return { success: true, data: allRows.slice(-limit) };
 }
 

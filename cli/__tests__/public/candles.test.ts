@@ -232,8 +232,8 @@ describe("candles auto-merge", () => {
     expect(call).toBe(3);
   });
 
-  it("respects MAX_FETCHES limit", async () => {
-    const smallData = {
+  it("caps at HARD_MAX_SEGMENTS for absurd limits", async () => {
+    const tinyData = {
       candlestick: [
         {
           type: "1day",
@@ -241,18 +241,40 @@ describe("candles auto-merge", () => {
         },
       ],
     };
-
     let callCount = 0;
     const manyFetch: typeof globalThis.fetch = async () => {
       callCount++;
-      return new Response(JSON.stringify({ success: 1, data: smallData }));
+      return new Response(JSON.stringify({ success: 1, data: tinyData }));
     };
-
     const result = await candles(
-      { pair: "btc_jpy", type: "1day", limit: 100, noCache: true },
+      { pair: "btc_jpy", type: "1day", limit: 1_000_000, noCache: true },
       { fetch: manyFetch, retries: 0 },
     );
     expect(result.success).toBe(true);
-    expect(callCount).toBe(3); // MAX_FETCHES = 3
+    expect(callCount).toBe(101); // 1 initial + 100 older (HARD_MAX_SEGMENTS)
+  });
+
+  it("computes fetch count from limit and rows-per-segment for 1hour", async () => {
+    const dayData = {
+      candlestick: [
+        {
+          type: "1hour",
+          ohlcv: Array.from({ length: 24 }, (_, i) => ["100", "110", "90", "105", "50", 1000 + i]),
+        },
+      ],
+    };
+    let callCount = 0;
+    const fetchHours: typeof globalThis.fetch = async () => {
+      callCount++;
+      return new Response(JSON.stringify({ success: 1, data: dayData }));
+    };
+    const result = await candles(
+      { pair: "btc_jpy", type: "1hour", limit: 200, noCache: true },
+      { fetch: fetchHours, retries: 0 },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toHaveLength(200);
+    // ceil((200 - 24) / 24) = 8 older + 1 first = 9
+    expect(callCount).toBe(9);
   });
 });
