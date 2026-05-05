@@ -50,3 +50,23 @@
 - 資金影響系（`trade create-order` 等）はドライランがデフォルト。skill から
   実発注をしたい場合は `--execute` を明示する
 - 詳細は `.claude/rules/trading-safety.md` を参照
+
+## paper コマンド
+
+- ペーパートレード（仮想資金）。`bitbank paper <cmd>` で呼び出す
+- 実 API は public ticker のみを叩く（private/trade は触らない）。`.env` 不要
+- 状態は `~/.bitbank/paper-state.json`（または `$XDG_DATA_HOME/bitbank/paper-state.json`）
+  に保存される
+- 主要例:
+
+  ```bash
+  npx tsx cli/index.ts paper init --jpy=1000000 --format=json
+  npx tsx cli/index.ts paper assets --format=json
+  npx tsx cli/index.ts paper create-order \
+    --pair=btc_jpy --side=buy --type=market --amount=0.001 --format=json
+  npx tsx cli/index.ts paper trade-history --format=json
+  npx tsx cli/index.ts paper reset --confirm --format=json
+  ```
+
+- MVP では成行（`--type=market`）のみ対応。指値・ストップ等は未実装
+- `paper reset` は state の誤削除を防ぐため `--confirm` 必須
