@@ -33,7 +33,9 @@ export function showTradeHelp(): void {
 
 export function showPaperHelp(): void {
   console.log("Usage: bitbank paper <subcommand> [options]\n");
-  console.log("Paper trading sim. Uses live ticker but only virtual funds — no real API calls.\n");
+  console.log(
+    "Paper trading sim. Uses live public ticker for pricing — no private/trade API calls.\n",
+  );
   console.log("Subcommands:");
   for (const [name, { description }] of Object.entries(PAPER_COMMANDS)) {
     console.log(`  ${name.padEnd(24)} ${description}`);

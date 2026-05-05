@@ -19,11 +19,15 @@ function invocationPath(name: string, schema: SchemaDef): string {
   return schema.category === "trade" ? `trade ${name}` : name;
 }
 
+function descKey(name: string, schema: SchemaDef): string {
+  return schema.category === "trade" ? `trade ${name}` : name;
+}
+
 function listAll(descriptions: Record<string, string>) {
   return Object.entries(ALL_SCHEMAS).map(([name, schema]) => ({
     command: invocationPath(name, schema),
     category: schema.category,
-    description: descriptions[name] ?? "",
+    description: descriptions[descKey(name, schema)] ?? "",
     params: Object.keys(schema.params),
   }));
 }
@@ -36,7 +40,7 @@ function detail(name: string, descriptions: Record<string, string>) {
     data: {
       command: invocationPath(name, schema),
       category: schema.category,
-      description: descriptions[name] ?? "",
+      description: descriptions[descKey(name, schema)] ?? "",
       params: toParamsJsonSchema(schema.params),
       output: schema.output,
     },

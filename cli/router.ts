@@ -33,13 +33,11 @@ export async function handleSpecialCommand(
   }
   if (command === "schema") {
     const { buildSchemaHandler } = await import("./commands/schema/handler.js");
-    const desc = Object.fromEntries(
-      [
-        ...Object.entries(COMMANDS),
-        ...Object.entries(TRADE_COMMANDS),
-        ...Object.entries(PAPER_COMMANDS),
-      ].map(([k, v]) => [k, v.description]),
-    );
+    const desc = Object.fromEntries([
+      ...Object.entries(COMMANDS).map(([k, v]) => [k, v.description] as const),
+      ...Object.entries(TRADE_COMMANDS).map(([k, v]) => [`trade ${k}`, v.description] as const),
+      ...Object.entries(PAPER_COMMANDS).map(([k, v]) => [`paper ${k}`, v.description] as const),
+    ]);
     await buildSchemaHandler(desc)(args, opts, format);
     return true;
   }

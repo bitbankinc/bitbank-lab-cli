@@ -12,7 +12,7 @@ description: |
   実発注（`bitbank trade ...`）とは別物で、状態は CLI 側のローカルファイル
   （`~/.bitbank/paper-state.json`）に保存される。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 20+.
   Public API のみ使用するため `.env` は不要。
 metadata:
   author: bitbank-aiforge
