@@ -65,7 +65,6 @@ async function attemptOnce<T>(
     if (body.success !== 1) {
       const code = body.data?.code ?? 0;
       const error = parseError(body);
-      if (code === 60001) return { kind: "retry", res, error, exitCode: EXIT.RATE_LIMIT };
       return { kind: "done", result: { success: false, error, exitCode: apiErrorExitCode(code) } };
     }
     const rl = extractRateLimit(res.headers);

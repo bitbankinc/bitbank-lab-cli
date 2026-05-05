@@ -12,7 +12,8 @@ import {
 describe("ERROR_CODES", () => {
   it("maps known codes", () => {
     expect(ERROR_CODES[20001]).toBe("API認証失敗");
-    expect(ERROR_CODES[60001]).toBe("レート制限");
+    expect(ERROR_CODES[60001]).toBe("残高不足");
+    expect(ERROR_CODES[10009]).toBe("リクエスト頻度過多");
   });
 });
 
@@ -23,8 +24,12 @@ describe("apiErrorExitCode", () => {
     expect(apiErrorExitCode(20003)).toBe(EXIT.AUTH);
   });
 
-  it("returns RATE_LIMIT for 60001", () => {
-    expect(apiErrorExitCode(60001)).toBe(EXIT.RATE_LIMIT);
+  it("returns RATE_LIMIT for 10009 (frequency warning)", () => {
+    expect(apiErrorExitCode(10009)).toBe(EXIT.RATE_LIMIT);
+  });
+
+  it("returns GENERAL for 60001 (insufficient amount, not rate limit)", () => {
+    expect(apiErrorExitCode(60001)).toBe(EXIT.GENERAL);
   });
 
   it("returns PARAM for 30001-40001", () => {
@@ -276,24 +281,25 @@ describe("fetchWithRetry", () => {
     expect(calls).toBe(1);
   });
 
-  it("retryOnNetworkError: false still retries on API rate limit 60001", async () => {
-    vi.useFakeTimers();
+  it("does not retry on API error 60001 (insufficient amount, not rate limit)", async () => {
     let calls = 0;
     const fetch: typeof globalThis.fetch = async () => {
       calls++;
-      if (calls === 1) return new Response(JSON.stringify({ success: 0, data: { code: 60001 } }));
-      return new Response(JSON.stringify({ success: 1, data: { ok: true } }));
+      return new Response(JSON.stringify({ success: 0, data: { code: 60001 } }));
     };
-    const p = fetchWithRetry(
-      "http://test",
-      {},
-      { fetch, retries: 1, retryOnNetworkError: false },
-      parseError,
-    );
-    await vi.advanceTimersByTimeAsync(5000);
-    const result = await p;
-    expect(result).toMatchObject({ success: true });
-    expect(calls).toBe(2);
-    vi.useRealTimers();
+    const result = await fetchWithRetry("http://test", {}, { fetch, retries: 3 }, parseError);
+    expect(result).toMatchObject({ success: false, exitCode: EXIT.GENERAL });
+    expect(calls).toBe(1);
+  });
+
+  it("classifies 10009 as RATE_LIMIT exit code without retrying", async () => {
+    let calls = 0;
+    const fetch: typeof globalThis.fetch = async () => {
+      calls++;
+      return new Response(JSON.stringify({ success: 0, data: { code: 10009 } }));
+    };
+    const result = await fetchWithRetry("http://test", {}, { fetch, retries: 3 }, parseError);
+    expect(result).toMatchObject({ success: false, exitCode: EXIT.RATE_LIMIT });
+    expect(calls).toBe(1);
   });
 });

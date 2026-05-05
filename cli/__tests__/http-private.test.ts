@@ -34,10 +34,10 @@ describe("privateGet", () => {
       credentials: TEST_CREDS,
       nonce: "123",
     });
-    expect(result).toMatchObject({ success: false, error: "20003: APIキー権限不足" });
+    expect(result).toMatchObject({ success: false, error: "20003: ACCESS-KEY が見つかりません" });
   });
 
-  it("returns error on rate limit", async () => {
+  it("returns formatted error on insufficient amount (60001)", async () => {
     const fetch = mockFetchRaw({ success: 0, data: { code: 60001 } });
     const result = await privateGet("/user/assets", undefined, {
       fetch,
@@ -45,7 +45,7 @@ describe("privateGet", () => {
       credentials: TEST_CREDS,
       nonce: "123",
     });
-    expect(result).toMatchObject({ success: false, error: "60001: レート制限" });
+    expect(result).toMatchObject({ success: false, error: "60001: 残高不足" });
   });
 
   it("returns error on HTTP failure", async () => {

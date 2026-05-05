@@ -21,25 +21,18 @@ describe("publicGet", () => {
     expect(result.success).toBe(false);
   });
 
-  it("retries on API error code 60001", async () => {
-    vi.useFakeTimers();
+  it("does not retry on API error code 60001 (insufficient amount)", async () => {
     let calls = 0;
     const fetch = async () => {
       calls++;
-      if (calls === 1) {
-        return new Response(JSON.stringify({ success: 0, data: { code: 60001 } }));
-      }
-      return new Response(JSON.stringify({ success: 1, data: { ok: true } }));
+      return new Response(JSON.stringify({ success: 0, data: { code: 60001 } }));
     };
-    const p = publicGet("/test", {
+    const result = await publicGet("/test", {
       fetch: fetch as typeof globalThis.fetch,
-      retries: 1,
+      retries: 3,
     });
-    await vi.advanceTimersByTimeAsync(5000);
-    const result = await p;
-    expect(result).toEqual({ success: true, data: { ok: true } });
-    expect(calls).toBe(2);
-    vi.useRealTimers();
+    expect(result.success).toBe(false);
+    expect(calls).toBe(1);
   });
 
   it("returns error on network failure", async () => {
@@ -121,14 +114,13 @@ describe("publicGet", () => {
     vi.useRealTimers();
   });
 
-  it("does not retry 60001 when retries is 0", async () => {
-    let calls = 0;
-    const fetch: typeof globalThis.fetch = async () => {
-      calls++;
-      return new Response(JSON.stringify({ success: 0, data: { code: 60001 } }));
-    };
+  it("returns code-only error on 60001 via publicGet's parseError contract", async () => {
+    // publicGet は parseError でコードのみ返す（http.ts）。
+    // formatApiError 経由の "60001: 残高不足" は privateGet 側の責務で、
+    // http-private.test.ts でカバーする。
+    const fetch: typeof globalThis.fetch = async () =>
+      new Response(JSON.stringify({ success: 0, data: { code: 60001 } }));
     const result = await publicGet("/test", { fetch, retries: 0 });
-    expect(result.success).toBe(false);
-    expect(calls).toBe(1);
+    expect(result).toMatchObject({ success: false, error: "60001" });
   });
 });
