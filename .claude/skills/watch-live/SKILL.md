@@ -13,7 +13,7 @@ description: |
   ローソク足ベースの分析は他 skill が担当する。本 skill は WebSocket
   ライブストリームの取得手段に特化する。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 20+.
+  Requires bitbank CLI. Node.js 20+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
@@ -44,10 +44,10 @@ WebSocket 経由で bitbank の `ticker_<pair>` チャネルを購読し、JSONL
 
 ```bash
 # 10 秒間 last を追跡
-npx tsx cli/index.ts watch ticker btc_jpy --duration=10 --format=json | jq '{ts,last,bid,ask}'
+bitbank watch ticker btc_jpy --duration=10 --format=json | jq '{ts,last,bid,ask}'
 
 # 20 件取得して終了
-npx tsx cli/index.ts watch ticker eth_jpy --count=20 --format=json
+bitbank watch ticker eth_jpy --count=20 --format=json
 ```
 
 `--max-retries=<n>` で再接続上限、`--idle-timeout=<秒>` で無音検出を

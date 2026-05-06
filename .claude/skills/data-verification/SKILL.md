@@ -9,7 +9,7 @@ description: |
   「このデータ信頼できる？」「品質チェックして」のようなリクエストで使用。
   注意: indicator-analysis や backtest の自動前処理としては起動しない。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
@@ -29,12 +29,12 @@ indicator-analysis / backtest / portfolio の前段として自動実行は**し
 ## データ取得
 
 ```bash
-npx tsx cli/index.ts candles <pair> --type=<timeframe> --format=json
+bitbank candles <pair> --type=<timeframe> --format=json
 ```
 
 ユーザーが期間を指定した場合:
 ```bash
-npx tsx cli/index.ts candles <pair> --type=<timeframe> --from=YYYYMMDD --to=YYYYMMDD --format=json
+bitbank candles <pair> --type=<timeframe> --from=YYYYMMDD --to=YYYYMMDD --format=json
 ```
 
 指定がなければ直近データ（デフォルト 100 本）で検証する。

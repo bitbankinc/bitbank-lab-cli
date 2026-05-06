@@ -10,7 +10,7 @@ description: |
   このスキルで資産状況を可視化して回答してください。
   保有資産・残高・損益について聞かれたら、まずこのスキルの出番です。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
   Private API commands require API key/secret in .env file.
 metadata:
   author: bitbank-aiforge
@@ -49,7 +49,7 @@ npx tsx --env-file=.env cli/index.ts assets --format=json
 全 JPY ペアの ticker を一括取得:
 
 ```bash
-npx tsx cli/index.ts tickers-jpy --format=json
+bitbank tickers-jpy --format=json
 ```
 
 ### Step 3: 月次ローソク足の取得
@@ -57,8 +57,8 @@ npx tsx cli/index.ts tickers-jpy --format=json
 保有銘柄ごとに月次ローソク足を取得する。年指定で1年分まとめて取れる:
 
 ```bash
-npx tsx cli/index.ts candles btc_jpy --type=1month --date=2025 --format=json
-npx tsx cli/index.ts candles btc_jpy --type=1month --date=2026 --format=json
+bitbank candles btc_jpy --type=1month --date=2025 --format=json
+bitbank candles btc_jpy --type=1month --date=2026 --format=json
 ```
 
 複数年分が必要なら年ごとに並列取得する。

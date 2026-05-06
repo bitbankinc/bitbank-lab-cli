@@ -92,8 +92,8 @@ bitbank 上の実際の出来高シェアに基づくペアの流動性カテゴ
 
 ```bash
 # 全ペアの ticker を取得して出来高を確認
-npx tsx cli/index.ts ticker --pair=btc_jpy --format=json
-npx tsx cli/index.ts ticker --pair=xrp_jpy --format=json
+bitbank ticker --pair=btc_jpy --format=json
+bitbank ticker --pair=xrp_jpy --format=json
 # ... 各ペアの vol フィールドを比較
 ```
 

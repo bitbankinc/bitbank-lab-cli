@@ -8,9 +8,7 @@
 - `./install.sh` を一度実行済みなら `bitbank <cmd>` でどのディレクトリからでも
   起動できる（`npm link` で PATH に通っている）
 - 未実行の環境では `npx tsx cli/index.ts <cmd>` で同じ呼び出しになる
-- 既存 skill 内のコマンド例は `npx tsx cli/index.ts ...` を採用しており、
-  どちらの形でも同じコマンドを実行する。skill が出力する例を `bitbank ...`
-  形式に書き換えても等価
+- skill 内のコマンド例は `bitbank ...` 形式で統一して記述する
 
 ## 出力フォーマット
 
@@ -60,20 +58,20 @@
 - 主要例:
 
   ```bash
-  npx tsx cli/index.ts paper init --jpy=1000000 --format=json
-  npx tsx cli/index.ts paper assets --format=json
+  bitbank paper init --jpy=1000000 --format=json
+  bitbank paper assets --format=json
   # 成行
-  npx tsx cli/index.ts paper create-order \
+  bitbank paper create-order \
     --pair=btc_jpy --side=buy --type=market --amount=0.001 --format=json
   # 指値（GTC）
-  npx tsx cli/index.ts paper create-order \
+  bitbank paper create-order \
     --pair=btc_jpy --side=buy --type=limit --price=10000000 --amount=0.001 --format=json
-  npx tsx cli/index.ts paper active-orders --format=json
-  npx tsx cli/index.ts paper cancel-order --id=<id> --format=json
-  npx tsx cli/index.ts paper tick --format=json
-  npx tsx cli/index.ts paper trade-history --format=json
-  npx tsx cli/index.ts paper pnl --format=json
-  npx tsx cli/index.ts paper reset --confirm --format=json
+  bitbank paper active-orders --format=json
+  bitbank paper cancel-order --id=<id> --format=json
+  bitbank paper tick --format=json
+  bitbank paper trade-history --format=json
+  bitbank paper pnl --format=json
+  bitbank paper reset --confirm --format=json
   ```
 
 - 成行は ticker last 価格で即時 fill。指値は `openOrders` に積み、`paper tick` または lazy tick（assets / trade-history / active-orders / create-order 呼出時に裏で実行）で 1m 足を遡って fill を解決する
@@ -96,11 +94,11 @@
 
   ```bash
   # 5 秒間 ticker を JSONL で取得
-  npx tsx cli/index.ts watch ticker btc_jpy --duration=5 --format=json
+  bitbank watch ticker btc_jpy --duration=5 --format=json
   # 10 イベント取得して終了
-  npx tsx cli/index.ts watch ticker btc_jpy --count=10 --format=json
+  bitbank watch ticker btc_jpy --count=10 --format=json
   # last だけ抽出
-  npx tsx cli/index.ts watch ticker btc_jpy --duration=10 --format=json | jq -r '.last'
+  bitbank watch ticker btc_jpy --duration=10 --format=json | jq -r '.last'
   ```
 
 - 切断時は指数バックオフで自動再接続（1, 2, 4, 8, 16, 32, 32...）。

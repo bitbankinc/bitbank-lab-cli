@@ -15,7 +15,7 @@ description: |
   単一銘柄のリスク特性は volatility-profile、シグナル → 将来リターンの
   予測力は signal-explorer、保有資産の評価は portfolio が担当。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
@@ -77,15 +77,15 @@ metadata:
 ### CLI 取得（各ペアごとに 1 コマンド）
 
 ```bash
-npx tsx cli/index.ts candles btc_jpy --type=1day --limit=1000 --format=json
-npx tsx cli/index.ts candles eth_jpy --type=1day --limit=1000 --format=json
-npx tsx cli/index.ts candles xrp_jpy --type=1day --limit=1000 --format=json
+bitbank candles btc_jpy --type=1day --limit=1000 --format=json
+bitbank candles eth_jpy --type=1day --limit=1000 --format=json
+bitbank candles xrp_jpy --type=1day --limit=1000 --format=json
 ```
 
 期間指定時:
 
 ```bash
-npx tsx cli/index.ts candles btc_jpy --type=1day --from=20240101 --to=20241231 --format=json
+bitbank candles btc_jpy --type=1day --from=20240101 --to=20241231 --format=json
 ```
 
 ### 整列（inner join）
