@@ -43,6 +43,18 @@ bitbank candles btc_jpy --type=1hour --limit=200 --format=json
 
 `--format=json` を使う。JSON はモデルがパースしやすいため。
 
+## 取得本数の目安
+
+`--limit` を省略すると CLI は 1000 件取得する。1000 件は context を大きく消費するため、
+分析対象に応じて「必要本数 + warmup」を目安に明示指定する:
+
+- **デフォルト分析セット**（SMA 200 を含む）: `--limit=300`
+- **短期指標のみ**（RSI / MACD / BB / ATR / ROC）: `--limit=100`
+- **長期トレンド・サンプル数が必要な統計**: `--limit=1000`（= CLI default）
+
+warmup を確保するのは、SMA(N) や ATR(N) は最初の N-1 本が定義不能で捨てるため。
+迷ったら `--limit=300` で始める。
+
 ## デフォルト分析セット
 
 ユーザーが指標を指定しない場合、以下をすべて計算する:
