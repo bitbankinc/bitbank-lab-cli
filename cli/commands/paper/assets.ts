@@ -18,12 +18,13 @@ export type PaperAssetsArgs = {
 
 export async function paperAssets(args: PaperAssetsArgs = {}): Promise<Result<PaperAssetRow[]>> {
   const path = args.statePath ?? defaultStatePath();
-  await runTick({
+  const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });
+  if (!tick.success) return tick;
   const r = await loadState(path);
   if (!r.success) return r;
   if (!r.data) {

@@ -65,9 +65,11 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
   const pairs = uniquePairs(sr.data.openOrders, opts.pair);
   let working: PaperState = sr.data;
   const filled: PaperHistoryEntry[] = [];
+  let anyFetchFailed = false;
   for (const p of pairs) {
     const cr = await fetchFn(p, fromMs, nowMs);
     if (!cr.success) {
+      anyFetchFailed = true;
       warnings.push(`fetch candles for ${p} failed: ${cr.error}`);
       continue;
     }
@@ -86,11 +88,15 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
       }
     }
   }
-  working = { ...working, lastTickAt: newLastTickAt, updatedAt: newLastTickAt };
+  // 部分 tick（pair 限定 or fetch 失敗）では lastTickAt を進めない。
+  // 進めると未処理 pair / 未処理区間が永久に評価されなくなる。
+  const advanceTick = !anyFetchFailed && opts.pair === undefined;
+  const persistedLastTickAt = advanceTick ? newLastTickAt : working.lastTickAt;
+  working = { ...working, lastTickAt: persistedLastTickAt, updatedAt: newLastTickAt };
   const w = await saveState(working, path);
   if (!w.success) return w;
   for (const msg of warnings) process.stderr.write(`Warning: ${msg}\n`);
-  return { success: true, data: { filled, warnings, lastTickAt: newLastTickAt } };
+  return { success: true, data: { filled, warnings, lastTickAt: persistedLastTickAt } };
 }
 
 function uniquePairs(orders: OpenOrder[], filter?: string): string[] {

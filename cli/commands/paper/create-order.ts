@@ -72,12 +72,13 @@ export async function paperCreateOrder(
     return { success: false, error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
   const path = args.statePath ?? defaultStatePath();
-  await runTick({
+  const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });
+  if (!tick.success) return tick;
   const sr = await loadState(path);
   if (!sr.success) return sr;
   if (!sr.data) {
