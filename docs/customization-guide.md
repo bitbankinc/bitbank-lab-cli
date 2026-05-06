@@ -32,7 +32,7 @@ description: |
   トリガーとなるユーザーの発話例:
   「〇〇を分析して」「〇〇の状況は？」
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: your-name
   version: "1.0"
@@ -45,7 +45,7 @@ metadata:
 どの CLI コマンドをどの引数で実行するか:
 
 \`\`\`bash
-npx tsx cli/index.ts candles btc_jpy --type=1day --format=json
+bitbank candles btc_jpy --type=1day --format=json
 \`\`\`
 
 ## 計算手順
@@ -201,10 +201,10 @@ npx bitbank assets --format=table
 
 ```bash
 # GitHub Actions 等で定期的に価格データを取得
-npx tsx cli/index.ts candles btc_jpy --type=1hour --format=json > data.json
+bitbank candles btc_jpy --type=1hour --format=json > data.json
 
 # Private API を使う場合は環境変数で認証
 BITBANK_API_KEY=${{ secrets.BB_KEY }} \
 BITBANK_API_SECRET=${{ secrets.BB_SECRET }} \
-npx tsx cli/index.ts assets --format=json
+bitbank assets --format=json
 ```
