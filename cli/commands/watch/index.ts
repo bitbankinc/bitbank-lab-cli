@@ -39,10 +39,11 @@ function runWatch(args: WatchArgs, pair: string): Promise<Result<void>> {
   return new Promise((resolve) => {
     const write = createWriter(args.format);
     let settled = false;
+    let reconnect: ReturnType<typeof createReconnect> | null = null;
     const settle = (r: Result<void>): void => {
       if (settled) return;
       settled = true;
-      reconnect.stop();
+      reconnect?.stop();
       lifecycle.teardown();
       resolve(r);
     };
@@ -62,7 +63,7 @@ function runWatch(args: WatchArgs, pair: string): Promise<Result<void>> {
       },
     });
 
-    const reconnect = createReconnect({
+    reconnect = createReconnect({
       maxRetries: args.maxRetries,
       backoffCap: args.backoffCap,
       idleTimeout: args.idleTimeout,
@@ -72,11 +73,11 @@ function runWatch(args: WatchArgs, pair: string): Promise<Result<void>> {
           {
             onTicker: (t) => {
               write(t);
-              reconnect.noteEvent();
-              if (lifecycle.noteEvent()) return;
+              reconnect?.noteEvent();
+              lifecycle.noteEvent();
             },
-            onConnect: () => reconnect.noteConnected(),
-            onDisconnect: (reason) => reconnect.noteDisconnect(reason),
+            onConnect: () => reconnect?.noteConnected(),
+            onDisconnect: (reason) => reconnect?.noteDisconnect(reason),
           },
           args.ioFactory,
         ),

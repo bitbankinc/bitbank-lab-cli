@@ -1,14 +1,27 @@
+import { EXIT } from "../exit-codes.js";
 import { output } from "../output.js";
+import type { Result } from "../types.js";
 import type { WatchFormat } from "../watch/format.js";
 import type { CommandEntry, ParsedValues } from "./handler-types.js";
 import { str, valStr } from "./handler-types.js";
 
-const numOpt = (v: ParsedValues, key: string, dflt?: number): number | undefined => {
+function parseNum(
+  v: ParsedValues,
+  key: string,
+  dflt: number | undefined,
+): Result<number | undefined> {
   const s = valStr(v, key);
-  if (s === undefined) return dflt;
+  if (s === undefined) return { success: true, data: dflt };
   const n = Number(s);
-  return Number.isFinite(n) ? n : dflt;
-};
+  if (!Number.isFinite(n)) {
+    return {
+      success: false,
+      error: `Invalid --${key}: "${s}" is not a finite number`,
+      exitCode: EXIT.PARAM,
+    };
+  }
+  return { success: true, data: n };
+}
 
 function resolveFormat(fmt: string, isTty: boolean, explicit: boolean): WatchFormat {
   const wanted = fmt === "table" ? "table" : "json";
@@ -37,24 +50,39 @@ export const watchCommands: Record<string, CommandEntry> = {
       "backoff-cap": str,
     },
     handler: async (args, values, format) => {
-      const { watchCommand } = await import("./watch/index.js");
       const fmt = resolveFormat(
         String(values.format ?? format),
         Boolean(process.stdout.isTTY),
         isExplicitFormat(process.argv.slice(2)),
       );
+      const outFmt = fmt === "table" ? "json" : fmt;
+      const nums = {
+        duration: parseNum(values, "duration", undefined),
+        count: parseNum(values, "count", undefined),
+        idleTimeout: parseNum(values, "idle-timeout", 30),
+        maxRetries: parseNum(values, "max-retries", Number.POSITIVE_INFINITY),
+        backoffCap: parseNum(values, "backoff-cap", 32),
+      };
+      for (const r of Object.values(nums)) {
+        if (!r.success) {
+          output(r, outFmt);
+          return;
+        }
+      }
+      const { watchCommand } = await import("./watch/index.js");
       const r = await watchCommand({
         channel: args[0] ?? "",
         pair: args[1],
         format: fmt,
-        duration: numOpt(values, "duration"),
-        count: numOpt(values, "count"),
-        idleTimeout: numOpt(values, "idle-timeout", 30) ?? 30,
+        duration: nums.duration.success ? nums.duration.data : undefined,
+        count: nums.count.success ? nums.count.data : undefined,
+        idleTimeout: (nums.idleTimeout.success ? nums.idleTimeout.data : 30) ?? 30,
         maxRetries:
-          numOpt(values, "max-retries", Number.POSITIVE_INFINITY) ?? Number.POSITIVE_INFINITY,
-        backoffCap: numOpt(values, "backoff-cap", 32) ?? 32,
+          (nums.maxRetries.success ? nums.maxRetries.data : Number.POSITIVE_INFINITY) ??
+          Number.POSITIVE_INFINITY,
+        backoffCap: (nums.backoffCap.success ? nums.backoffCap.data : 32) ?? 32,
       });
-      if (!r.success) output(r, fmt === "table" ? "json" : fmt);
+      if (!r.success) output(r, outFmt);
     },
   },
 };

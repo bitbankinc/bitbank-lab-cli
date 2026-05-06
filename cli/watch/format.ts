@@ -1,15 +1,19 @@
-export type TickerData = {
-  ts: string;
-  pair: string;
-  last: string;
-  bid: string;
-  ask: string;
-  high: string;
-  low: string;
-  vol: string;
-};
+import { z } from "zod";
 
-export type WatchFormat = "json" | "table";
+export const TickerDataSchema = z.object({
+  ts: z.string(),
+  pair: z.string(),
+  last: z.string(),
+  bid: z.string(),
+  ask: z.string(),
+  high: z.string(),
+  low: z.string(),
+  vol: z.string(),
+});
+export type TickerData = z.infer<typeof TickerDataSchema>;
+
+export const WatchFormatSchema = z.enum(["json", "table"]);
+export type WatchFormat = z.infer<typeof WatchFormatSchema>;
 
 export function formatJsonl(t: TickerData): string {
   return JSON.stringify(t);

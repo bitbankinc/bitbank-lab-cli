@@ -99,6 +99,17 @@ describe("watch handler", () => {
     );
   });
 
+  it("rejects invalid numeric option without invoking watchCommand", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    await handler(["ticker", "btc_jpy"], { "max-retries": "foo" }, "json");
+    expect(mockWatchCommand).not.toHaveBeenCalled();
+    expect(mockOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, error: expect.stringContaining("max-retries") }),
+      "json",
+    );
+  });
+
   it("calls output() when watchCommand returns failure", async () => {
     setTTY(false);
     process.argv = ["node", "cli", "watch", "foo", "btc_jpy"];

@@ -1,5 +1,5 @@
 import { type Socket, io } from "socket.io-client";
-import type { TickerData } from "./format.js";
+import { type TickerData, TickerDataSchema } from "./format.js";
 
 const WS_ENDPOINT = "wss://stream.bitbank.cc";
 
@@ -30,10 +30,14 @@ export function startTickerSocket(
     cb.onConnect();
   });
 
-  socket.on("message", (msg: { room_name: string; message: { data: Record<string, unknown> } }) => {
-    if (msg.room_name !== room) return;
-    cb.onTicker(parseTicker(pair, msg.message.data));
-  });
+  socket.on(
+    "message",
+    (msg: { room_name: string; message?: { data?: Record<string, unknown> } }) => {
+      if (msg.room_name !== room) return;
+      if (!msg.message?.data) return;
+      cb.onTicker(parseTicker(pair, msg.message.data));
+    },
+  );
 
   socket.on("disconnect", (reason: string) => cb.onDisconnect(String(reason)));
   socket.on("connect_error", (err: Error) => cb.onDisconnect(`connect_error: ${err.message}`));
@@ -48,7 +52,7 @@ export function startTickerSocket(
 
 export function parseTicker(pair: string, data: Record<string, unknown>): TickerData {
   const tsMs = typeof data.timestamp === "number" ? data.timestamp : Date.now();
-  return {
+  return TickerDataSchema.parse({
     ts: new Date(tsMs).toISOString(),
     pair,
     last: String(data.last ?? ""),
@@ -57,5 +61,5 @@ export function parseTicker(pair: string, data: Record<string, unknown>): Ticker
     high: String(data.high ?? ""),
     low: String(data.low ?? ""),
     vol: String(data.vol ?? ""),
-  };
+  });
 }

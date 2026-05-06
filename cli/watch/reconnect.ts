@@ -41,12 +41,17 @@ export function createReconnect(cfg: ReconnectConfig): ReconnectController {
   };
 
   const connectNow = (): void => {
+    scheduled = null;
     if (stopped) return;
     active = cfg.startConnection();
   };
 
   const scheduleReconnect = (): void => {
     if (stopped) return;
+    if (scheduled) {
+      clearTimeout(scheduled);
+      scheduled = null;
+    }
     if (retries >= cfg.maxRetries) {
       cfg.onMaxRetries(retries);
       return;
@@ -66,7 +71,7 @@ export function createReconnect(cfg: ReconnectConfig): ReconnectController {
     },
     noteEvent: armIdle,
     noteDisconnect: (reason) => {
-      cfg.onLost(reason);
+      if (!stopped) cfg.onLost(reason);
       active = null;
       if (idle) clearTimeout(idle);
       idle = null;
