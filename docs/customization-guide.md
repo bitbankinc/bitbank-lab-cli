@@ -32,7 +32,7 @@ description: |
   トリガーとなるユーザーの発話例:
   「〇〇を分析して」「〇〇の状況は？」
 compatibility: |
-  Requires bitbank CLI. Node.js 18+.
+  Requires bitbank CLI. Node.js 20+.
 metadata:
   author: your-name
   version: "1.0"
