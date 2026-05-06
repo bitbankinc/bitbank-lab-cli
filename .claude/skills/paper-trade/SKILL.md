@@ -17,7 +17,7 @@ description: |
   実発注（`bitbank trade ...`）とは別物で、状態は CLI 側のローカルファイル
   （`~/.bitbank/paper-state.json`）に保存される。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 20+.
+  Requires bitbank CLI. Node.js 20+.
   Public API のみ使用するため `.env` は不要。
 metadata:
   author: bitbank-aiforge
@@ -50,7 +50,7 @@ metadata:
 ユーザーが残高や履歴を聞いてきた場合は、まず以下を試す:
 
 ```bash
-npx tsx cli/index.ts paper assets --format=json
+bitbank paper assets --format=json
 ```
 
 `success: false` で `not initialized` が返ったら、初期 JPY をユーザーに
@@ -59,7 +59,7 @@ npx tsx cli/index.ts paper assets --format=json
 ### Step 2: 仮想口座を初期化
 
 ```bash
-npx tsx cli/index.ts paper init --jpy=1000000 --format=json
+bitbank paper init --jpy=1000000 --format=json
 ```
 
 既存 state があると Err になる。上書きしたい場合は `--force` を付ける。
@@ -69,7 +69,7 @@ npx tsx cli/index.ts paper init --jpy=1000000 --format=json
 成行は last 価格で即時 fill:
 
 ```bash
-npx tsx cli/index.ts paper create-order \
+bitbank paper create-order \
   --pair=btc_jpy --side=buy --type=market --amount=0.01 --format=json
 ```
 
@@ -77,7 +77,7 @@ npx tsx cli/index.ts paper create-order \
 側でロックされる:
 
 ```bash
-npx tsx cli/index.ts paper create-order \
+bitbank paper create-order \
   --pair=btc_jpy --side=buy --type=limit --price=10000000 --amount=0.001 --format=json
 ```
 
@@ -94,11 +94,11 @@ npx tsx cli/index.ts paper create-order \
 ### Step 4: 未約定 / 残高 / 履歴の確認
 
 ```bash
-npx tsx cli/index.ts paper active-orders --format=json
-npx tsx cli/index.ts paper assets --format=json
-npx tsx cli/index.ts paper trade-history --format=json
+bitbank paper active-orders --format=json
+bitbank paper assets --format=json
+bitbank paper trade-history --format=json
 # 明示的に fill 解決を走らせたいとき:
-npx tsx cli/index.ts paper tick --format=json
+bitbank paper tick --format=json
 ```
 
 `paper assets` は各通貨ごとに `total` / `locked` / `available` を返す。
@@ -109,9 +109,9 @@ npx tsx cli/index.ts paper tick --format=json
 
 ```bash
 # 全ペア + 合計
-npx tsx cli/index.ts paper pnl --format=json
+bitbank paper pnl --format=json
 # 単一ペアに絞る
-npx tsx cli/index.ts paper pnl --pair=btc_jpy --format=json
+bitbank paper pnl --pair=btc_jpy --format=json
 ```
 
 - `paper trade-history` から加重平均でコスト基底を再構築し、`realizedPnl`
@@ -126,7 +126,7 @@ npx tsx cli/index.ts paper pnl --pair=btc_jpy --format=json
 ### Step 6: 指値のキャンセル
 
 ```bash
-npx tsx cli/index.ts paper cancel-order --id=<id> --format=json
+bitbank paper cancel-order --id=<id> --format=json
 ```
 
 `active-orders` が返す `id` を渡す。キャンセル後はロックが解除され、
@@ -135,7 +135,7 @@ npx tsx cli/index.ts paper cancel-order --id=<id> --format=json
 ### Step 7: リセット（必要な場合のみ）
 
 ```bash
-npx tsx cli/index.ts paper reset --confirm --format=json
+bitbank paper reset --confirm --format=json
 ```
 
 `--confirm` なしでは Err。実発注の `withdraw` と同じ思想で誤爆を防ぐ。

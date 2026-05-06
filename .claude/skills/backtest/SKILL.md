@@ -12,7 +12,7 @@ description: |
   このスキルでバックテストを実行して根拠を示してください。
   戦略の有効性や過去実績を問われたら、まずこのスキルの出番です。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
@@ -36,7 +36,7 @@ metadata:
 ### Step 2: データ取得
 
 ```bash
-npx tsx cli/index.ts candles <pair> --type=<timeframe> --limit=<N> --format=json
+bitbank candles <pair> --type=<timeframe> --limit=<N> --format=json
 ```
 
 - バックテストには十分なデータが必要。最低でも SMA の長期期間 × 2 以上

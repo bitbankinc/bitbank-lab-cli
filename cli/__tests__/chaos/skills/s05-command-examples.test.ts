@@ -8,7 +8,7 @@ const SKILLS = ["indicator-analysis", "backtest", "portfolio"];
 
 /** Extract CLI subcommands from SKILL.md command examples */
 function extractCommands(content: string): string[] {
-  const re = /npx tsx cli\/index\.ts\s+(\S+)/g;
+  const re = /^\s*bitbank\s+([a-z][\w-]*)/gm;
   const cmds: string[] = [];
   let m: RegExpExecArray | null;
   // biome-ignore lint/suspicious/noAssignInExpressions: regex loop

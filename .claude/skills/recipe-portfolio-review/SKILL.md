@@ -12,7 +12,7 @@ description: |
   束ねて「偏りや見落としがないか」のチェックリスト的に使う。最終判断は
   人間が下す。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
   Private API commands require API key/secret in .env file.
 metadata:
   author: bitbank-aiforge

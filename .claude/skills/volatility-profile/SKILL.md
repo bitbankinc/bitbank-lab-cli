@@ -13,7 +13,7 @@ description: |
   注意: 「RSI を見て」「移動平均のクロスは？」のような売買シグナル系の
   リクエストは indicator-analysis 側の担当。本 skill は起動しない。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
@@ -54,18 +54,18 @@ metadata:
 
 ```bash
 # デフォルト: 短期 1hour + 長期 1day
-npx tsx cli/index.ts candles <pair> --type=1hour --format=json
-npx tsx cli/index.ts candles <pair> --type=1day --format=json
+bitbank candles <pair> --type=1hour --format=json
+bitbank candles <pair> --type=1day --format=json
 ```
 
 ユーザー指定がある場合の例:
 ```bash
 # 期間指定
-npx tsx cli/index.ts candles btc_jpy --type=1hour --from=20240401 --to=20241231 --format=json
-npx tsx cli/index.ts candles btc_jpy --type=1day --from=20240401 --to=20241231 --format=json
+bitbank candles btc_jpy --type=1hour --from=20240401 --to=20241231 --format=json
+bitbank candles btc_jpy --type=1day --from=20240401 --to=20241231 --format=json
 
 # 件数指定
-npx tsx cli/index.ts candles eth_jpy --type=15min --limit=5000 --format=json
+bitbank candles eth_jpy --type=15min --limit=5000 --format=json
 ```
 
 ユーザーが片方の足種だけを指定した場合は、その足種だけで計算し、

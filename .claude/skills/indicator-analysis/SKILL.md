@@ -13,7 +13,7 @@ description: |
   このスキルを使ってテクニカル指標で客観的に回答してください。
   価格やトレンドについて聞かれたら、まずこのスキルの出番です。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
@@ -26,19 +26,19 @@ metadata:
 ローソク足データを CLI で取得する:
 
 ```bash
-npx tsx cli/index.ts candles <pair> --type=<timeframe> --format=json
+bitbank candles <pair> --type=<timeframe> --format=json
 ```
 
 例:
 ```bash
 # BTC/JPY の日足を取得
-npx tsx cli/index.ts candles btc_jpy --type=1day --format=json
+bitbank candles btc_jpy --type=1day --format=json
 
 # ETH/JPY の4時間足、特定日
-npx tsx cli/index.ts candles eth_jpy --type=4hour --date=20240301 --format=json
+bitbank candles eth_jpy --type=4hour --date=20240301 --format=json
 
 # データ件数を指定（デフォルト100件）
-npx tsx cli/index.ts candles btc_jpy --type=1hour --limit=200 --format=json
+bitbank candles btc_jpy --type=1hour --limit=200 --format=json
 ```
 
 `--format=json` を使う。JSON はモデルがパースしやすいため。

@@ -13,7 +13,7 @@ description: |
   「この戦略をバックテストして」（コスト込み戦略 PnL）は backtest が担当。
   本 skill はその間にある「シグナルの予測力スクリーニング」レイヤー。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"

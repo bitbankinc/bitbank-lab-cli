@@ -11,7 +11,7 @@ description: |
   注意: 売買判断そのものを断定するものではなく、各 skill の出力を束ねて
   「見落としがないか」のチェックリスト的に使う。最終判断は人間が下す。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 18+.
+  Requires bitbank CLI. Node.js 18+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
