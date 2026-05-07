@@ -1,17 +1,13 @@
 ---
 name: watch-live
 description: |
-  bitbank の WebSocket public stream を使って、ticker をリアルタイムで
-  watch する。1 行 JSONL または ANSI 再描画の table で配信され、`jq` で
-  パイプ加工しやすい。指数バックオフ自動再接続・無音検出・SIGINT graceful
-  shutdown を備えるが、長時間動き続けるため Skill 経路では必ず `--duration`
-  か `--count` を併用して停止条件を与える。
-  「BTC の ticker をライブで見たい」「リアルタイム価格監視」「last の動きを
-  ストリームで取りたい」「ライブで last を 10 秒だけ見たい」のような発話で
-  起動する。
-  注意: 価格指標の現在値（RSI / SMA / MACD 等）は indicator-analysis、
-  ローソク足ベースの分析は他 skill が担当する。本 skill は WebSocket
-  ライブストリームの取得手段に特化する。
+  bitbank の WebSocket public stream で ticker をリアルタイム watch する。
+  Skill 経路では必ず `--duration` か `--count` で停止条件を与える
+  （長時間動き続けるため）。
+  代表トリガー: 「BTC の ticker をライブで見たい」「リアルタイム価格監視」
+  「ライブで last を 10 秒だけ見たい」
+  注意: 指標の現在値（RSI / SMA 等）は indicator-analysis、
+  ローソク足ベースの分析は他 skill。本 skill は WS 取得手段に特化。
 compatibility: |
   Requires bitbank CLI. Node.js 20+.
 metadata:
@@ -23,6 +19,13 @@ metadata:
 
 WebSocket 経由で bitbank の `ticker_<pair>` チャネルを購読し、JSONL
 （または table）でライブ配信する。`bitbank watch ticker <pair>` を呼び出す。
+
+## いつ使うか
+
+代表トリガー以外にも以下のような発話で起動する:
+
+- 「last の動きをストリームで取りたい」「spread をライブで監視」
+- 「vol を監視して」
 
 ## 実行フロー
 

@@ -1,21 +1,12 @@
 ---
 name: paper-trade
 description: |
-  ペーパートレード（仮想資金）で売買を練習・検証する。
-  bitbank の live ticker / 1m candles を取得して、成行は last 価格で即時
-  fill し、指値（GTC）は openOrders に積んで前回 tick 以降の 1m 足で
-  fill 解決する。実 API は public のみ叩き、private/trade エンドポイントには
-  一切触れない。
-  「BTC を仮想で 0.01 買って」「指値で BTC を 1000 万円で買い注文」
-  「ペーパー口座の残高見て」「ペーパーの未約定注文見せて」
-  「練習用に 100万円で始めたい」「仮想で sell シミュレーションして」
-  「paper trade-history 見せて」「仮想口座リセットして」
-  「ペーパーの指値キャンセルして」「指値の fill 確認して」
-  「ペーパーの損益見せて」「仮想口座いくら勝ってる？」
-  「含み益どれくらい？」「BTC のペーパー P&L は？」
-  のような発話で起動する。
-  実発注（`bitbank trade ...`）とは別物で、状態は CLI 側のローカルファイル
-  （`~/.bitbank/paper-state.json`）に保存される。
+  仮想資金でペーパートレード（売買練習）を行う。実 API は public ticker
+  と 1m candles のみで、private/trade エンドポイントには触れない。
+  代表トリガー: 「BTC を仮想で買って」「ペーパー口座の残高見て」
+  「ペーパーの損益見せて」「仮想口座リセットして」
+  注意: 実発注（`bitbank trade ...`）は対象外。状態は
+  `~/.bitbank/paper-state.json` にローカル保存される。
 compatibility: |
   Requires bitbank CLI. Node.js 20+.
   Public API のみ使用するため `.env` は不要。
@@ -30,6 +21,18 @@ metadata:
 本体は `bitbank paper <cmd>` サブコマンド群。Skill はモデルが
 自然言語をこのコマンドに変換するための指示書であり、計算ロジックは
 持たない。
+
+## いつ使うか
+
+代表トリガー以外にも以下のような発話で起動する:
+
+- 発注系: 「BTC を仮想で 0.01 買って」「指値で BTC を 1000 万円で買い注文」
+  「練習用に 100万円で始めたい」「仮想で sell シミュレーションして」
+- 確認系: 「ペーパーの未約定注文見せて」「paper trade-history 見せて」
+  「指値の fill 確認して」
+- P&L 系: 「仮想口座いくら勝ってる？」「含み益どれくらい？」
+  「BTC のペーパー P&L は？」
+- キャンセル: 「ペーパーの指値キャンセルして」
 
 ## 前提
 

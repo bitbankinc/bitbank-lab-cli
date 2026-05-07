@@ -1,18 +1,12 @@
 ---
 name: profile-management
 description: |
-  bitbank CLI の API キー切替プロファイル（`profiles.json`）を管理する。
-  複数アカウント（メイン口座 / サブ口座 / read-only 検証用 等）を
-  ユースケースごとに切り替えて使うための CRUD を提供する。
-  「API キー追加して」「サブ口座のキー登録」「profile 一覧」
-  「default profile 切り替えて」「メインに戻して」「キー削除」
-  「サブ口座のキーで残高見て」「main の secret 見せて」のような
-  発話で起動する。
-  曖昧な「キーの管理」「アカウント切り替えたい」もカバー。
-  注意: secret 値は CLI flag で受け取れない（shell 履歴に残るため）。
-  対話 hidden 入力か `BITBANK_API_SECRET` env vars でしか登録できない。
-  この skill は profiles.json の管理だけを担当し、bitbank API は
-  叩かない。
+  bitbank CLI の API キー切替プロファイル（`profiles.json`）の CRUD を
+  提供する。複数アカウント（メイン / サブ / read-only 等）を切替えて使う。
+  代表トリガー: 「API キー追加して」「profile 一覧」
+  「default profile 切り替えて」「アカウント切り替えたい」
+  注意: secret は flag では渡さず、対話 hidden 入力か
+  `BITBANK_API_SECRET` env のみ。bitbank API 自体は叩かない。
 compatibility: |
   Requires bitbank CLI (npx tsx cli/index.ts). Node.js 20+.
 metadata:
@@ -25,6 +19,14 @@ metadata:
 `profiles.json` ベースの API キー切替（`--profile=<name>`）を管理する skill。
 secret は対話プロンプトで hidden 入力する前提で、モデルが flag 経由で
 渡そうとしないように注意する。
+
+## いつ使うか
+
+代表トリガー以外にも以下のような発話で起動する:
+
+- 「サブ口座のキー登録」「メインに戻して」「キー削除」
+- 「サブ口座のキーで残高見て」「main の secret 見せて」
+- 曖昧形: 「キーの管理」
 
 ## 前提
 
