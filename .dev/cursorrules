@@ -45,7 +45,7 @@ git log --oneline --merges -5
 | `cli/commands/stream/*.ts` | `cli/__tests__/stream/<name>.test.ts`, `cli/commands/stream-handler.ts` |
 | `cli/http*.ts` | `cli/__tests__/http*.test.ts`, 利用側のコマンド |
 | `cli/*.ts`（共有ユーティリティ） | `cli/__tests__/` 内の対応テスト |
-| `.claude/skills/*/SKILL.md` | `.claude/rules/skills.md` の規約との整合性 |
+| `skills/*/SKILL.md` | `.claude/rules/skills.md` の規約との整合性 |
 
 ## 評価しないこと（自動化済み）
 
@@ -118,7 +118,7 @@ private / trade コマンドの変更時に確認:
 - スキーマが `cli/commands/schema/` に適切に配置されているか
 - 共有スキーマは `cli/commands/shared-schemas.ts` にあるか
 
-### 7. Skill の品質（`.claude/skills/` 変更時）
+### 7. Skill の品質（`skills/` 変更時）
 
 - `SKILL.md` が `.claude/rules/skills.md` のテンプレートに従っているか
 - Skill に分析ロジックのコードが含まれていないか（CLI 呼び出しの指示書であること）
@@ -198,5 +198,5 @@ cli/profiles-mutate.ts / cli/profiles-resolver.ts / cli/profiles-store.ts
 cli/__tests__/                 — テスト
 cli/__tests__/chaos/           — chaos テスト（規約検証）
 .claude/rules/                 — Claude Code 向けルールファイル
-.claude/skills/                — Claude Code Skills 定義
+skills/                        — Agent Skills 定義（.claude/skills/ から symlink）
 ```
