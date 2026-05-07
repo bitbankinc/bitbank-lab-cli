@@ -1,0 +1,21 @@
+{
+  "name": "bitbank-cli-skills",
+  "version": "0.1.0",
+  "description": "bitbank 暗号資産取引所の CLI と Agent Skills スターターキット。生 OHLCV を渡してモデルに自由に計算させる、薄い API アクセス層。",
+  "author": {
+    "name": "tjackiet",
+    "url": "https://github.com/tjackiet"
+  },
+  "homepage": "https://github.com/tjackiet/bitbank-cli-skills",
+  "repository": "https://github.com/tjackiet/bitbank-cli-skills",
+  "license": "MIT",
+  "keywords": [
+    "bitbank",
+    "cryptocurrency",
+    "trading",
+    "agent-skills",
+    "cli",
+    "paper-trading"
+  ],
+  "skills": "./skills/"
+}
