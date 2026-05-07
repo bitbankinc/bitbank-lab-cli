@@ -130,7 +130,7 @@
 
 ---
 
-## Phase 5: Agent Skills（7本）+ references + カスタマイズガイド ✅
+## Phase 5: Agent Skills（12本）+ references + カスタマイズガイド ✅
 
 **成果物:** `.claude/skills/*/SKILL.md`, `.claude/skills/_shared/references/`, README 拡充
 **ドッグフーディング基準:** Claude Code / Cursor で Skills が正しくトリガーされること
