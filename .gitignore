@@ -28,6 +28,9 @@ coverage/
 
 # Claude Code
 .claude/settings.local.json
+# 開発者が .dev/setup.sh で手元生成するファイル（クローン者には不要）
+.claude/settings.json
+.claude/hooks/
 
 # Misc
 *.log
