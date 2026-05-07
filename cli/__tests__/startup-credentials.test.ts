@@ -156,7 +156,7 @@ describe("credential threading: ctx → handler → command → privateGet", () 
 
     let captured: Record<string, string> = {};
     const fetch: typeof globalThis.fetch = async (_input, init) => {
-      captured = init?.headers as Record<string, string>;
+      if (init?.headers) captured = init.headers as Record<string, string>;
       return new Response(JSON.stringify({ success: 1, data: { assets: [] } }));
     };
     const cap = captureStdout();
@@ -191,7 +191,7 @@ describe("credential threading: ctx → handler → command → privateGet", () 
     let captured: Record<string, string> = {};
     const fetch = mockFetchRaw({ success: 1, data: { assets: [] } });
     const wrapped: typeof globalThis.fetch = async (input, init) => {
-      captured = init?.headers as Record<string, string>;
+      if (init?.headers) captured = init.headers as Record<string, string>;
       return fetch(input, init);
     };
 
@@ -217,5 +217,45 @@ describe("credential threading: ctx → handler → command → privateGet", () 
       nonce: "1",
     });
     expect(process.env).toEqual(before);
+  });
+
+  it("ctx.credentials=undefined → privateGet が NOT_CONFIGURED で失敗する", async () => {
+    // env / profiles.json いずれにも creds が無い状態 (isolateEnv で保証済み)。
+    // resolveStartupCredentials は data: undefined を返し、make-handler の
+    // ctxOpts() が opts を渡さない経路。privateGet は resolveCredentials() に
+    // フォールバックして NOT_CONFIGURED エラーを返す。
+    const credsResult = resolveStartupCredentials(undefined);
+    expect(credsResult.success).toBe(true);
+    if (credsResult.success) expect(credsResult.data).toBeUndefined();
+
+    const fetchSpy = vi.fn();
+    const cap = captureStdout();
+    const h = handler(
+      new URL("../commands/private/assets.js", import.meta.url).pathname,
+      "assets",
+      () => ({ showAll: false }),
+    );
+    const mod = await import("../commands/private/assets.js");
+    let observedOpts: unknown;
+    vi.spyOn(mod, "assets").mockImplementation(async (_a, opts) => {
+      observedOpts = opts;
+      return privateGet("/user/assets", undefined, {
+        ...opts,
+        fetch: fetchSpy as unknown as typeof globalThis.fetch,
+        retries: 0,
+      });
+    });
+
+    await h([], { machine: true }, "json", { credentials: undefined });
+    const out = cap.read();
+    cap.restore();
+    vi.restoreAllMocks();
+
+    expect(observedOpts).toBeUndefined();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const parsed = JSON.parse(out);
+    expect(parsed.success).toBe(false);
+    expect(parsed.error).toContain("BITBANK_API_KEY");
+    expect(parsed.error).toContain("BITBANK_API_SECRET");
   });
 });

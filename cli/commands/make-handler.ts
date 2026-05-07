@@ -7,7 +7,9 @@ import { valStr } from "./handler-types.js";
 
 const DEFAULT_TRADE_LOG = join(homedir(), ".bitbank-trade.log");
 
-function ctxOpts(ctx?: RuntimeContext): { credentials?: unknown } | undefined {
+function ctxOpts(
+  ctx?: RuntimeContext,
+): { credentials: NonNullable<RuntimeContext["credentials"]> } | undefined {
   return ctx?.credentials ? { credentials: ctx.credentials } : undefined;
 }
 
