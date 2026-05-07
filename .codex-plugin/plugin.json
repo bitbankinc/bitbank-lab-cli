@@ -1,0 +1,36 @@
+{
+  "name": "bitbank-cli-skills",
+  "version": "0.1.0",
+  "description": "bitbank 暗号資産取引所の CLI と Agent Skills スターターキット。",
+  "author": {
+    "name": "tjackiet",
+    "url": "https://github.com/tjackiet"
+  },
+  "homepage": "https://github.com/tjackiet/bitbank-cli-skills",
+  "repository": "https://github.com/tjackiet/bitbank-cli-skills",
+  "license": "MIT",
+  "keywords": [
+    "bitbank",
+    "cryptocurrency",
+    "trading",
+    "agent-skills",
+    "cli",
+    "paper-trading"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "bitbank CLI & Agent Skills",
+    "shortDescription": "bitbank 取引所の生 OHLCV をモデルに渡し、指標もロジックも自由にカスタマイズ。",
+    "longDescription": "bitbank API への薄い CLI アクセス層と、Claude Code / Cursor 用 Agent Skills のスターターキット。MCP の固定実装と異なり、生データを LLM に渡すアプローチで指標のパラメータもロジックも完全カスタマイズ可能。ペーパートレード（仮想資金 × ライブ価格）、ポートフォリオ分析、テクニカル指標、ボラティリティ分析、相関分析、バックテスト、シグナル探索、recipe（買う前チェック / ポートフォリオ総点検）など 12 本の skill を同梱。",
+    "developerName": "tjackiet",
+    "category": "Finance",
+    "capabilities": ["Read"],
+    "websiteURL": "https://github.com/tjackiet/bitbank-cli-skills",
+    "defaultPrompt": [
+      "BTC の RSI を見て",
+      "ポートフォリオの状況を見せて",
+      "BTC を仮想で 0.01 買って",
+      "買う前にざっと見て"
+    ]
+  }
+}
