@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import type { ApiCredentials } from "./auth.js";
 import { EXIT } from "./exit-codes.js";
 import type { Result } from "./types.js";
 
@@ -29,7 +30,6 @@ export function parseEnvFile(content: string): Record<string, string> {
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
     let val = trimmed.slice(eq + 1).trim();
-    // Remove surrounding quotes
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
@@ -40,8 +40,9 @@ export function parseEnvFile(content: string): Record<string, string> {
 
 const ALLOWED_KEYS = /^BITBANK_[A-Z0-9_]+$/;
 
-/** プロファイル用 .env ファイルを読み込み process.env に反映する */
-export function applyProfile(profile: string): Result<string> {
+/** .env.<profile> から credentials を読み出す。process.env は変更しない。
+ * BITBANK_* 以外のキーは読み捨てて警告（PATH/LD_PRELOAD 等の上書き防止）。 */
+export function loadEnvProfile(profile: string): Result<ApiCredentials> {
   if (!/^[A-Za-z0-9._-]+$/.test(profile) || profile.startsWith(".") || profile.includes("..")) {
     return { success: false, error: "Invalid profile name", exitCode: EXIT.PARAM };
   }
@@ -58,17 +59,27 @@ export function applyProfile(profile: string): Result<string> {
   const content = readFileSync(filepath, "utf-8");
   const vars = parseEnvFile(content);
   const skipped: string[] = [];
+  let apiKey: string | undefined;
+  let apiSecret: string | undefined;
   for (const [key, val] of Object.entries(vars)) {
     if (!ALLOWED_KEYS.test(key)) {
       skipped.push(key);
       continue;
     }
-    process.env[key] = val;
+    if (key === "BITBANK_API_KEY") apiKey = val;
+    else if (key === "BITBANK_API_SECRET") apiSecret = val;
   }
   if (skipped.length > 0) {
     process.stderr.write(
       `Warning: ignored non-BITBANK_* keys in ${filename}: ${skipped.join(", ")}\n`,
     );
   }
-  return { success: true, data: filename };
+  if (!apiKey || !apiSecret) {
+    return {
+      success: false,
+      error: `${filename} must define "BITBANK_API_KEY" and "BITBANK_API_SECRET"`,
+      exitCode: EXIT.AUTH,
+    };
+  }
+  return { success: true, data: { apiKey, apiSecret } };
 }

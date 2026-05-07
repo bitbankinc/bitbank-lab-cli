@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 import { parseArgs } from "node:util";
+import type { RuntimeContext } from "./commands/handler-types.js";
 import { COMMON_OPTIONS } from "./common-options.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
 import { showHelp, showPaperHelp, showProfileHelp, showTradeHelp } from "./help-print.js";
 import { machineOutput } from "./output.js";
-import { applyProfile } from "./profile.js";
-import { loadProfiles } from "./profiles-store.js";
 import { handleSpecialCommand, resolveCommand, runCommandHelp } from "./router.js";
+import { resolveStartupCredentials } from "./startup-credentials.js";
 import type { Format } from "./types.js";
 
 function fail(machine: boolean, msg: string, code: ExitCode): void {
@@ -36,20 +36,13 @@ async function main(): Promise<void> {
     strict: false,
   });
   const machine = values.machine === true;
-  if (typeof values.profile === "string") {
-    // profiles.json を優先、無ければ .env.<name> にフォールバック（後方互換）。
-    // Object.hasOwn で prototype 経由の ("__proto__", "toString" 等) を弾く
-    const file = loadProfiles();
-    if (file.success && Object.hasOwn(file.data.profiles, values.profile)) {
-      process.env.BITBANK_PROFILE = values.profile;
-    } else {
-      const r = applyProfile(values.profile);
-      if (!r.success) {
-        fail(machine, r.error, r.exitCode ?? EXIT.GENERAL);
-        return;
-      }
-    }
+  const profileFlag = typeof values.profile === "string" ? values.profile : undefined;
+  const credsResult = resolveStartupCredentials(profileFlag);
+  if (!credsResult.success) {
+    fail(machine, credsResult.error, credsResult.exitCode ?? EXIT.GENERAL);
+    return;
   }
+  const ctx: RuntimeContext = { credentials: credsResult.data };
   const format = (values.format ?? "json") as Format;
   if (!["json", "table", "csv"].includes(format)) {
     fail(machine, `Unknown format "${format}". Use json, table, or csv.`, EXIT.PARAM);
@@ -75,7 +68,7 @@ async function main(): Promise<void> {
     if (values.help && (await runCommandHelp(command, entry.description))) return;
     const [, , ...subArgs] = positionals;
     const opts = values as Record<string, string | boolean | undefined>;
-    await entry.handler(subArgs, opts, format);
+    await entry.handler(subArgs, opts, format, ctx);
     return;
   }
 
@@ -87,7 +80,7 @@ async function main(): Promise<void> {
     return;
   }
   if (values.help && command && (await runCommandHelp(command, entry.description))) return;
-  await entry.handler(args, opts, format);
+  await entry.handler(args, opts, format, ctx);
 }
 
 main().catch((e: unknown) => {

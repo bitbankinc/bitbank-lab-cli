@@ -6,7 +6,7 @@ export const streamCommands: Record<string, CommandEntry> = {
   stream: {
     description: "Subscribe to real-time stream (public or --private)",
     options: { private: bool(), channel: str, filter: str },
-    handler: async (args, values, format) => {
+    handler: async (args, values, format, ctx) => {
       const { streamCommand } = await import("./stream/index.js");
       const fmt = format === "csv" ? "json" : format;
       const r = await streamCommand({
@@ -15,6 +15,7 @@ export const streamCommands: Record<string, CommandEntry> = {
         channel: valStr(values, "channel"),
         filter: valStr(values, "filter"),
         format: fmt,
+        credentials: ctx?.credentials,
       });
       if (!r.success) output(r, format);
     },

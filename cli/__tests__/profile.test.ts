@@ -1,33 +1,29 @@
-// 100行超: profile 切替の各分岐を網羅
-import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+// 100行超: profile 切替の各分岐を網羅（loadEnvProfile は env を mutate しない）
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { applyProfile, parseEnvFile, warnIfInsecure } from "../profile.js";
+import { loadEnvProfile, parseEnvFile, warnIfInsecure } from "../profile.js";
 
 describe("parseEnvFile", () => {
   it("parses key=value lines", () => {
-    const result = parseEnvFile("FOO=bar\nBAZ=qux");
-    expect(result).toEqual({ FOO: "bar", BAZ: "qux" });
+    expect(parseEnvFile("FOO=bar\nBAZ=qux")).toEqual({ FOO: "bar", BAZ: "qux" });
   });
 
   it("ignores comments and blank lines", () => {
-    const result = parseEnvFile("# comment\n\nKEY=val\n");
-    expect(result).toEqual({ KEY: "val" });
+    expect(parseEnvFile("# comment\n\nKEY=val\n")).toEqual({ KEY: "val" });
   });
 
   it("strips surrounding quotes", () => {
-    const result = parseEnvFile("A=\"hello\"\nB='world'");
-    expect(result).toEqual({ A: "hello", B: "world" });
+    expect(parseEnvFile("A=\"hello\"\nB='world'")).toEqual({ A: "hello", B: "world" });
   });
 
   it("handles values with = sign", () => {
-    const result = parseEnvFile("KEY=a=b=c");
-    expect(result).toEqual({ KEY: "a=b=c" });
+    expect(parseEnvFile("KEY=a=b=c")).toEqual({ KEY: "a=b=c" });
   });
 });
 
-describe("applyProfile", () => {
+describe("loadEnvProfile", () => {
   let origCwd: typeof process.cwd;
   let tmpDir: string;
   const savedEnv: Record<string, string | undefined> = {};
@@ -54,16 +50,30 @@ describe("applyProfile", () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it("loads credentials from .env.<profile>", () => {
+  it("returns credentials from .env.<profile>", () => {
     writeFileSync(join(tmpDir, ".env.bot1"), "BITBANK_API_KEY=k1\nBITBANK_API_SECRET=s1");
-    const result = applyProfile("bot1");
+    const result = loadEnvProfile("bot1");
     expect(result.success).toBe(true);
-    expect(process.env.BITBANK_API_KEY).toBe("k1");
-    expect(process.env.BITBANK_API_SECRET).toBe("s1");
+    if (result.success) {
+      expect(result.data).toEqual({ apiKey: "k1", apiSecret: "s1" });
+    }
+  });
+
+  it("does not mutate process.env", () => {
+    writeFileSync(join(tmpDir, ".env.bot1"), "BITBANK_API_KEY=k1\nBITBANK_API_SECRET=s1");
+    // biome-ignore lint/performance/noDelete: process.env requires delete
+    delete process.env.BITBANK_API_KEY;
+    // biome-ignore lint/performance/noDelete: process.env requires delete
+    delete process.env.BITBANK_API_SECRET;
+    const before = { ...process.env };
+    loadEnvProfile("bot1");
+    expect(process.env.BITBANK_API_KEY).toBeUndefined();
+    expect(process.env.BITBANK_API_SECRET).toBeUndefined();
+    expect(process.env).toEqual(before);
   });
 
   it("returns PARAM error for missing profile file", () => {
-    const result = applyProfile("nonexistent");
+    const result = loadEnvProfile("nonexistent");
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toContain("not found");
@@ -73,7 +83,7 @@ describe("applyProfile", () => {
 
   it("rejects profile names with path traversal", () => {
     for (const name of ["../etc/passwd", "..\\foo", "sub/dir", "a\\b", "foo..bar"]) {
-      const result = applyProfile(name);
+      const result = loadEnvProfile(name);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBe("Invalid profile name");
@@ -84,7 +94,7 @@ describe("applyProfile", () => {
 
   it("rejects profile names with disallowed characters", () => {
     for (const name of ["foo bar", ".hidden", "foo\0bar", "foo\nbar", "foo;bar", ""]) {
-      const result = applyProfile(name);
+      const result = loadEnvProfile(name);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBe("Invalid profile name");
@@ -94,28 +104,31 @@ describe("applyProfile", () => {
   });
 
   it("accepts valid profile names", () => {
-    writeFileSync(join(tmpDir, ".env.valid_name-1"), "BITBANK_API_KEY=v1");
-    writeFileSync(join(tmpDir, ".env.test"), "BITBANK_API_KEY=t1");
-    expect(applyProfile("valid_name-1").success).toBe(true);
-    expect(applyProfile("test").success).toBe(true);
+    writeFileSync(join(tmpDir, ".env.valid_name-1"), "BITBANK_API_KEY=v1\nBITBANK_API_SECRET=s1");
+    writeFileSync(join(tmpDir, ".env.test"), "BITBANK_API_KEY=t1\nBITBANK_API_SECRET=s2");
+    expect(loadEnvProfile("valid_name-1").success).toBe(true);
+    expect(loadEnvProfile("test").success).toBe(true);
   });
 
-  it("only reflects BITBANK_* keys and warns for others", () => {
+  it("warns and ignores non-BITBANK_* keys (no env mutation)", () => {
     const origPath = process.env.PATH;
     const origNodeOpts = process.env.NODE_OPTIONS;
     writeFileSync(
       join(tmpDir, ".env.bot2"),
       [
         "BITBANK_API_KEY=foo",
+        "BITBANK_API_SECRET=bar",
         "PATH=/evil",
         "NODE_OPTIONS=--require ./mal.js",
         "LD_PRELOAD=/tmp/x.so",
       ].join("\n"),
     );
     const spy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-    const result = applyProfile("bot2");
+    const result = loadEnvProfile("bot2");
     expect(result.success).toBe(true);
-    expect(process.env.BITBANK_API_KEY).toBe("foo");
+    if (result.success) {
+      expect(result.data).toEqual({ apiKey: "foo", apiSecret: "bar" });
+    }
     expect(process.env.PATH).toBe(origPath);
     expect(process.env.NODE_OPTIONS).toBe(origNodeOpts);
     const warnings = spy.mock.calls
@@ -128,11 +141,14 @@ describe("applyProfile", () => {
     spy.mockRestore();
   });
 
-  it("does not affect env when profile is not specified (backward compat)", () => {
-    // biome-ignore lint/performance/noDelete: process.env requires delete
-    delete process.env.BITBANK_API_KEY;
-    // loadCredentials without profile should use process.env as-is
-    expect(process.env.BITBANK_API_KEY).toBeUndefined();
+  it("returns AUTH error when BITBANK_API_KEY or _SECRET is missing", () => {
+    writeFileSync(join(tmpDir, ".env.partial"), "BITBANK_API_KEY=foo");
+    const result = loadEnvProfile("partial");
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("BITBANK_API_KEY");
+      expect(result.error).toContain("BITBANK_API_SECRET");
+    }
   });
 });
 

@@ -56,18 +56,21 @@ export async function tradeHistory(
 }
 
 /** --all 分岐を吸収するディスパッチ関数 */
-export async function tradeHistoryDispatch(args: {
-  pair: string | undefined;
-  count?: string;
-  orderId?: string;
-  since?: string;
-  end?: string;
-  order?: string;
-  all: boolean;
-}): Promise<Result<Trade[]>> {
+export async function tradeHistoryDispatch(
+  args: {
+    pair: string | undefined;
+    count?: string;
+    orderId?: string;
+    since?: string;
+    end?: string;
+    order?: string;
+    all: boolean;
+  },
+  opts?: PrivateHttpOptions,
+): Promise<Result<Trade[]>> {
   if (args.all) {
     const { tradeHistoryAll } = await import("./trade-history-all.js");
-    return tradeHistoryAll({ pair: args.pair, since: args.since, end: args.end });
+    return tradeHistoryAll({ pair: args.pair, since: args.since, end: args.end }, opts);
   }
-  return tradeHistory(args);
+  return tradeHistory(args, opts);
 }

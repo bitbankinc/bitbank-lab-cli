@@ -1,3 +1,4 @@
+import type { ApiCredentials } from "../../auth.js";
 import type { Result } from "../../types.js";
 import type { StreamFormat } from "./format.js";
 
@@ -7,6 +8,7 @@ export type StreamArgs = {
   channel?: string;
   filter?: string;
   format: StreamFormat;
+  credentials?: ApiCredentials;
 };
 
 export async function streamCommand(args: StreamArgs): Promise<Result<void>> {
@@ -15,7 +17,7 @@ export async function streamCommand(args: StreamArgs): Promise<Result<void>> {
   if (args.isPrivate) {
     const { startPrivateStream } = await import("./private.js");
     const filter = args.filter ? args.filter.split(",").map((s) => s.trim()) : undefined;
-    const result = await startPrivateStream({ format, filter });
+    const result = await startPrivateStream({ format, filter, credentials: args.credentials });
     if (!result.success) return result;
     setupShutdown(result.data.stop);
     return { success: true, data: undefined };

@@ -1,3 +1,4 @@
+import type { ApiCredentials } from "../auth.js";
 import type { Format } from "../types.js";
 
 export type ParsedValues = Record<string, string | boolean | undefined>;
@@ -8,10 +9,18 @@ export function valStr(v: ParsedValues, key: string): string | undefined {
   return typeof val === "string" ? val : undefined;
 }
 
+/** Runtime context threaded from CLI entry to command handlers.
+ * credentials が undefined の場合、private API は呼べない（HTTP helper 側で
+ * resolveCredentials() フォールバックも切れているため、明示エラーになる）。 */
+export type RuntimeContext = {
+  credentials?: ApiCredentials;
+};
+
 export type CommandHandler = (
   args: string[],
   values: ParsedValues,
   format: Format,
+  ctx?: RuntimeContext,
 ) => Promise<void>;
 
 export type CliOptionConfig = {
