@@ -1,5 +1,6 @@
 import { EXIT } from "../../exit-codes.js";
-import { type ProfilesFile, loadProfiles, saveProfiles } from "../../profiles-store.js";
+import { updateProfiles } from "../../profiles-mutate.js";
+import type { ProfilesFile } from "../../profiles-store.js";
 import type { Result } from "../../types.js";
 
 export type ProfileRemoveArgs = {
@@ -20,22 +21,20 @@ export async function profileRemove(args: ProfileRemoveArgs): Promise<Result<Pro
       exitCode: EXIT.PARAM,
     };
   }
-  const file = loadProfiles();
-  if (!file.success) return file;
-  if (!file.data.profiles[args.name]) {
-    return { success: false, error: `Profile "${args.name}" not found`, exitCode: EXIT.PARAM };
-  }
-  const { [args.name]: _, ...rest } = file.data.profiles;
-  const wasDefault = file.data.default === args.name;
-  const next: ProfilesFile = {
-    version: 1,
-    default: wasDefault ? null : file.data.default,
-    profiles: rest,
-  };
-  const saved = saveProfiles(next);
-  if (!saved.success) return saved;
-  return {
-    success: true,
-    data: { removed: args.name, defaultCleared: wasDefault },
-  };
+  let wasDefault = false;
+  const result = updateProfiles((current) => {
+    if (!current.profiles[args.name]) {
+      return { success: false, error: `Profile "${args.name}" not found`, exitCode: EXIT.PARAM };
+    }
+    const { [args.name]: _, ...rest } = current.profiles;
+    wasDefault = current.default === args.name;
+    const next: ProfilesFile = {
+      version: 1,
+      default: wasDefault ? null : current.default,
+      profiles: rest,
+    };
+    return { success: true, data: next };
+  });
+  if (!result.success) return result;
+  return { success: true, data: { removed: args.name, defaultCleared: wasDefault } };
 }
