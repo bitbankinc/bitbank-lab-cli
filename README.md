@@ -481,6 +481,17 @@ npm run typecheck # 型チェック
 
 `npm test` では実 API を叩く E2E ブロックは `TEST_E2E=1` で gating されており、デフォルトでは skip される。実 API に対する E2E を走らせる場合は `TEST_E2E=1 npm test` を指定する（`.env.example` の API キー設定が必要）。
 
+### コントリビューター向けセットアップ
+
+このリポジトリ自体に PR を送る場合は、Claude Code 用の hook をローカルで
+有効化してください:
+
+    ./.dev/setup.sh
+
+これで lint / test / 設定保護の hook が `.claude/` 配下に symlink で
+復元されます。`.claude/settings.json` と `.claude/hooks/` は `.gitignore`
+済みなのでコミットには含まれません。詳細は `.dev/README.md` を参照。
+
 ### アーキテクチャ
 
 ```
