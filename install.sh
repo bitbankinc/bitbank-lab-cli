@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # bitbank CLI installer (Linux / macOS).
 #
-# Runs npm install (so tsx is available as a local devDependency) and
-# `npm link` to put the `bitbank` command on PATH. After running this you
-# can invoke `bitbank <cmd>` from any directory.
+# Runs npm ci (so tsx is available as a local devDependency, with strict
+# lockfile enforcement) and `npm link` to put the `bitbank` command on
+# PATH. After running this you can invoke `bitbank <cmd>` from any directory.
 #
 # Uninstall: npm unlink -g bitbank
 set -euo pipefail
@@ -22,8 +22,8 @@ if [ "$NODE_MAJOR" -lt 20 ]; then
 fi
 echo "    $(node --version) ok."
 
-echo "==> Installing dependencies (npm install)..."
-npm install
+echo "==> Installing dependencies (npm ci)..."
+npm ci
 
 echo "==> Linking 'bitbank' command globally (npm link)..."
 npm link
