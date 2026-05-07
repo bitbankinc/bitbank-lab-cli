@@ -36,5 +36,5 @@ npx tsx cli/index.ts    # CLI 実行
 
 - コミット: `<type>: <概要>`（日本語 OK）
 - 外部依存最小。`tsx` で直接実行。ビルドステップなし
-- 開発フェーズ → [`docs/phases.md`](docs/phases.md)
+- 開発フェーズ → [`docs/dev/phases.md`](docs/dev/phases.md)
 - Skill 追加 → `.claude/rules/skills.md`
