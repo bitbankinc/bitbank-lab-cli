@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # bitbank CLI installer (Linux / macOS).
 #
-# Runs npm ci (so tsx is available as a local devDependency, with strict
+# Runs npm ci (which installs tsx as a runtime dependency, with strict
 # lockfile enforcement) and `npm link` to put the `bitbank` command on
 # PATH. After running this you can invoke `bitbank <cmd>` from any directory.
 #
-# Uninstall: npm unlink -g bitbank
+# Uninstall: npm unlink -g bitbank-lab-cli
 set -euo pipefail
 
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -47,4 +47,4 @@ echo "Installed. Try:"
 echo "  bitbank ticker btc_jpy"
 echo "  bitbank candles btc_jpy --type=1day --format=table"
 echo ""
-echo "Uninstall: npm unlink -g bitbank"
+echo "Uninstall: npm unlink -g bitbank-lab-cli"
