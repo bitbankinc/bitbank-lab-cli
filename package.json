@@ -24,7 +24,8 @@
     "lint": "biome check cli/",
     "lint:fix": "biome check --fix cli/",
     "format": "biome format --write cli/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "version": "node scripts/sync-version.mjs && git add .claude-plugin/plugin.json .cursor-plugin/plugin.json .codex-plugin/plugin.json gemini-extension.json"
   },
   "dependencies": {
     "pubnub": "^10.2.9",

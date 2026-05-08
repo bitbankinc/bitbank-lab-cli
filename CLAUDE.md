@@ -38,3 +38,17 @@ npx tsx cli/index.ts    # CLI 実行
 - 外部依存最小。`tsx` で直接実行。ビルドステップなし
 - 開発フェーズ → [`docs/dev/phases.md`](docs/dev/phases.md)
 - Skill 追加 → `.claude/rules/skills.md`
+
+## リリース手順
+
+`npm version <patch|minor|major>` で version 系を一括同期する。`scripts.version`
+フック経由で `scripts/sync-version.mjs` が走り、`package.json` と同じ version を
+plugin manifest 4 種（`.claude-plugin/` `.cursor-plugin/` `.codex-plugin/`
+`gemini-extension.json`）に転写してから commit + tag が作られる。手動で
+版数を編集して整合を取らないこと（同期漏れの温床）。
+
+```bash
+npm version patch        # 0.1.0 → 0.1.1 (5 ファイル同期 + commit + tag)
+git push --follow-tags   # tag を含めて push
+npm publish --otp=<OTP>  # /tmp で動作確認してから
+```
