@@ -58,6 +58,8 @@ bitbank paper create-order --pair=btc_jpy --side=buy --type=market --amount=0.00
 
 各エージェントの plugin システムから直接インストールできます（CLI 本体は別途 `npm i -g bitbank-lab-cli` でインストールしてください）。
 
+> 注: `/plugin install` は **ローカル版 Claude Code CLI**（ターミナル）で使う slash command です。Web 版（[claude.ai/code](https://claude.ai/code)）のクラウドサンドボックスでは動作しません。Web 版のコンテナは一時的で `bitbank` CLI を永続的に PATH へ通せないため、Skill が CLI を呼べません。ローカル環境で使ってください。
+
 ### Claude Code
 
 ```bash
