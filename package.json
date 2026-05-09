@@ -28,7 +28,7 @@
     "version": "node scripts/sync-version.mjs && git add .claude-plugin/plugin.json .cursor-plugin/plugin.json .codex-plugin/plugin.json gemini-extension.json"
   },
   "dependencies": {
-    "pubnub": "^10.2.9",
+    "pubnub": "^11.0.0",
     "socket.io-client": "^4.8.3",
     "tsx": "^4.19.0",
     "zod": "^3.24.0"
