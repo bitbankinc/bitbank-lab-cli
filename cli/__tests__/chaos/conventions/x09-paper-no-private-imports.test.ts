@@ -31,7 +31,12 @@ describe("Chaos X-09: paper uses only public ticker / candles (no private/trade 
   });
 
   it("cli/paper-*.ts does not import http-private / http-private-post / auth", () => {
-    const hits = grepForbidden(["cli/paper-fill.ts", "cli/paper-pnl.ts", "cli/paper-state.ts"]);
+    const helpers = execSync('find cli/ -maxdepth 1 -name "paper-*.ts"', { encoding: "utf-8" })
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+    expect(helpers.length, "expected to discover cli/paper-*.ts helpers").toBeGreaterThan(0);
+    const hits = grepForbidden(helpers);
     expect(
       hits,
       `paper helpers must not touch private API (see CLAUDE.md "paper" 例外節):\n${hits.join("\n")}`,

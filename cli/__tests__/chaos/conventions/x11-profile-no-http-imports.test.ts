@@ -31,11 +31,12 @@ describe("Chaos X-11: profile commands do not hit any HTTP API", () => {
   });
 
   it("cli/profiles-*.ts does not import cli/http* or cli/auth", () => {
-    const hits = grepForbidden([
-      "cli/profiles-mutate.ts",
-      "cli/profiles-resolver.ts",
-      "cli/profiles-store.ts",
-    ]);
+    const helpers = execSync('find cli/ -maxdepth 1 -name "profiles-*.ts"', { encoding: "utf-8" })
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+    expect(helpers.length, "expected to discover cli/profiles-*.ts helpers").toBeGreaterThan(0);
+    const hits = grepForbidden(helpers);
     expect(
       hits,
       `profile helpers must not call bitbank API (see .claude/rules/commands.md: "profile は実 API を叩かない"):\n${hits.join("\n")}`,
