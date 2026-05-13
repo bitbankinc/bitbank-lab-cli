@@ -100,6 +100,7 @@
 - [x] `trade confirm-deposits` — 入金確認
 - [x] `trade confirm-deposits-all` — 全入金確認
 - [x] `trade withdraw` — 出金リクエスト（--execute + --confirm 必須）
+  - **運用方針 (PoC スコープ)**: 実装・テスト・安全ガードは完備しているが、本 PoC では **AI エージェント経由での起動は非推奨**。人間が CLI から直接実行する用途のみとし、Skill / MCP からの自動起動フローは組まない。read-only な `withdrawal-accounts` / `withdrawal-history` は AI 経由でも利用可。
 
 ### テスト
 
