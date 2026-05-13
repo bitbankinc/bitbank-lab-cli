@@ -1,0 +1,116 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# bitbank-cli-skills 用 CodeRabbit 設定。
+# inheritance: false なので org UI 設定は継承されない。必要な項目はここに移植する。
+# 仕様: https://docs.coderabbit.ai/guides/configuration-overview
+
+language: ja
+inheritance: false
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  high_level_summary_instructions: |-
+    Generate the summary in the following format:
+
+    ## Summary
+    Describe what this PR does in 1-2 sentences.
+
+    ## Category
+    Show all that apply:
+    - 🔒 Security (cli/auth*, cli/http-private*, cli/profile*, cli/withdrawal-allowlist*)
+    - 💰 Trade (cli/commands/trade/**)
+    - 🧪 Paper (cli/commands/paper/**)
+    - 🤖 Skill (skills/**)
+    - 🔧 Infra (router / output / cache / http-core / validators)
+    - 📚 Docs / tests
+
+    ## Risk Level
+    - 🔴 High: Changes affecting funds, authentication, or trading safety
+    - 🟡 Medium: Logic changes to existing commands, schema changes
+    - 🟢 Low: Documentation, test additions, refactoring
+
+    ## Impact
+    List the cli commands or modules affected by the changes.
+
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: true
+  suggested_reviewers: true
+  poem: true
+  enable_prompt_for_ai_agents: true
+
+  path_filters:
+    - "!dist/**"
+    - "!node_modules/**"
+    - "!*.lock"
+    - "!coverage/**"
+
+  path_instructions:
+    - path: "cli/auth.ts"
+      instructions: |-
+        HMAC 署名と nonce 取扱い。構造的整合は chaos test
+        (a04-sign-divergence, a07-nonce-monotonic) で担保済。
+        論理レベルで以下を確認:
+        - secret がエラーメッセージ / ログに混入していないか
+        - nonce の単調性を破る分岐がないか
+        - TIME_WINDOW 境界値の取り扱い
+
+    - path: "cli/http-private*.ts"
+      instructions: |-
+        Private API クライアント。POST 経路は retries: 0 強制
+        (chaos test x08-post-no-retry で担保) なので、その不変条件を
+        破壊していないか・エラーパスで secret/nonce が漏れていないかに焦点。
+
+    - path: "cli/commands/trade/**"
+      instructions: |-
+        資金影響あり。--execute / --confirm ガードの存在は chaos test
+        (x06, x07, t01, t03, t11) で担保済。論理レベルで以下を確認:
+        - dry-run 出力が実 API 呼び出しと等価か
+        - エラーパスで API を叩いていないか
+        - 失敗時に副作用が残らないか (POST は冪等でない前提)
+
+    - path: "cli/withdrawal-allowlist.ts"
+      instructions: |-
+        出金 allowlist。ラベル → UUID 解決は bitbank API 側 backstop に
+        依存している (.claude/rules/trading-safety.md 参照)。
+        ローカル改ざんで UUID 捏造ができない設計を崩していないかを確認。
+
+    - path: "cli/profile*.ts"
+      instructions: |-
+        Credential 取扱い。0600 強制 / atomic write / process.env 非汚染、
+        secret は flag 経由で受け取らない (chaos test x12-profile-no-secret-flag)。
+        ALLOWED_KEYS のホワイトリスト化を維持しているかを確認。
+
+    - path: "skills/**/SKILL.md"
+      instructions: |-
+        Skill はモデルへの指示書。コード規約ではなく以下を見て:
+        - トリガー語が他 skill と被っていないか (誤起動リスク)
+        - 責務境界が他 skill と重複していないか
+        - 「~してください」型の判断委ねが過剰でないか
+
+  labeling_instructions:
+    - label: security
+      instructions: cli/auth*, cli/http-private*, cli/profile*, cli/withdrawal-allowlist* への変更
+    - label: trade
+      instructions: cli/commands/trade/** への変更
+    - label: paper
+      instructions: cli/commands/paper/** への変更
+    - label: skill
+      instructions: skills/** への変更
+    - label: docs
+      instructions: README, CLAUDE.md, .claude/rules/**, docs/**, *.md のみの変更
+    - label: breaking
+      instructions: bin/, package.json の major/minor バージョン変更、cli/commands/registry.ts のコマンド削除
+
+  # bitbank-cli-skills は JSDoc 文化が薄いため docstring coverage チェックは無効化。
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
