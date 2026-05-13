@@ -84,6 +84,7 @@ describe("buildLogRecord", () => {
         success: true,
         data: {
           private_key: "pk",
+          seed: "raw-seed",
           seed_phrase: "abc",
           mnemonic: "word word",
           passphrase: "p",
@@ -92,6 +93,7 @@ describe("buildLogRecord", () => {
     );
     const data = r.data as Record<string, string>;
     expect(data.private_key).toBe("***");
+    expect(data.seed).toBe("***");
     expect(data.seed_phrase).toBe("***");
     expect(data.mnemonic).toBe("***");
     expect(data.passphrase).toBe("***");
