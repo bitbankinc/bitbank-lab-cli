@@ -110,6 +110,7 @@ reviews:
     - label: breaking
       instructions: bin/, package.json の major/minor バージョン変更、cli/commands/registry.ts のコマンド削除
 
-# 注: pre_merge_checks (docstring coverage 等) は CodeRabbit の UI 専用設定で
-# .coderabbit.yaml では設定できない。bitbank-cli-skills では JSDoc 文化が薄いため、
-# Repo/Org Settings → Pre-merge checks → Docstring coverage を off にすること。
+  # bitbank-cli-skills は JSDoc 文化が薄いため docstring coverage チェックは無効化。
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
