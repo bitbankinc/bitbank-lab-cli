@@ -114,3 +114,35 @@ reviews:
   pre_merge_checks:
     docstrings:
       mode: "off"
+
+knowledge_base:
+  linked_repositories:
+    - repository: "bitbankinc/bitbank-api-docs"
+      instructions: |-
+        bitbank.cc の公式 API 仕様書 (Markdown)。以下の観点で CLI 実装と照合する:
+
+        - rest-api.md (Private REST API): cli/commands/private/** および
+          cli/commands/trade/** の各コマンドが、公式仕様のエンドポイント・
+          HTTP メソッド・パスパラメータ・リクエストボディの型と一致しているか。
+          特に create-order / cancel-order / cancel-orders / withdraw の
+          引数バリデーション (price, amount, side, type, asset 等の型と必須性)。
+        - public-api.md (Public API): cli/commands/public/** の ticker /
+          depth / transactions / candles / pairs / circuit-break / status
+          が仕様準拠か。レスポンスフィールド名・型も含む。
+        - private-stream.md / public-stream.md: cli/commands/stream.ts の
+          WebSocket チャネル名・メッセージ形式の準拠。
+        - errors.md: 公式エラーコード体系と、cli/types.ts の Result<T> 型
+          経由で返すエラー表現が整合しているか。
+        - CHANGELOG.md: 公式 API の最近の変更で CLI 側が追随すべき項目が
+          ないか。特に新規エンドポイント追加・既存パラメータの仕様変更。
+
+        HMAC-SHA256 署名と認証ヘッダは rest-api.md の認証セクションを
+        cli/auth.ts と照合すること。現状の CLI 実装は ACCESS-NONCE 方式
+        (signature = HMAC(nonce + /v1 + path + queryString) / HMAC(nonce + body))
+        のみを用い、ACCESS-TIME-WINDOW は固定値 "5000" を付加ヘッダとして
+        送出している。公式 docs に別方式 (ACCESS-REQUEST-TIME +
+        ACCESS-TIME-WINDOW を署名対象に含める方式など) の記述があれば、
+        その差分・移行要否を指摘すること。
+        併せて以下も確認: GET の連結順序 (nonce + /v1 + path + query) /
+        POST の連結順序 (nonce + body) / 必須ヘッダ (ACCESS-KEY /
+        ACCESS-SIGNATURE / ACCESS-NONCE / ACCESS-TIME-WINDOW)。
