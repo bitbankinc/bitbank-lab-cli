@@ -1,8 +1,14 @@
 {
   "$schema": "https://code.claude.com/schemas/marketplace.json",
-  "version": "1.0",
   "name": "bitbank-lab-cli",
+  "owner": {
+    "name": "tjackiet"
+  },
   "plugins": [
-    { "name": "bitbank-lab-cli", "source": "." }
+    {
+      "name": "bitbank-lab-cli",
+      "source": "./",
+      "description": "Experimental CLI & Agent Skills starter kit for bitbank — botters lab community edition. A thin API access layer that hands raw OHLCV to the model so indicators and logic stay fully customizable."
+    }
   ]
 }
