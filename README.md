@@ -67,31 +67,10 @@ bitbank paper create-order --pair=btc_jpy --side=buy --type=market --amount=0.00
 
 ### Claude Code
 
-slash command は **1 行ずつ送信**してください（一気に貼り付けると 1 つのコマンドとして解釈されて失敗します）。
-
-1. マーケットプレイスを登録:
-
-   ```
-   /plugin marketplace add tjackiet/bitbank-cli-skills
-   ```
-
-2. plugin をインストール:
-
-   ```
-   /plugin install bitbank-lab-cli@bitbank-lab-cli
-   ```
-
-3. インストール直後は、今開いている Claude Code に skill がまだ読み込まれていません。次のどちらかで有効化してください:
-
-   - **A. すぐ使いたい場合**: 以下を実行
-
-     ```
-     /reload-plugins
-     ```
-
-   - **B. 後で使えれば OK な場合**: Claude Code を一度終了して再度 `claude` を起動（起動時に自動でロードされます）
-
-   どちらか一度やれば以降ずっと使えます。次回以降の起動では常に自動ロードされるので、**別の plugin を追加 / 有効化 / 無効化するまで `/reload-plugins` は不要です**。
+```bash
+/plugin marketplace add tjackiet/bitbank-cli-skills
+/plugin install bitbank-lab-cli@bitbank-lab-cli
+```
 
 ### Cursor
 
