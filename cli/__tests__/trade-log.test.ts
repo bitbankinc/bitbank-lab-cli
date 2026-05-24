@@ -41,7 +41,7 @@ describe("buildLogRecord", () => {
 
   it("masks sensitive keys (token, otp_token)", () => {
     const r = buildLogRecord(
-      "withdraw",
+      "createOrder",
       { asset: "btc", amount: "0.5", token: "123456", otp_token: "abcdef" },
       { success: true, data: { uuid: "u1" } },
     );
@@ -53,7 +53,7 @@ describe("buildLogRecord", () => {
 
   it("masks sensitive keys in result.data", () => {
     const r = buildLogRecord(
-      "withdraw",
+      "createOrder",
       { asset: "btc" },
       { success: true, data: { token: "secret123", uuid: "u1" } },
     );
@@ -64,7 +64,7 @@ describe("buildLogRecord", () => {
 
   it("masks sensitive keys in nested objects within data", () => {
     const r = buildLogRecord(
-      "withdraw",
+      "createOrder",
       {},
       {
         success: true,
@@ -78,7 +78,7 @@ describe("buildLogRecord", () => {
 
   it("masks wallet-related keys (private_key / seed / mnemonic / passphrase)", () => {
     const r = buildLogRecord(
-      "withdraw",
+      "createOrder",
       {},
       {
         success: true,
@@ -101,7 +101,7 @@ describe("buildLogRecord", () => {
 
   it("masks sensitive keys inside arrays within data", () => {
     const r = buildLogRecord(
-      "withdraw",
+      "createOrder",
       {},
       { success: true, data: { items: [{ token: "a" }, { uuid: "b" }] } },
     );
@@ -112,13 +112,13 @@ describe("buildLogRecord", () => {
 
   it("does not pollute Object.prototype via __proto__ key", () => {
     const payload = JSON.parse('{"__proto__": {"polluted": true}, "ok": 1}');
-    buildLogRecord("withdraw", {}, { success: true, data: payload });
+    buildLogRecord("createOrder", {}, { success: true, data: payload });
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
 
   it("masks sensitive keys in nested params (regression)", () => {
     const r = buildLogRecord(
-      "withdraw",
+      "createOrder",
       { nested: { token: "deep", asset: "btc" } },
       { success: true, data: {} },
     );

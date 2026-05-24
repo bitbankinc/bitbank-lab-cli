@@ -11,11 +11,6 @@ export function mockFetchData(data: unknown): typeof globalThis.fetch {
 /** テスト用 API 認証情報 */
 export const TEST_CREDS = { apiKey: "testkey", apiSecret: "testsecret" } as const;
 
-/** withdraw テスト用: 指定ラベルを通す allowlist loader */
-export function fakeAllowlist(labels: string[] = ["cold-wallet"]) {
-  return () => ({ success: true as const, data: { version: 1 as const, labels } });
-}
-
 /** stdout をキャプチャして後で読み取る */
 export function captureStdout() {
   let buf = "";

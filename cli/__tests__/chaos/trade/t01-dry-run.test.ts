@@ -4,8 +4,6 @@ import { cancelOrders } from "../../../commands/trade/cancel-orders.js";
 import { confirmDepositsAll } from "../../../commands/trade/confirm-deposits-all.js";
 import { confirmDeposits } from "../../../commands/trade/confirm-deposits.js";
 import { createOrder } from "../../../commands/trade/create-order.js";
-import { withdraw } from "../../../commands/trade/withdraw.js";
-import { fakeAllowlist } from "../../test-helpers.js";
 
 describe("Chaos T-01: all trade commands return dryRun without --execute", () => {
   it("create-order dry-run returns { dryRun: true } and prints DRY RUN", async () => {
@@ -53,19 +51,6 @@ describe("Chaos T-01: all trade commands return dryRun without --execute", () =>
     const r = await confirmDepositsAll({});
     expect(r).toEqual({ success: true, data: { dryRun: true } });
     expect(spy.mock.calls.map((c) => c[0]).join("")).toContain("DRY RUN");
-    spy.mockRestore();
-  });
-
-  it("withdraw dry-run shows --confirm hint", async () => {
-    const spy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    const r = await withdraw(
-      { asset: "btc", to: "cold-wallet", amount: "1.0" },
-      { loadAllowlist: fakeAllowlist(["cold-wallet"]) },
-    );
-    expect(r).toEqual({ success: true, data: { dryRun: true } });
-    const out = spy.mock.calls.map((c) => c[0]).join("");
-    expect(out).toContain("DRY RUN");
-    expect(out).toContain("--confirm");
     spy.mockRestore();
   });
 });

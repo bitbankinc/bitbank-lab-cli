@@ -41,7 +41,6 @@ describe("buildCompletionData", () => {
   it("derives pair-taking trade subcommands", () => {
     expect(d.pairTradeSubcommands).toContain("create-order");
     expect(d.pairTradeSubcommands).toContain("cancel-order");
-    expect(d.pairTradeSubcommands).not.toContain("withdraw");
   });
 
   it("formats are exactly json/table/csv", () => {

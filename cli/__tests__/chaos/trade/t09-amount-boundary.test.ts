@@ -46,26 +46,4 @@ describe("Chaos T-09: create-order --amount boundary values", () => {
     expect(r.success).toBe(true);
     spy.mockRestore();
   });
-
-  it("withdraw rejects amount = 0", async () => {
-    const { withdraw } = await import("../../../commands/trade/withdraw.js");
-    const { fakeAllowlist } = await import("../../test-helpers.js");
-    const r = await withdraw(
-      { asset: "btc", to: "cold-wallet", amount: "0" },
-      { loadAllowlist: fakeAllowlist(["cold-wallet"]) },
-    );
-    expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("amount must be > 0");
-  });
-
-  it("withdraw rejects negative amount", async () => {
-    const { withdraw } = await import("../../../commands/trade/withdraw.js");
-    const { fakeAllowlist } = await import("../../test-helpers.js");
-    const r = await withdraw(
-      { asset: "btc", to: "cold-wallet", amount: "-5" },
-      { loadAllowlist: fakeAllowlist(["cold-wallet"]) },
-    );
-    expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("amount must be > 0");
-  });
 });

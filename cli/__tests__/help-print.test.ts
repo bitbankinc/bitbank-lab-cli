@@ -57,7 +57,6 @@ describe("showTradeHelp", () => {
     expect(out).toContain("Subcommands:");
     expect(out).toContain("create-order");
     expect(out).toContain("cancel-order");
-    expect(out).toContain("withdraw");
   });
 
   it("サブコマンドヘルプの呼び出し方を案内する", () => {
