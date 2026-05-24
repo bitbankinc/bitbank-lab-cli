@@ -16,7 +16,9 @@ Settings → Branches → Add branch protection rule:
   - ✅ Dismiss stale approvals when new commits are pushed
 - ✅ Require status checks to pass before merging
   - ✅ Require branches to be up to date before merging
-  - 必須 check: `test`（`.github/workflows/ci.yml` の job 名）
+  - 必須 check:
+    - `test`（`.github/workflows/ci.yml` の job 名）
+    - `audit`（`.github/workflows/security.yml` の job 名）
 - ✅ Require conversation resolution before merging
 - ✅ Do not allow bypassing the above settings（admin も含めて enforce）
 - ❌ Allow force pushes / deletions（無効のまま）

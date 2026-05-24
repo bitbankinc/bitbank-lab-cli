@@ -57,7 +57,7 @@
 
 ## 現在の対策
 
-- `npm audit --audit-level=high` を CI で実行
+- `npm audit` を CI で二段実行（ci.yml で critical 警告、security.yml で high ブロッキング + 週次スケジュール）
 - Dependabot で依存を weekly 更新
 - OIDC trusted publishing + `--provenance` で改ざん検出を可能化
 - `files` allowlist で不要ファイル（`.env*` 等）を tarball から排除
