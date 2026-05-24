@@ -75,7 +75,6 @@ describe("CLI E2E", () => {
     expect(exitCode).toBe(0);
     expect(stdout).toContain("Usage: bitbank trade");
     expect(stdout).toContain("create-order");
-    expect(stdout).toContain("withdraw");
   });
 
   it("rejects unknown trade subcommand with exit 4", async () => {

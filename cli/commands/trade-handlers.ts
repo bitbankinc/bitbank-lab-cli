@@ -59,16 +59,4 @@ export const tradeCommands: Record<string, CommandEntry> = {
       execute: !!v.execute,
     })),
   },
-  withdraw: {
-    description: "Request withdrawal (dry-run default, requires --confirm)",
-    options: { asset: str, to: str, amount: str, token: str, execute: bool(), confirm: bool() },
-    handler: tradeHandler("./trade/withdraw.js", "withdraw", (v) => ({
-      asset: valStr(v, "asset"),
-      to: valStr(v, "to"),
-      amount: valStr(v, "amount"),
-      token: valStr(v, "token"),
-      execute: !!v.execute,
-      confirm: !!v.confirm,
-    })),
-  },
 };

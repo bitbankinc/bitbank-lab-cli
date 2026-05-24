@@ -62,7 +62,6 @@ describe("tradeCommands", () => {
     expect(names).toContain("cancel-orders");
     expect(names).toContain("confirm-deposits");
     expect(names).toContain("confirm-deposits-all");
-    expect(names).toContain("withdraw");
   });
 
   it("all have descriptions mentioning dry-run", () => {

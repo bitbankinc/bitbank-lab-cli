@@ -23,9 +23,9 @@ describe("printDryRun", () => {
   it("masks token and otp_token in body", () => {
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     printDryRun({
-      endpoint: "/v1/user/request_withdrawal",
-      body: { asset: "btc", token: "secret-otp", otp_token: "secret-otp2" },
-      executeHint: "npx withdraw --execute",
+      endpoint: "/v1/user/spot/order",
+      body: { pair: "btc_jpy", token: "secret-otp", otp_token: "secret-otp2" },
+      executeHint: "npx bitbank trade create-order --execute",
     });
     const output = writeSpy.mock.calls.map((c) => c[0]).join("");
     expect(output).toContain('token: "***"');

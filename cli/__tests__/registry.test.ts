@@ -21,7 +21,6 @@ describe("COMMANDS registry", () => {
   it("does not include trade commands in flat COMMANDS", () => {
     expect(COMMANDS["create-order"]).toBeUndefined();
     expect(COMMANDS["cancel-order"]).toBeUndefined();
-    expect(COMMANDS.withdraw).toBeUndefined();
   });
 
   it("includes stream command", () => {
@@ -44,7 +43,6 @@ describe("TRADE_COMMANDS registry", () => {
     expect(TRADE_COMMANDS["cancel-orders"]).toBeDefined();
     expect(TRADE_COMMANDS["confirm-deposits"]).toBeDefined();
     expect(TRADE_COMMANDS["confirm-deposits-all"]).toBeDefined();
-    expect(TRADE_COMMANDS.withdraw).toBeDefined();
   });
 
   it("all entries have description and handler", () => {

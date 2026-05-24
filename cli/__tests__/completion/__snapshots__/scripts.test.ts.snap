@@ -11,7 +11,7 @@ _bitbank() {
   sub="\${COMP_WORDS[2]:-}"
 
   local commands="active-orders assets candles circuit-break completion deposit-history deposit-originators depth margin-positions margin-status order orders-info pairs paper profile profiles schema status stream ticker tickers tickers-jpy trade trade-history trade-history-all transactions unconfirmed-deposits watch withdrawal-accounts withdrawal-history"
-  local trade_subs="cancel-order cancel-orders confirm-deposits confirm-deposits-all create-order withdraw"
+  local trade_subs="cancel-order cancel-orders confirm-deposits confirm-deposits-all create-order"
   local paper_subs="active-orders assets cancel-order create-order init pnl reset tick trade-history"
   local profile_subs="add list remove set-default show"
   local pairs="btc_jpy xrp_jpy eth_jpy doge_jpy sol_jpy ltc_jpy ada_jpy avax_jpy dot_jpy bnb_jpy sui_jpy link_jpy mona_jpy bcc_jpy xlm_jpy qtum_jpy bat_jpy omg_jpy xym_jpy boba_jpy enj_jpy astr_jpy axs_jpy flr_jpy sand_jpy gala_jpy ape_jpy chz_jpy oas_jpy mana_jpy grt_jpy dai_jpy op_jpy arb_jpy klay_jpy imx_jpy mask_jpy pol_jpy cyber_jpy render_jpy trx_jpy lpt_jpy atom_jpy sky_jpy"
@@ -63,7 +63,6 @@ _bitbank() {
         cancel-orders) opts="$opts --pair --order-ids --execute" ;;
         confirm-deposits) opts="$opts --id --execute" ;;
         confirm-deposits-all) opts="$opts --execute" ;;
-        withdraw) opts="$opts --asset --to --amount --token --execute --confirm" ;;
       esac
     elif [[ "$cmd" == "paper" ]]; then
       case "$sub" in
@@ -134,7 +133,7 @@ _bitbank() {
   sub="\${words[3]:-}"
 
   local commands="active-orders assets candles circuit-break completion deposit-history deposit-originators depth margin-positions margin-status order orders-info pairs paper profile profiles schema status stream ticker tickers tickers-jpy trade trade-history trade-history-all transactions unconfirmed-deposits watch withdrawal-accounts withdrawal-history"
-  local trade_subs="cancel-order cancel-orders confirm-deposits confirm-deposits-all create-order withdraw"
+  local trade_subs="cancel-order cancel-orders confirm-deposits confirm-deposits-all create-order"
   local paper_subs="active-orders assets cancel-order create-order init pnl reset tick trade-history"
   local profile_subs="add list remove set-default show"
   local pairs="btc_jpy xrp_jpy eth_jpy doge_jpy sol_jpy ltc_jpy ada_jpy avax_jpy dot_jpy bnb_jpy sui_jpy link_jpy mona_jpy bcc_jpy xlm_jpy qtum_jpy bat_jpy omg_jpy xym_jpy boba_jpy enj_jpy astr_jpy axs_jpy flr_jpy sand_jpy gala_jpy ape_jpy chz_jpy oas_jpy mana_jpy grt_jpy dai_jpy op_jpy arb_jpy klay_jpy imx_jpy mask_jpy pol_jpy cyber_jpy render_jpy trx_jpy lpt_jpy atom_jpy sky_jpy"
@@ -186,7 +185,6 @@ _bitbank() {
       cancel-orders) opts="$opts --pair --order-ids --execute" ;;
       confirm-deposits) opts="$opts --id --execute" ;;
       confirm-deposits-all) opts="$opts --execute" ;;
-      withdraw) opts="$opts --asset --to --amount --token --execute --confirm" ;;
       esac
     elif [[ "$cmd" == "paper" ]]; then
       case "$sub" in
