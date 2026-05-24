@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version-file: '.nvmrc'
       - run: npm ci
       - name: Audit dependencies (critical, non-blocking)
         run: npm audit --audit-level=critical || echo "::warning::npm audit found vulnerabilities (non-blocking)"
