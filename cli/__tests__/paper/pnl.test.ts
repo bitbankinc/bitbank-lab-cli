@@ -28,7 +28,7 @@ function entry(
   side: "buy" | "sell",
   amount: number,
   fillPrice: number,
-  feeJpy: number,
+  feeQuote: number,
   ts = "2024-01-01T00:00:00.000Z",
 ): PaperHistoryEntry {
   return {
@@ -38,7 +38,7 @@ function entry(
     type: "market",
     amount,
     fillPrice,
-    feeJpy,
+    feeQuote,
     filledAt: ts,
   };
 }

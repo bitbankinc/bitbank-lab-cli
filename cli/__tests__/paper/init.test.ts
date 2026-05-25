@@ -26,7 +26,7 @@ describe("paper init", () => {
     expect(r.data.balances.jpy).toBe(1000000);
     expect(r.data.history).toEqual([]);
     const raw = JSON.parse(readFileSync(statePath, "utf-8"));
-    expect(raw.version).toBe(2);
+    expect(raw.version).toBe(3);
     expect(raw.balances.jpy).toBe(1000000);
     expect(raw.openOrders).toEqual([]);
     expect(typeof raw.lastTickAt).toBe("string");

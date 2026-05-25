@@ -42,7 +42,7 @@ export async function paperInit(args: PaperInitArgs): Promise<Result<PaperState>
   const initialJpy = Number(parsed.data.jpy);
   const now = nowIso();
   const state: PaperState = {
-    version: 2,
+    version: 3,
     createdAt: now,
     updatedAt: now,
     initialJpy,

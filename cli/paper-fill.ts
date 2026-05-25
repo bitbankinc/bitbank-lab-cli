@@ -118,13 +118,17 @@ function applyFill(
   const [base, quote] = o.pair.split("_");
   const balances = { ...state.balances };
   const notional = o.price * o.amount;
-  const feeJpy = notional * feeRate;
+  const rawFee = notional * feeRate;
+  const isJpy = quote === "jpy";
+  const feeQuote = isJpy ? Math.round(rawFee) : rawFee;
   if (o.side === "buy") {
-    balances[quote] = (balances[quote] ?? 0) - (notional + feeJpy);
+    const cost = isJpy ? Math.round(notional + rawFee) : notional + rawFee;
+    balances[quote] = (balances[quote] ?? 0) - cost;
     balances[base] = (balances[base] ?? 0) + o.amount;
   } else {
+    const proceeds = isJpy ? Math.round(notional - rawFee) : notional - rawFee;
     balances[base] = (balances[base] ?? 0) - o.amount;
-    balances[quote] = (balances[quote] ?? 0) + (notional - feeJpy);
+    balances[quote] = (balances[quote] ?? 0) + proceeds;
   }
   const filledAt = new Date(candle.timestamp + ONE_MIN_MS).toISOString();
   const entry: PaperHistoryEntry = {
@@ -134,7 +138,7 @@ function applyFill(
     type: "limit",
     amount: o.amount,
     fillPrice: o.price,
-    feeJpy,
+    feeQuote,
     filledAt,
   };
   const newState: PaperState = {

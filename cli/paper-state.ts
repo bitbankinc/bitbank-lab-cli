@@ -1,7 +1,7 @@
 // 100行超: paper サブコマンド専用のローカル状態管理。
 // CLI 全体は API データの取得・整形のみを責務とするが、
 // paper はライブ価格 × 仮想資金のシミュレーションを行うため例外的に
-// state を持つ（CLAUDE.md 参照）。スキーマ・I/O・v1→v2 マイグレーション・
+// state を持つ（CLAUDE.md 参照）。スキーマ・I/O・v1→v3 マイグレーション・
 // 残高ロック集計をまとめて集約。
 import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -16,7 +16,7 @@ export const PaperHistoryEntrySchema = z.object({
   type: z.enum(["market", "limit"]),
   amount: z.number(),
   fillPrice: z.number(),
-  feeJpy: z.number(),
+  feeQuote: z.number(),
   filledAt: z.string(),
 });
 
@@ -30,17 +30,40 @@ export const OpenOrderSchema = z.object({
   createdAt: z.string(),
 });
 
+// v1 / v2 では fee フィールドが feeJpy だった。v3 で feeQuote にリネーム。
+const PaperHistoryEntrySchemaLegacy = z.object({
+  id: z.string(),
+  pair: z.string(),
+  side: z.enum(["buy", "sell"]),
+  type: z.enum(["market", "limit"]),
+  amount: z.number(),
+  fillPrice: z.number(),
+  feeJpy: z.number(),
+  filledAt: z.string(),
+});
+
 const PaperStateSchemaV1 = z.object({
   version: z.literal(1),
   createdAt: z.string(),
   updatedAt: z.string(),
   initialJpy: z.number(),
   balances: z.record(z.string(), z.number()),
-  history: z.array(PaperHistoryEntrySchema),
+  history: z.array(PaperHistoryEntrySchemaLegacy),
+});
+
+const PaperStateSchemaV2 = z.object({
+  version: z.literal(2),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  initialJpy: z.number(),
+  balances: z.record(z.string(), z.number()),
+  history: z.array(PaperHistoryEntrySchemaLegacy),
+  lastTickAt: z.string(),
+  openOrders: z.array(OpenOrderSchema),
 });
 
 export const PaperStateSchema = z.object({
-  version: z.literal(2),
+  version: z.literal(3),
   createdAt: z.string(),
   updatedAt: z.string(),
   initialJpy: z.number(),
@@ -50,7 +73,11 @@ export const PaperStateSchema = z.object({
   openOrders: z.array(OpenOrderSchema),
 });
 
-const PaperStateAnySchema = z.discriminatedUnion("version", [PaperStateSchemaV1, PaperStateSchema]);
+const PaperStateAnySchema = z.discriminatedUnion("version", [
+  PaperStateSchemaV1,
+  PaperStateSchemaV2,
+  PaperStateSchema,
+]);
 
 export type PaperState = z.infer<typeof PaperStateSchema>;
 export type PaperHistoryEntry = z.infer<typeof PaperHistoryEntrySchema>;
@@ -75,15 +102,24 @@ export function genId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function migrateToV2(parsed: z.infer<typeof PaperStateAnySchema>): PaperState {
-  if (parsed.version === 2) return parsed;
+function upgradeHistory(
+  history: z.infer<typeof PaperHistoryEntrySchemaLegacy>[],
+): PaperHistoryEntry[] {
+  return history.map(({ feeJpy, ...rest }) => ({ ...rest, feeQuote: feeJpy }));
+}
+
+function migrateToV3(parsed: z.infer<typeof PaperStateAnySchema>): PaperState {
+  if (parsed.version === 3) return parsed;
+  if (parsed.version === 2) {
+    return { ...parsed, version: 3, history: upgradeHistory(parsed.history) };
+  }
   return {
-    version: 2,
+    version: 3,
     createdAt: parsed.createdAt,
     updatedAt: parsed.updatedAt,
     initialJpy: parsed.initialJpy,
     balances: parsed.balances,
-    history: parsed.history,
+    history: upgradeHistory(parsed.history),
     lastTickAt: parsed.updatedAt,
     openOrders: [],
   };
@@ -124,7 +160,7 @@ export async function loadState(path = defaultStatePath()): Promise<Result<Paper
     if (!parsed.success) {
       return { success: false, error: `Invalid paper state: ${parsed.error.message}` };
     }
-    return { success: true, data: migrateToV2(parsed.data) };
+    return { success: true, data: migrateToV3(parsed.data) };
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") {
       return { success: true, data: null };

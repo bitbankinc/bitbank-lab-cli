@@ -1,4 +1,4 @@
-// 100行超: paper state 永続化の互換/移行を網羅
+// 100行超: paper state 永続化の互換/移行を網羅（v1/v2/v3）
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -32,7 +32,7 @@ let statePath: string;
 
 function makeState(overrides: Partial<PaperState> = {}): PaperState {
   return {
-    version: 2,
+    version: 3,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     initialJpy: 1_000_000,
@@ -71,7 +71,7 @@ describe("paper saveState atomic write", () => {
     expect(w.success).toBe(true);
     const r = await loadState(statePath);
     expect(r.success).toBe(true);
-    if (r.success && r.data) expect(r.data.version).toBe(2);
+    if (r.success && r.data) expect(r.data.version).toBe(3);
   });
 
   it("leaves target untouched when rename fails mid-write", async () => {
@@ -106,6 +106,38 @@ describe("paper saveState atomic write", () => {
     expect(leftovers).toEqual([]);
   });
 
+  it("migrates a v2 state file (feeJpy → feeQuote) to v3 in memory", async () => {
+    const v2 = {
+      version: 2,
+      createdAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-02T00:00:00.000Z",
+      initialJpy: 1000000,
+      balances: { jpy: 994995, btc: 0.001 },
+      history: [
+        {
+          id: "abc",
+          pair: "btc_jpy",
+          side: "buy",
+          type: "market",
+          amount: 0.001,
+          fillPrice: 5000000,
+          feeJpy: 5,
+          filledAt: "2025-01-01T01:00:00.000Z",
+        },
+      ],
+      lastTickAt: "2025-01-02T00:00:00.000Z",
+      openOrders: [],
+    };
+    writeFileSync(statePath, JSON.stringify(v2));
+    const r = await loadState(statePath);
+    expect(r.success).toBe(true);
+    if (!r.success || !r.data) return;
+    expect(r.data.version).toBe(3);
+    expect(r.data.history).toHaveLength(1);
+    expect(r.data.history[0].feeQuote).toBe(5);
+    expect("feeJpy" in r.data.history[0]).toBe(false);
+  });
+
   it("does not corrupt the target under concurrent saves", async () => {
     const a = makeState({ initialJpy: 111, updatedAt: "2026-02-01T00:00:00.000Z" });
     const b = makeState({ initialJpy: 222, updatedAt: "2026-02-02T00:00:00.000Z" });
@@ -114,7 +146,7 @@ describe("paper saveState atomic write", () => {
 
     const raw = readFileSync(statePath, "utf-8");
     const parsed = JSON.parse(raw);
-    expect(parsed.version).toBe(2);
+    expect(parsed.version).toBe(3);
     expect([111, 222]).toContain(parsed.initialJpy);
 
     const r = await loadState(statePath);

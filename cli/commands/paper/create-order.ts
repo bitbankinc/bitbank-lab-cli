@@ -1,9 +1,10 @@
 // 100行超: paper の成行/指値発注を 1 ファイルで処理。市場 fill は ticker
 // fetch + 即時 fill、指値は openOrders へ積むだけ + 残高ロック検証 + lazy
-// tick で過去ギャップを解消。
+// tick で過去ギャップを解消 + pairs キャッシュからの unit_amount/最大量検証。
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import type { HttpOptions } from "../../http.js";
+import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, runTick } from "../../paper-fill.js";
 import {
   DEFAULT_TAKER_FEE_RATE,
@@ -19,6 +20,7 @@ import {
 import type { Result } from "../../types.js";
 import { PairSchema, PositiveDecimalSchema } from "../../validators.js";
 import { ticker } from "../public/ticker.js";
+import { validateOrderSize } from "./order-validate.js";
 
 const InputSchema = z
   .object({
@@ -42,6 +44,8 @@ export type PaperCreateOrderArgs = {
   statePath?: string;
   fetchCandles?: FetchCandles;
   nowMs?: number;
+  refreshPairs?: boolean;
+  getPairs?: () => Promise<Result<CachedPair[]>>;
 };
 
 export type PaperFill = {
@@ -51,7 +55,7 @@ export type PaperFill = {
   type: "market";
   amount: number;
   fillPrice: number;
-  feeJpy: number;
+  feeQuote: number;
   filledAt: string;
   balances: Record<string, number>;
 };
@@ -76,6 +80,17 @@ export async function paperCreateOrder(
       exitCode: EXIT.PARAM,
     };
   }
+  const pairsR = args.getPairs
+    ? await args.getPairs()
+    : await getPairsWithCache({ refresh: args.refreshPairs, httpOptions: opts });
+  if (!pairsR.success) return pairsR;
+  const v = validateOrderSize(
+    parsed.data.pair,
+    parsed.data.type,
+    Number(parsed.data.amount),
+    pairsR.data,
+  );
+  if (!v.success) return { ...v, exitCode: EXIT.PARAM };
   const path = args.statePath ?? defaultStatePath();
   const tick = await runTick({
     statePath: path,
@@ -148,11 +163,13 @@ async function fillMarket(
   const amount = Number(input.amount);
   const feeRate = feeRateArg ?? DEFAULT_TAKER_FEE_RATE;
   const [base, quote] = input.pair.split("_");
+  const isJpy = quote === "jpy";
   const notional = amount * last;
-  const feeJpy = notional * feeRate;
+  const rawFee = notional * feeRate;
+  const feeQuote = isJpy ? Math.round(rawFee) : rawFee;
   const balances = { ...state.balances };
   if (input.side === "buy") {
-    const cost = notional + feeJpy;
+    const cost = isJpy ? Math.round(notional + rawFee) : notional + rawFee;
     const avail = availableOf(state, quote, feeRate);
     if (avail < cost) {
       return { success: false, error: `insufficient ${quote}: need ${cost}, have ${avail}` };
@@ -164,8 +181,9 @@ async function fillMarket(
     if (avail < amount) {
       return { success: false, error: `insufficient ${base}: need ${amount}, have ${avail}` };
     }
+    const proceeds = isJpy ? Math.round(notional - rawFee) : notional - rawFee;
     balances[base] = (balances[base] ?? 0) - amount;
-    balances[quote] = (balances[quote] ?? 0) + (notional - feeJpy);
+    balances[quote] = (balances[quote] ?? 0) + proceeds;
   }
   const filledAt = nowIso();
   const id = genId();
@@ -176,7 +194,7 @@ async function fillMarket(
     type: "market",
     amount,
     fillPrice: last,
-    feeJpy,
+    feeQuote,
     filledAt,
     balances,
   };
@@ -193,7 +211,7 @@ async function fillMarket(
         type: "market",
         amount,
         fillPrice: last,
-        feeJpy,
+        feeQuote,
         filledAt,
       },
     ],

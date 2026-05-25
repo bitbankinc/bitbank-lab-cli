@@ -23,13 +23,21 @@ export const paperCommands: Record<string, CommandEntry> = {
   },
   "create-order": {
     description: "Place a paper order (market or limit)",
-    options: { pair: str, side: str, type: str, amount: str, price: str },
+    options: {
+      pair: str,
+      side: str,
+      type: str,
+      amount: str,
+      price: str,
+      "refresh-pairs": bool(),
+    },
     handler: handler("./paper/create-order.js", "paperCreateOrder", (_a, v) => ({
       pair: valStr(v, "pair"),
       side: valStr(v, "side"),
       type: valStr(v, "type"),
       amount: valStr(v, "amount"),
       price: valStr(v, "price"),
+      refreshPairs: v["refresh-pairs"] === true,
     })),
   },
   "active-orders": {

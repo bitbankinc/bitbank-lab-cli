@@ -12,6 +12,7 @@ import { paperTick } from "../../commands/paper/tick.js";
 import { paperTradeHistory } from "../../commands/paper/trade-history.js";
 import type { FetchCandles } from "../../paper-fill.js";
 import { loadState } from "../../paper-state.js";
+import { mockGetPairs } from "../test-helpers.js";
 
 let dir: string;
 let statePath: string;
@@ -31,8 +32,8 @@ function candle(ts: number, open: number, high: number, low: number, close: numb
   return { open, high, low, close, vol: 0, timestamp: ts };
 }
 
-describe("paper state v1 → v2 migration", () => {
-  it("loads a v1 state file and returns v2 in memory", async () => {
+describe("paper state v1 → v3 migration", () => {
+  it("loads a v1 state file and returns v3 in memory", async () => {
     const v1 = {
       version: 1,
       createdAt: "2024-01-01T00:00:00.000Z",
@@ -45,7 +46,7 @@ describe("paper state v1 → v2 migration", () => {
     const r = await loadState(statePath);
     expect(r.success).toBe(true);
     if (!r.success || !r.data) return;
-    expect(r.data.version).toBe(2);
+    expect(r.data.version).toBe(3);
     expect(r.data.lastTickAt).toBe("2024-01-02T00:00:00.000Z");
     expect(r.data.openOrders).toEqual([]);
   });
@@ -63,6 +64,7 @@ describe("paper limit create / active / cancel", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     expect(r.success).toBe(true);
     const ao = await paperActiveOrders({ statePath, fetchCandles: noCandles });
@@ -84,6 +86,7 @@ describe("paper limit create / active / cancel", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error).toContain("insufficient");
@@ -100,6 +103,7 @@ describe("paper limit create / active / cancel", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     if (!placed.success || !("placed" in placed.data)) throw new Error("expected placed");
     const id = placed.data.placed.id;
@@ -133,6 +137,7 @@ describe("paper assets shows available / locked / total", () => {
       feeRate: 0.001,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const a = await paperAssets({ statePath, fetchCandles: noCandles, feeRate: 0.001 });
     expect(a.success).toBe(true);
@@ -156,6 +161,7 @@ describe("paper tick fill resolution", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const sBefore = await loadState(statePath);
     if (!sBefore.success || !sBefore.data) throw new Error("state missing");
@@ -184,7 +190,15 @@ describe("paper tick fill resolution", () => {
   it("sell fills when candle.high >= price", async () => {
     await paperInit({ jpy: "10000000", statePath });
     await paperCreateOrder(
-      { pair: "btc_jpy", side: "buy", type: "market", amount: "0.01", feeRate: 0, statePath },
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "market",
+        amount: "0.01",
+        feeRate: 0,
+        statePath,
+        getPairs: mockGetPairs,
+      },
       {
         fetch: async () =>
           new Response(
@@ -214,6 +228,7 @@ describe("paper tick fill resolution", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const s = await loadState(statePath);
     if (!s.success || !s.data) throw new Error("state missing");
@@ -244,6 +259,7 @@ describe("paper tick fill resolution", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const s = await loadState(statePath);
     if (!s.success || !s.data) return;
@@ -278,6 +294,7 @@ describe("paper tick fill resolution", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const s = await loadState(statePath);
     if (!s.success || !s.data) return;
@@ -307,6 +324,7 @@ describe("paper tick fill resolution", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     await paperCreateOrder({
       pair: "eth_jpy",
@@ -317,6 +335,7 @@ describe("paper tick fill resolution", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const s = await loadState(statePath);
     if (!s.success || !s.data) return;
@@ -361,6 +380,7 @@ describe("paper lazy tick", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const s = await loadState(statePath);
     if (!s.success || !s.data) return;
@@ -394,6 +414,7 @@ describe("paper lazy tick", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const s = await loadState(statePath);
     if (!s.success || !s.data) return;
@@ -427,6 +448,7 @@ describe("paper tick gap warning", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     // Backdate lastTickAt by ~3 days
     {
@@ -465,6 +487,7 @@ describe("paper tick partial-progress safety", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const before = await loadState(statePath);
     if (!before.success || !before.data) throw new Error("state missing");
@@ -494,6 +517,7 @@ describe("paper tick partial-progress safety", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     await paperCreateOrder({
       pair: "eth_jpy",
@@ -504,6 +528,7 @@ describe("paper tick partial-progress safety", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     const before = await loadState(statePath);
     if (!before.success || !before.data) throw new Error("state missing");
@@ -535,6 +560,7 @@ describe("paper cancel-order resolves fills first", () => {
       feeRate: 0,
       statePath,
       fetchCandles: noCandles,
+      getPairs: mockGetPairs,
     });
     if (!placed.success || !("placed" in placed.data)) throw new Error("expected placed");
     const id = placed.data.placed.id;

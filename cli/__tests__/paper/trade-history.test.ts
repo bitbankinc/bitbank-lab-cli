@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { paperCreateOrder } from "../../commands/paper/create-order.js";
 import { paperInit } from "../../commands/paper/init.js";
 import { paperTradeHistory } from "../../commands/paper/trade-history.js";
-import { mockFetchData } from "../test-helpers.js";
+import { mockFetchData, mockGetPairs } from "../test-helpers.js";
 
 const ticker = mockFetchData({
   sell: "5000000",
@@ -41,7 +41,15 @@ describe("paper trade-history", () => {
   it("returns recorded fills", async () => {
     await paperInit({ jpy: "1000000", statePath });
     await paperCreateOrder(
-      { pair: "btc_jpy", side: "buy", type: "market", amount: "0.001", feeRate: 0, statePath },
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "market",
+        amount: "0.001",
+        feeRate: 0,
+        statePath,
+        getPairs: mockGetPairs,
+      },
       { fetch: ticker, retries: 0 },
     );
     const r = await paperTradeHistory({ statePath });

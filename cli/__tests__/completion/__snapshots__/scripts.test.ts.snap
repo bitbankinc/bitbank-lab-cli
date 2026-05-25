@@ -67,7 +67,7 @@ _bitbank() {
     elif [[ "$cmd" == "paper" ]]; then
       case "$sub" in
         init) opts="$opts --jpy --force" ;;
-        create-order) opts="$opts --pair --side --type --amount --price" ;;
+        create-order) opts="$opts --pair --side --type --amount --price --refresh-pairs" ;;
         cancel-order) opts="$opts --id" ;;
         tick) opts="$opts --pair" ;;
         reset) opts="$opts --confirm" ;;
@@ -189,7 +189,7 @@ _bitbank() {
     elif [[ "$cmd" == "paper" ]]; then
       case "$sub" in
       init) opts="$opts --jpy --force" ;;
-      create-order) opts="$opts --pair --side --type --amount --price" ;;
+      create-order) opts="$opts --pair --side --type --amount --price --refresh-pairs" ;;
       cancel-order) opts="$opts --id" ;;
       tick) opts="$opts --pair" ;;
       reset) opts="$opts --confirm" ;;

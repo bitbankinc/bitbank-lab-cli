@@ -37,7 +37,7 @@ export function computePositions(
   for (const h of history) {
     if (h.amount <= 0) continue;
     const cur: PositionState = pos[h.pair] ?? { position: 0, avgCost: 0, realizedPnl: 0 };
-    const perUnitFee = h.feeJpy / h.amount;
+    const perUnitFee = h.feeQuote / h.amount;
     if (h.side === "buy") {
       const newPos = cur.position + h.amount;
       cur.avgCost = (cur.avgCost * cur.position + (h.fillPrice + perUnitFee) * h.amount) / newPos;
@@ -50,7 +50,7 @@ export function computePositions(
           error: `negative position detected for ${h.pair} (paper does not support short)`,
         };
       }
-      cur.realizedPnl += (h.fillPrice - cur.avgCost) * h.amount - h.feeJpy;
+      cur.realizedPnl += (h.fillPrice - cur.avgCost) * h.amount - h.feeQuote;
       cur.position = newPos < 0 ? 0 : newPos;
     }
     pos[h.pair] = cur;
