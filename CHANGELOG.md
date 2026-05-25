@@ -3,6 +3,13 @@
 [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) 形式で管理しています。  
 [Semantic Versioning](https://semver.org/lang/ja/) に準拠します。
 
+> **本リポジトリは bitbank の PoC サンドボックスです。**
+> 0.x の間は API・出力フォーマット・コマンド構成に破壊的変更を含む可能性があります
+> （SemVer 0.x の慣習に従う）。1.0.0 への到達は当面予定していません。
+>
+> 公式 Org への移管時は、ownership 変更を CHANGELOG のリリースノートに記録します
+> （バージョン番号には影響しません）。
+
 ## [Unreleased]
 
 ### Breaking Changes
@@ -128,3 +135,9 @@
   `cancel-order --order-id` 未指定時のエラー文言が
   `order-id is required. Example: --order-id=12345` から
   `id is required. Example: --id=12345` に変更（共通スキーマ既定の文言）。
+
+## [0.1.0] - 2026-05-08 〜 [0.1.2] - 2026-05-09
+
+プロトタイプ期。Public / Private / Trade / Paper / Profile コマンド一式、
+Agent Skills 12 本、CI / Release / Security workflow の初期投入。
+詳細は git log および GitHub Releases を参照。
