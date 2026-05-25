@@ -90,4 +90,24 @@ describe("output", () => {
     expect(stderr).toContain("fail");
     expect(process.exitCode).toBe(1);
   });
+
+  it("warns on stderr when result.partial is true", () => {
+    output({ success: true, data: [1], partial: true }, "json");
+    expect(stderr).toContain("Warning: partial data returned");
+  });
+
+  it("warns on stderr with reason when result.meta.truncated is true", () => {
+    output(
+      {
+        success: true,
+        data: [1],
+        partial: true,
+        meta: { truncated: true, reason: "MAX_RANGE_FETCHES" },
+      },
+      "json",
+    );
+    expect(stderr).toContain("Warning: truncated data returned");
+    expect(stderr).toContain("MAX_RANGE_FETCHES");
+    expect(stderr).not.toContain("partial data returned");
+  });
 });

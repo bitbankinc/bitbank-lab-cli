@@ -10,7 +10,9 @@ export function output<T>(result: Result<T>, format: Format, raw = false, machin
     process.exitCode = result.exitCode ?? 1;
     return;
   }
-  if (result.partial) {
+  if (result.meta?.truncated) {
+    process.stderr.write(`Warning: truncated data returned (${result.meta.reason ?? "unknown"})\n`);
+  } else if (result.partial) {
     process.stderr.write("Warning: partial data returned (some fetches failed)\n");
   }
   const data = result.data;

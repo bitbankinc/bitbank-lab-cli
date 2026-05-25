@@ -8,14 +8,19 @@ const MAX_RANGE_FETCHES = 366;
 // 並列フェッチ数。API レート制限を考慮した経験値
 const BATCH_SIZE = 10;
 
-function buildDateList(from: string, to: string, type: string): string[] {
+function buildDateList(
+  from: string,
+  to: string,
+  type: string,
+): { dates: string[]; truncated: boolean; truncatedAt?: string } {
   const dates: string[] = [];
   let current = from;
   while (current <= to && dates.length < MAX_RANGE_FETCHES) {
     dates.push(current);
     current = shiftDate(current, 1, type);
   }
-  return dates;
+  const truncated = current <= to;
+  return { dates, truncated, truncatedAt: truncated ? current : undefined };
 }
 
 function mergeBatchResults(
@@ -40,7 +45,7 @@ export async function candlesRange(
   opts?: HttpOptions,
   noCache?: boolean,
 ): Promise<Result<Candle[]>> {
-  const dates = buildDateList(from, to, type);
+  const { dates, truncated, truncatedAt } = buildDateList(from, to, type);
   const allRows: Candle[] = [];
 
   for (let i = 0; i < dates.length; i += BATCH_SIZE) {
@@ -50,5 +55,13 @@ export async function candlesRange(
     if (!merged.cont) return merged.result;
   }
 
+  if (truncated) {
+    return {
+      success: true,
+      data: allRows,
+      partial: true,
+      meta: { truncated: true, truncatedAt, reason: "MAX_RANGE_FETCHES" },
+    };
+  }
   return { success: true, data: allRows };
 }

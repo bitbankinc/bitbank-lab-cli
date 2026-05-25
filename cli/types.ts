@@ -9,7 +9,16 @@ const RateLimitSchema = z.object({
 
 export type RateLimitInfo = z.infer<typeof RateLimitSchema>;
 
-export type ResultMeta = { rateLimit?: RateLimitInfo };
+export type TruncationReason = "MAX_RANGE_FETCHES" | "HARD_MAX_SEGMENTS";
+
+export type ResultMeta = {
+  rateLimit?: RateLimitInfo;
+  truncated?: boolean;
+  truncatedAt?: string;
+  requestedLimit?: number;
+  returnedRows?: number;
+  reason?: TruncationReason;
+};
 
 export type Result<T> =
   | { success: true; data: T; partial?: boolean; meta?: ResultMeta }

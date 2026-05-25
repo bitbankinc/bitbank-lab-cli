@@ -160,6 +160,31 @@ describe("candles --from/--to", () => {
     if (result.success) {
       expect(result.partial).toBeUndefined();
       expect(result.data).toHaveLength(2);
+      expect(result.meta?.truncated).toBeUndefined();
     }
+  });
+
+  it("surfaces MAX_RANGE_FETCHES truncation via meta for 367-day range", async () => {
+    const minimal = makeData("1min", [["1", "1", "1", "1", "1", 1000]]);
+    let callCount = 0;
+    const fetchAll: typeof globalThis.fetch = async () => {
+      callCount++;
+      return new Response(JSON.stringify({ success: 1, data: minimal }));
+    };
+
+    // 2020 is leap (366 days); 20200101..20210101 = 367 entries.
+    // MAX_RANGE_FETCHES=366 drops the trailing 20210101.
+    const result = await candles(
+      { pair: "btc_jpy", type: "1min", from: "20200101", to: "20210101", noCache: true },
+      { fetch: fetchAll, retries: 0, throttleMs: 0 },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.partial).toBe(true);
+      expect(result.meta?.truncated).toBe(true);
+      expect(result.meta?.truncatedAt).toBe("20210101");
+      expect(result.meta?.reason).toBe("MAX_RANGE_FETCHES");
+    }
+    expect(callCount).toBe(366);
   });
 });
