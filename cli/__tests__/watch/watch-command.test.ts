@@ -1,8 +1,9 @@
-// 100行超: watch CLI フラグ/出口分岐を網羅
+// 100行超: watch CLI フラグ/出口分岐 + table mode の decimals 注入を網羅
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { watchCommand } from "../../commands/watch/index.js";
 import { EXIT } from "../../exit-codes.js";
 import type { IoFactory, TickerCallbacks } from "../../watch/ticker.js";
+import { mockGetPairs } from "../test-helpers.js";
 
 function makeFakeFactory(): {
   factory: IoFactory;
@@ -88,7 +89,7 @@ describe("watchCommand", () => {
     const r = await promise;
     expect(r.success).toBe(true);
     const stdoutCalls = writeSpy.mock.calls.map((c) => String(c[0]));
-    const jsonl = stdoutCalls.find((s) => s.includes('"last":"100"'));
+    const jsonl = stdoutCalls.find((s) => s.includes('"last":100'));
     expect(jsonl).toBeDefined();
     writeSpy.mockRestore();
   });
@@ -178,5 +179,33 @@ describe("watchCommand", () => {
     emit("onDisconnect", "idle");
     await vi.advanceTimersByTimeAsync(30000);
     await promise;
+  });
+
+  it("table mode uses pair decimals from cache (JPY pair = 0 decimals)", async () => {
+    const { factory, emit } = makeFakeFactory();
+    const writes: string[] = [];
+    vi.spyOn(process.stdout, "write").mockImplementation((c) => {
+      writes.push(String(c));
+      return true;
+    });
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const promise = watchCommand({
+      channel: "ticker",
+      pair: "btc_jpy",
+      format: "table",
+      count: 1,
+      idleTimeout: 0,
+      maxRetries: 0,
+      backoffCap: 32,
+      ioFactory: factory,
+      getPairs: mockGetPairs,
+    });
+    // Yield microtasks so the async resolvePairInfo + socket setup complete before emit().
+    await vi.advanceTimersByTimeAsync(0);
+    emit("onConnect");
+    emit("onTicker", { last: "5123456.789", buy: "99", sell: "101", vol: "1.23456", timestamp: 1 });
+    await promise;
+    expect(writes.some((w) => w.includes("last=5123457"))).toBe(true);
+    expect(writes.some((w) => w.includes("vol=1.2346"))).toBe(true);
   });
 });

@@ -1,7 +1,9 @@
+// 100行超: lifecycle / reconnect / socket / writer + table mode の pair decimals 解決を 1 場所で束ねる
 import { EXIT } from "../../exit-codes.js";
 import type { Result } from "../../types.js";
-import { type WatchFormat, createWriter } from "../../watch/format.js";
+import { type PairInfo, type WatchFormat, createWriter } from "../../watch/format.js";
 import { type LifecycleReason, setupLifecycle } from "../../watch/lifecycle.js";
+import { type GetPairs, resolvePairInfo } from "../../watch/pair-info.js";
 import { createReconnect } from "../../watch/reconnect.js";
 import { type IoFactory, startTickerSocket } from "../../watch/ticker.js";
 
@@ -15,6 +17,7 @@ export type WatchArgs = {
   maxRetries: number;
   backoffCap: number;
   ioFactory?: IoFactory;
+  getPairs?: GetPairs;
 };
 
 export async function watchCommand(args: WatchArgs): Promise<Result<void>> {
@@ -32,12 +35,18 @@ export async function watchCommand(args: WatchArgs): Promise<Result<void>> {
       exitCode: EXIT.PARAM,
     };
   }
-  return runWatch(args, args.pair);
+  const info =
+    args.format === "table" ? await resolvePairInfo(args.pair, args.getPairs) : undefined;
+  return runWatch(args, args.pair, info);
 }
 
-function runWatch(args: WatchArgs, pair: string): Promise<Result<void>> {
+function runWatch(
+  args: WatchArgs,
+  pair: string,
+  info: PairInfo | undefined,
+): Promise<Result<void>> {
   return new Promise((resolve) => {
-    const write = createWriter(args.format);
+    const write = createWriter(args.format, info);
     let settled = false;
     let reconnect: ReturnType<typeof createReconnect> | null = null;
     const settle = (r: Result<void>): void => {

@@ -23,6 +23,8 @@ const CachedPairSchema = z.object({
   unit_amount: z.number(),
   limit_max_amount: z.number(),
   market_max_amount: z.number(),
+  price_digits: z.number(),
+  amount_digits: z.number(),
   is_enabled: z.boolean(),
   stop_order: z.boolean(),
   stop_order_and_cancel: z.boolean(),
