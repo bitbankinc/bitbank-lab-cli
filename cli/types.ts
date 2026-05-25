@@ -11,6 +11,8 @@ export type RateLimitInfo = z.infer<typeof RateLimitSchema>;
 
 export type TruncationReason = "MAX_RANGE_FETCHES" | "HARD_MAX_SEGMENTS";
 
+export type Gap = { from: number; to: number; missing: number };
+
 export type ResultMeta = {
   rateLimit?: RateLimitInfo;
   truncated?: boolean;
@@ -18,6 +20,8 @@ export type ResultMeta = {
   requestedLimit?: number;
   returnedRows?: number;
   reason?: TruncationReason;
+  dedupedCount?: number;
+  gaps?: Gap[];
 };
 
 export type Result<T> =
