@@ -653,11 +653,11 @@ npm publish 手順とバージョン同期の仕組みは [`docs/dev/release.md`
 このリポジトリ自体に PR を送る場合は、Claude Code 用の hook をローカルで
 有効化してください:
 
-    ./.dev/setup.sh
+    ./.contrib/setup.sh
 
 これで lint / test / 設定保護の hook が `.claude/` 配下に symlink で
 復元されます。`.claude/settings.json` と `.claude/hooks/` は `.gitignore`
-済みなのでコミットには含まれません。詳細は `.dev/README.md` を参照。
+済みなのでコミットには含まれません。詳細は `.contrib/README.md` を参照。
 
 ### アーキテクチャ
 

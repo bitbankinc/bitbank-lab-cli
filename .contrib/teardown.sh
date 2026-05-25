@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 開発者向け: .dev/setup.sh で張った symlink を全部外す
+# 開発者向け: .contrib/setup.sh で張った symlink を全部外す
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

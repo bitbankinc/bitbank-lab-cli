@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 開発者向け: .dev/ 配下の hook と settings を .claude/ にリンクする
+# 開発者向け: .contrib/ 配下の hook と settings を .claude/ にリンクする
 # クローン者は実行不要。コントリビューターだけが叩く。
 
 set -euo pipefail
@@ -8,7 +8,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 mkdir -p .claude/hooks
-for hook in .dev/hooks/*.sh; do
+for hook in .contrib/hooks/*.sh; do
   name=$(basename "$hook")
   target=".claude/hooks/$name"
   if [ -L "$target" ] || [ -e "$target" ]; then
@@ -22,16 +22,16 @@ target=".claude/settings.json"
 if [ -L "$target" ] || [ -e "$target" ]; then
   rm -f "$target"
 fi
-ln -s "../.dev/claude-settings.json" "$target"
-echo "linked: $target -> .dev/claude-settings.json"
+ln -s "../.contrib/claude-settings.json" "$target"
+echo "linked: $target -> .contrib/claude-settings.json"
 
 # .cursorrules を symlink で復元
 target=".cursorrules"
 if [ -L "$target" ] || [ -e "$target" ]; then
   rm -f "$target"
 fi
-ln -s ".dev/cursorrules" "$target"
-echo "linked: $target -> .dev/cursorrules"
+ln -s ".contrib/cursorrules" "$target"
+echo "linked: $target -> .contrib/cursorrules"
 
 echo ""
 echo "✅ 開発者用 hook と settings をリンクしました。"
