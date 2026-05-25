@@ -1,6 +1,7 @@
 // 100行超: candles の YYYYMMDD/yyyy 分岐を網羅
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { candles, shiftDate } from "../../commands/public/candles.js";
+import { rowsPerSegment } from "../../date-utils.js";
 import { mockFetchData } from "../test-helpers.js";
 
 const MOCK_DATA = {
@@ -118,6 +119,47 @@ describe("shiftDate", () => {
     expect(shiftDate("20260329", 1, "1hour")).toBe("20260330");
     expect(shiftDate("20260331", 1, "1hour")).toBe("20260401");
     expect(shiftDate("20261231", 1, "1min")).toBe("20270101");
+  });
+
+  it("handles leap day transitions", () => {
+    expect(shiftDate("20240228", 1, "1min")).toBe("20240229");
+    expect(shiftDate("20240229", 1, "1min")).toBe("20240301");
+    expect(shiftDate("20240228", 1, "1hour")).toBe("20240229");
+    expect(shiftDate("20230228", 1, "1min")).toBe("20230301");
+  });
+});
+
+describe("rowsPerSegment", () => {
+  it("returns 366 for 1day in leap years", () => {
+    expect(rowsPerSegment("1day", 2024)).toBe(366);
+    expect(rowsPerSegment("1day", 2000)).toBe(366);
+  });
+
+  it("returns 365 for 1day in non-leap years", () => {
+    expect(rowsPerSegment("1day", 2025)).toBe(365);
+    expect(rowsPerSegment("1day", 1900)).toBe(365);
+  });
+
+  it("adjusts 4hour / 8hour / 12hour for leap years", () => {
+    expect(rowsPerSegment("4hour", 2024)).toBe(2196);
+    expect(rowsPerSegment("4hour", 2025)).toBe(2190);
+    expect(rowsPerSegment("8hour", 2024)).toBe(1098);
+    expect(rowsPerSegment("12hour", 2024)).toBe(732);
+  });
+
+  it("does not adjust 1week / 1month for leap years", () => {
+    expect(rowsPerSegment("1week", 2024)).toBe(52);
+    expect(rowsPerSegment("1month", 2024)).toBe(12);
+  });
+
+  it("returns leap-year max when year is omitted", () => {
+    expect(rowsPerSegment("1day")).toBe(366);
+    expect(rowsPerSegment("4hour")).toBe(2196);
+  });
+
+  it("ignores year for short types", () => {
+    expect(rowsPerSegment("1hour", 2024)).toBe(24);
+    expect(rowsPerSegment("1min")).toBe(1440);
   });
 });
 
@@ -253,6 +295,66 @@ describe("candles auto-merge", () => {
     );
     expect(result.success).toBe(true);
     expect(callCount).toBe(101); // 1 initial + 100 older (HARD_MAX_SEGMENTS)
+  });
+
+  it("uses 366 (not 365) for segment count when starting year is leap (1day)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2024-06-15T00:00:00Z"));
+    try {
+      const leapData = {
+        candlestick: [
+          {
+            type: "1day",
+            ohlcv: Array.from({ length: 366 }, (_, i) => [
+              "100",
+              "110",
+              "90",
+              "105",
+              "50",
+              1000 + i,
+            ]),
+          },
+        ],
+      };
+      const nonLeapData = {
+        candlestick: [
+          {
+            type: "1day",
+            ohlcv: Array.from({ length: 365 }, (_, i) => [
+              "100",
+              "110",
+              "90",
+              "105",
+              "50",
+              2000 + i,
+            ]),
+          },
+        ],
+      };
+      let callCount = 0;
+      const fetchYears: typeof globalThis.fetch = async (input) => {
+        callCount++;
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        const data = url.includes("/2024") ? leapData : nonLeapData;
+        return new Response(JSON.stringify({ success: 1, data }));
+      };
+      // remaining = 1098 - 366 = 732
+      //   leap-aware (366): needed = ceil(732/366) = 2 → 3 total calls
+      //   old non-leap (365): needed = ceil(732/365) = 3 → 4 total calls
+      const result = await candles(
+        { pair: "btc_jpy", type: "1day", limit: 1098, noCache: true },
+        { fetch: fetchYears, retries: 0 },
+      );
+      expect(result.success).toBe(true);
+      expect(callCount).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("computes fetch count from limit and rows-per-segment for 1hour", async () => {
