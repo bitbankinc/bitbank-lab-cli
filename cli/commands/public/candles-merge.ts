@@ -1,3 +1,4 @@
+import { nextBoundaryMs } from "../../date-utils.js";
 import type { Gap, ResultMeta } from "../../types.js";
 import type { Candle } from "./candles-fetch.js";
 
@@ -45,16 +46,27 @@ export function detectGaps(rows: Candle[], type: string): Gap[] {
   return gaps;
 }
 
+/** 末尾の足が未確定（次の境界がまだ来ていない）かを判定。空配列・未知 type は false */
+export function detectLastIncomplete(rows: Candle[], type: string, nowMs?: number): boolean {
+  if (rows.length === 0) return false;
+  const end = nextBoundaryMs(type, rows[rows.length - 1].timestamp);
+  if (end === 0) return false;
+  return end > (nowMs ?? Date.now());
+}
+
 export function augmentMeta(
   dedupedCount: number,
   gaps: Gap[],
   baseMeta?: ResultMeta,
+  lastIsIncomplete?: boolean,
 ): ResultMeta | undefined {
   const hasDeduped = dedupedCount > 0;
   const hasGaps = gaps.length > 0;
-  if (!hasDeduped && !hasGaps) return baseMeta;
+  const hasIncomplete = !!lastIsIncomplete;
+  if (!hasDeduped && !hasGaps && !hasIncomplete) return baseMeta;
   const meta: ResultMeta = { ...(baseMeta ?? {}) };
   if (hasDeduped) meta.dedupedCount = dedupedCount;
   if (hasGaps) meta.gaps = gaps;
+  if (hasIncomplete) meta.lastIsIncomplete = true;
   return meta;
 }

@@ -22,6 +22,7 @@ export type ResultMeta = {
   reason?: TruncationReason;
   dedupedCount?: number;
   gaps?: Gap[];
+  lastIsIncomplete?: boolean;
 };
 
 export type Result<T> =

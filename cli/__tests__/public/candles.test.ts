@@ -1,7 +1,7 @@
 // 100行超: candles の YYYYMMDD/yyyy 分岐を網羅
 import { describe, expect, it, vi } from "vitest";
 import { candles, shiftDate } from "../../commands/public/candles.js";
-import { rowsPerSegment } from "../../date-utils.js";
+import { nextBoundaryMs, rowsPerSegment } from "../../date-utils.js";
 import { mockFetchData } from "../test-helpers.js";
 
 const MOCK_DATA = {
@@ -160,6 +160,207 @@ describe("rowsPerSegment", () => {
   it("ignores year for short types", () => {
     expect(rowsPerSegment("1hour", 2024)).toBe(24);
     expect(rowsPerSegment("1min")).toBe(1440);
+  });
+});
+
+describe("nextBoundaryMs", () => {
+  it("returns ts + step for sub-daily types", () => {
+    expect(nextBoundaryMs("1min", 0)).toBe(60_000);
+    expect(nextBoundaryMs("5min", 0)).toBe(300_000);
+    expect(nextBoundaryMs("15min", 0)).toBe(900_000);
+    expect(nextBoundaryMs("30min", 0)).toBe(1_800_000);
+    expect(nextBoundaryMs("1hour", 1_000_000)).toBe(1_000_000 + 3_600_000);
+  });
+
+  it("returns ts + step for yearly fixed types", () => {
+    expect(nextBoundaryMs("4hour", 0)).toBe(14_400_000);
+    expect(nextBoundaryMs("8hour", 0)).toBe(28_800_000);
+    expect(nextBoundaryMs("12hour", 0)).toBe(43_200_000);
+    expect(nextBoundaryMs("1day", 0)).toBe(86_400_000);
+    expect(nextBoundaryMs("1week", 0)).toBe(7 * 86_400_000);
+  });
+
+  it("returns JST first-of-next-month for 1month", () => {
+    // 2026-01-01 00:00 JST = Date.UTC(2026, 0, 1) - 9h
+    const jan1 = Date.UTC(2026, 0, 1) - 32_400_000;
+    const feb1 = Date.UTC(2026, 1, 1) - 32_400_000;
+    expect(nextBoundaryMs("1month", jan1)).toBe(feb1);
+  });
+
+  it("handles December → January year rollover for 1month", () => {
+    const dec1_2026 = Date.UTC(2026, 11, 1) - 32_400_000;
+    const jan1_2027 = Date.UTC(2027, 0, 1) - 32_400_000;
+    expect(nextBoundaryMs("1month", dec1_2026)).toBe(jan1_2027);
+  });
+
+  it("handles February in leap and non-leap years for 1month", () => {
+    const feb1_2024 = Date.UTC(2024, 1, 1) - 32_400_000;
+    const mar1_2024 = Date.UTC(2024, 2, 1) - 32_400_000;
+    expect(nextBoundaryMs("1month", feb1_2024)).toBe(mar1_2024);
+    const feb1_2025 = Date.UTC(2025, 1, 1) - 32_400_000;
+    const mar1_2025 = Date.UTC(2025, 2, 1) - 32_400_000;
+    expect(nextBoundaryMs("1month", feb1_2025)).toBe(mar1_2025);
+  });
+
+  it("returns 0 for unknown type", () => {
+    expect(nextBoundaryMs("bogus", 1000)).toBe(0);
+  });
+});
+
+describe("candles meta.lastIsIncomplete", () => {
+  it("sets lastIsIncomplete: true when --date today and last candle period is current", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-05-25T03:30:00Z")); // 12:30 JST
+    try {
+      const mock = {
+        candlestick: [
+          {
+            type: "1hour",
+            ohlcv: [
+              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 25, 2, 0)], // 11:00 JST → done
+              ["105", "115", "95", "110", "60", Date.UTC(2026, 4, 25, 3, 0)], // 12:00 JST → incomplete
+            ],
+          },
+        ],
+      };
+      const result = await candles(
+        { pair: "btc_jpy", type: "1hour", date: "20260525", noCache: true },
+        { fetch: mockFetchData(mock), retries: 0 },
+      );
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.meta?.lastIsIncomplete).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not set lastIsIncomplete when --date is fully in the past", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-05-25T03:30:00Z"));
+    try {
+      const mock = {
+        candlestick: [
+          {
+            type: "1hour",
+            ohlcv: [
+              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 24, 2, 0)],
+              ["105", "115", "95", "110", "60", Date.UTC(2026, 4, 24, 3, 0)],
+            ],
+          },
+        ],
+      };
+      const result = await candles(
+        { pair: "btc_jpy", type: "1hour", date: "20260524", noCache: true },
+        { fetch: mockFetchData(mock), retries: 0 },
+      );
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.meta?.lastIsIncomplete).toBeUndefined();
+        // 過去日のときは meta 自体が undefined（他フラグも無いケース）
+        expect(result.meta).toBeUndefined();
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("sets lastIsIncomplete in auto-merge path when last is current", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-05-25T03:30:00Z"));
+    try {
+      const mock = {
+        candlestick: [
+          {
+            type: "1hour",
+            ohlcv: [
+              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 25, 2, 0)],
+              ["105", "115", "95", "110", "60", Date.UTC(2026, 4, 25, 3, 0)],
+            ],
+          },
+        ],
+      };
+      const result = await candles(
+        { pair: "btc_jpy", type: "1hour", limit: 2, noCache: true },
+        { fetch: mockFetchData(mock), retries: 0 },
+      );
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.meta?.lastIsIncomplete).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("works for 1min boundary (incomplete when within the current minute)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-05-25T03:30:30Z"));
+    try {
+      const mock = {
+        candlestick: [
+          {
+            type: "1min",
+            ohlcv: [
+              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 25, 3, 30)], // 12:30 JST
+            ],
+          },
+        ],
+      };
+      const result = await candles(
+        { pair: "btc_jpy", type: "1min", date: "20260525", noCache: true },
+        { fetch: mockFetchData(mock), retries: 0 },
+      );
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.meta?.lastIsIncomplete).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("works for 1day boundary (incomplete when within today's JST day)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-05-25T03:30:00Z")); // 12:30 JST 2026-05-25
+    try {
+      const todayJst = Date.UTC(2026, 4, 25) - 32_400_000; // 00:00 JST 2026-05-25
+      const mock = {
+        candlestick: [
+          {
+            type: "1day",
+            ohlcv: [["100", "110", "90", "105", "50", todayJst]],
+          },
+        ],
+      };
+      const result = await candles(
+        { pair: "btc_jpy", type: "1day", date: "2026", noCache: true },
+        { fetch: mockFetchData(mock), retries: 0 },
+      );
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.meta?.lastIsIncomplete).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("works for 1month boundary (incomplete during current JST month)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-05-15T03:00:00Z")); // mid-May JST
+    try {
+      const may1 = Date.UTC(2026, 4, 1) - 32_400_000; // 2026-05-01 00:00 JST
+      const mock = {
+        candlestick: [
+          {
+            type: "1month",
+            ohlcv: [["100", "110", "90", "105", "50", may1]],
+          },
+        ],
+      };
+      const result = await candles(
+        { pair: "btc_jpy", type: "1month", date: "2026", noCache: true },
+        { fetch: mockFetchData(mock), retries: 0 },
+      );
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.meta?.lastIsIncomplete).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

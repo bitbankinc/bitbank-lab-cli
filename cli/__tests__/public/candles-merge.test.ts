@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Candle } from "../../commands/public/candles-fetch.js";
-import { augmentMeta, detectGaps, normalizeCandles } from "../../commands/public/candles-merge.js";
+import {
+  augmentMeta,
+  detectGaps,
+  detectLastIncomplete,
+  normalizeCandles,
+} from "../../commands/public/candles-merge.js";
 
 const c = (timestamp: number): Candle => ({
   open: 1,
@@ -139,5 +144,92 @@ describe("augmentMeta", () => {
       dedupedCount: 2,
       gaps,
     });
+  });
+
+  it("adds lastIsIncomplete only when true", () => {
+    expect(augmentMeta(0, [], undefined, true)).toEqual({ lastIsIncomplete: true });
+    expect(augmentMeta(0, [], undefined, false)).toBeUndefined();
+    expect(augmentMeta(0, [], undefined, undefined)).toBeUndefined();
+  });
+
+  it("merges lastIsIncomplete with baseMeta and other flags", () => {
+    expect(augmentMeta(2, [], { truncated: true, reason: "HARD_MAX_SEGMENTS" }, true)).toEqual({
+      truncated: true,
+      reason: "HARD_MAX_SEGMENTS",
+      dedupedCount: 2,
+      lastIsIncomplete: true,
+    });
+  });
+});
+
+describe("detectLastIncomplete", () => {
+  it("returns false for empty input", () => {
+    expect(detectLastIncomplete([], "1hour")).toBe(false);
+  });
+
+  it("returns true when next boundary is after now (1hour)", () => {
+    // last timestamp = 12:00, now = 12:30 → period 12:00〜13:00 incomplete
+    const now = Date.UTC(2026, 0, 1, 12, 30);
+    const last = Date.UTC(2026, 0, 1, 12, 0);
+    expect(detectLastIncomplete([c(last)], "1hour", now)).toBe(true);
+  });
+
+  it("returns false when last period has ended (1hour)", () => {
+    // last timestamp = 11:00, now = 12:30 → period 11:00〜12:00 already complete
+    const now = Date.UTC(2026, 0, 1, 12, 30);
+    const last = Date.UTC(2026, 0, 1, 11, 0);
+    expect(detectLastIncomplete([c(last)], "1hour", now)).toBe(false);
+  });
+
+  it("returns false at the exact boundary (1hour)", () => {
+    // end > now なので等値時は false（period 終端 = 現在時刻 → 終了済み扱い）
+    const last = Date.UTC(2026, 0, 1, 12, 0);
+    const now = last + 3_600_000;
+    expect(detectLastIncomplete([c(last)], "1hour", now)).toBe(false);
+  });
+
+  it("works for 1min", () => {
+    const last = Date.UTC(2026, 0, 1, 12, 0);
+    expect(detectLastIncomplete([c(last)], "1min", last + 30_000)).toBe(true);
+    expect(detectLastIncomplete([c(last)], "1min", last + 60_000)).toBe(false);
+  });
+
+  it("works for 1day in JST", () => {
+    // last = 2026-01-01 00:00 JST, now = 2026-01-01 12:00 JST → 日中なので未確定
+    const last = Date.UTC(2026, 0, 1) - 32_400_000;
+    const now = last + 12 * 3_600_000;
+    expect(detectLastIncomplete([c(last)], "1day", now)).toBe(true);
+    // now = 2026-01-02 00:00 JST → 確定済み
+    expect(detectLastIncomplete([c(last)], "1day", last + 86_400_000)).toBe(false);
+  });
+
+  it("works for 1month (JST 翌月 1 日 00:00 で判定)", () => {
+    // last = 2026-01-01 00:00 JST (January candle)
+    const last = Date.UTC(2026, 0, 1) - 32_400_000;
+    // now = 2026-01-15 → January はまだ未確定
+    expect(detectLastIncomplete([c(last)], "1month", last + 14 * 86_400_000)).toBe(true);
+    // now = 2026-02-01 00:00 JST → January 完了
+    const feb1 = Date.UTC(2026, 1, 1) - 32_400_000;
+    expect(detectLastIncomplete([c(last)], "1month", feb1)).toBe(false);
+    // now = 2026-01-31 23:59 JST → まだ未確定
+    expect(detectLastIncomplete([c(last)], "1month", feb1 - 60_000)).toBe(true);
+  });
+
+  it("handles December → January rollover for 1month", () => {
+    const last = Date.UTC(2026, 11, 1) - 32_400_000;
+    const jan1 = Date.UTC(2027, 0, 1) - 32_400_000;
+    expect(detectLastIncomplete([c(last)], "1month", jan1 - 60_000)).toBe(true);
+    expect(detectLastIncomplete([c(last)], "1month", jan1)).toBe(false);
+  });
+
+  it("uses the LAST row's timestamp (not first)", () => {
+    const now = Date.UTC(2026, 0, 1, 12, 30);
+    const first = Date.UTC(2026, 0, 1, 0, 0); // far past
+    const last = Date.UTC(2026, 0, 1, 12, 0); // current hour
+    expect(detectLastIncomplete([c(first), c(last)], "1hour", now)).toBe(true);
+  });
+
+  it("returns false for unknown type", () => {
+    expect(detectLastIncomplete([c(1000)], "bogus", 2000)).toBe(false);
   });
 });

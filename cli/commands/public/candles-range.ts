@@ -2,7 +2,12 @@ import { shiftDate } from "../../date-utils.js";
 import type { HttpOptions } from "../../http.js";
 import type { Result, ResultMeta } from "../../types.js";
 import { type Candle, fetchOne } from "./candles-fetch.js";
-import { augmentMeta, detectGaps, normalizeCandles } from "./candles-merge.js";
+import {
+  augmentMeta,
+  detectGaps,
+  detectLastIncomplete,
+  normalizeCandles,
+} from "./candles-merge.js";
 
 // 1年分+1日。年をまたぐレンジでも全日取得可能にする上限
 const MAX_RANGE_FETCHES = 366;
@@ -54,7 +59,8 @@ export async function candlesRange(
   const baseMeta: ResultMeta | undefined = truncated
     ? { truncated: true, truncatedAt, reason: "MAX_RANGE_FETCHES" }
     : undefined;
-  const meta = augmentMeta(dedupedCount, gaps, baseMeta);
+  const incomplete = detectLastIncomplete(normalized, type);
+  const meta = augmentMeta(dedupedCount, gaps, baseMeta, incomplete);
   const isPartial = partial || truncated;
 
   if (isPartial && meta) return { success: true, data: normalized, partial: true, meta };

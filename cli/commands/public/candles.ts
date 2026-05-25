@@ -5,7 +5,12 @@ import type { HttpOptions } from "../../http.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
 import { type Candle, VALID_TYPES, fetchOne } from "./candles-fetch.js";
-import { augmentMeta, detectGaps, normalizeCandles } from "./candles-merge.js";
+import {
+  augmentMeta,
+  detectGaps,
+  detectLastIncomplete,
+  normalizeCandles,
+} from "./candles-merge.js";
 import { candlesRange } from "./candles-range.js";
 
 export type { Candle };
@@ -53,7 +58,11 @@ async function fetchAutoMerge(
   const remaining = Math.max(0, limit - firstData.length);
   const idealNeeded = Math.ceil(remaining / perSegment);
   const needed = Math.min(idealNeeded, HARD_MAX_SEGMENTS);
-  if (needed === 0) return { success: true, data: firstData.slice(-limit) };
+  if (needed === 0) {
+    const data = firstData.slice(-limit);
+    const meta = augmentMeta(0, [], undefined, detectLastIncomplete(data, type));
+    return meta ? { success: true, data, meta } : { success: true, data };
+  }
   const dates = olderDates(dateStr, type, needed);
   const olderChunks: Candle[][] = new Array(dates.length);
   let hadFetchFailure = false;
@@ -77,20 +86,26 @@ async function fetchAutoMerge(
   const { rows: normalized, dedupedCount } = normalizeCandles(allRows);
   const data = normalized.slice(-limit);
   const gaps = detectGaps(data, type);
+  const incomplete = detectLastIncomplete(data, type);
   if (idealNeeded > HARD_MAX_SEGMENTS && !hadFetchFailure) {
     return {
       success: true,
       data,
       partial: true,
-      meta: augmentMeta(dedupedCount, gaps, {
-        truncated: true,
-        requestedLimit: limit,
-        returnedRows: data.length,
-        reason: "HARD_MAX_SEGMENTS",
-      }),
+      meta: augmentMeta(
+        dedupedCount,
+        gaps,
+        {
+          truncated: true,
+          requestedLimit: limit,
+          returnedRows: data.length,
+          reason: "HARD_MAX_SEGMENTS",
+        },
+        incomplete,
+      ),
     };
   }
-  const meta = augmentMeta(dedupedCount, gaps);
+  const meta = augmentMeta(dedupedCount, gaps, undefined, incomplete);
   if (hadFetchFailure) {
     return meta
       ? { success: true, data, partial: true, meta }
@@ -134,7 +149,9 @@ export async function candles(args: CandlesArgs, opts?: HttpOptions): Promise<Re
   const first = await fetchOne(pair, validType, dateStr, opts, noCache);
   if (!first.success) return first;
   if (date !== undefined) {
-    return { success: true, data: limit === undefined ? first.data : first.data.slice(-limit) };
+    const data = limit === undefined ? first.data : first.data.slice(-limit);
+    const meta = augmentMeta(0, [], undefined, detectLastIncomplete(data, validType));
+    return meta ? { success: true, data, meta } : { success: true, data };
   }
   const effectiveLimit = limit ?? 1000;
   return fetchAutoMerge(pair, validType, dateStr, effectiveLimit, first.data, opts, noCache);

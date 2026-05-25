@@ -1,3 +1,4 @@
+// 100行超: JST 基準の日付演算・足周期・次境界判定を 1 ファイルに集約
 export const YEARLY_TYPES = new Set(["4hour", "8hour", "12hour", "1day", "1week", "1month"]);
 
 // 非うるう年での 1 セグメント（短期足は 1 日分、年タイプは 1 年分）あたりのローソク本数
@@ -85,4 +86,33 @@ export function shiftDate(dateStr: string, offset: number, type: string): string
 export function todayDate(type: string): string {
   const now = new Date();
   return YEARLY_TYPES.has(type) ? yearJst(now.getTime()) : ymdJst(now.getTime());
+}
+
+// 足 1 本あたりの周期（ms）。1month は可変なので含めない（nextBoundaryMs で別処理）。
+const STEP_MS_PER_TYPE: Record<string, number> = {
+  "1min": 60_000,
+  "5min": 300_000,
+  "15min": 900_000,
+  "30min": 1_800_000,
+  "1hour": 3_600_000,
+  "4hour": 14_400_000,
+  "8hour": 28_800_000,
+  "12hour": 43_200_000,
+  "1day": 86_400_000,
+  "1week": 604_800_000,
+};
+
+/**
+ * 足の timestamp が属する期間の終端 epoch ms を返す。
+ * 1month は JST 基準の翌月 1 日 00:00 で判定（暦依存）。未知 type は 0。
+ */
+export function nextBoundaryMs(type: string, ts: number): number {
+  const step = STEP_MS_PER_TYPE[type];
+  if (step) return ts + step;
+  if (type !== "1month") return 0;
+  const ymd = ymdJst(ts);
+  const y = Number(ymd.slice(0, 4));
+  const m = Number(ymd.slice(4, 6));
+  // JST 00:00 = UTC -9h. Date.UTC(...) から 9h 引くと JST 00:00 の epoch ms。
+  return Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 1) - 32_400_000;
 }
