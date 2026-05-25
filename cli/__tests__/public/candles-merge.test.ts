@@ -97,6 +97,17 @@ describe("detectGaps", () => {
   it("returns empty for unknown types", () => {
     expect(detectGaps([c(0), c(1_000_000)], "bogus")).toEqual([]);
   });
+
+  it("ignores fractional delta that does not span a full step", () => {
+    // delta = 1.5 * step (1min) → 整数の欠損本数にならないので gap として扱わない
+    expect(detectGaps([c(0), c(90_000)], "1min")).toEqual([]);
+  });
+
+  it("floors fractional delta when missing >= 1", () => {
+    // delta = 2.5 * step (1min) → missing = floor(2.5) - 1 = 1
+    const gaps = detectGaps([c(0), c(150_000)], "1min");
+    expect(gaps).toEqual([{ from: 0, to: 150_000, missing: 1 }]);
+  });
 });
 
 describe("augmentMeta", () => {

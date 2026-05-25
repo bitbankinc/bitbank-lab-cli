@@ -33,10 +33,12 @@ export function detectGaps(rows: Candle[], type: string): Gap[] {
   for (let i = 1; i < rows.length; i++) {
     const delta = rows[i].timestamp - rows[i - 1].timestamp;
     if (delta > step) {
+      const missing = Math.floor(delta / step) - 1;
+      if (missing <= 0) continue;
       gaps.push({
         from: rows[i - 1].timestamp,
         to: rows[i].timestamp,
-        missing: delta / step - 1,
+        missing,
       });
     }
   }
