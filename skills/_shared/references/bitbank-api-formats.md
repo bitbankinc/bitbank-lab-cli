@@ -29,9 +29,13 @@ bitbank 公開 API ドキュメント（`rest-api.md` 等）上の整理:
 
 | 時間軸 | 日付形式 | 例 |
 |---|---|---|
-| `1month` | `YYYY` | `2024` |
-| それ以外 | `YYYYMMDD` | `20240101` |
+| `4hour`, `8hour`, `12hour`, `1day`, `1week`, `1month` | `YYYY` | `--type=1day --date=2024` |
+| `1min`, `5min`, `15min`, `30min`, `1hour` | `YYYYMMDD` | `--type=1hour --date=20240101` |
 | 未指定 | 当日データ | — |
+
+実装上のソース: `cli/date-utils.ts` の `YEARLY_TYPES`。`YYYY` 系の時間軸に
+`YYYYMMDD` を渡す（または逆）と CLI が reject するので、Skill から組み立てる
+際は時間軸と日付形式の対応を必ず確認する。
 
 ### レスポンス形式
 
