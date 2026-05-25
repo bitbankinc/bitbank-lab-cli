@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { type HttpOptions, publicGet } from "../../http.js";
 import { parseResponse } from "../../parse-response.js";
+import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 
 const StatusItemSchema = z.object({
   pair: z.string(),
   status: z.string(),
-  min_amount: z.string().optional(),
+  min_amount: numStr.optional(),
 });
 
 const StatusSchema = z.object({

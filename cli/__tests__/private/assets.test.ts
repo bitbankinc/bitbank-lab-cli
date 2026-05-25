@@ -43,6 +43,9 @@ describe("assets", () => {
     if (result.success) {
       expect(result.data).toHaveLength(2);
       expect(result.data[0].asset).toBe("btc");
+      expect(typeof result.data[0].free_amount).toBe("number");
+      expect(result.data[0].free_amount).toBe(0.001);
+      expect(result.data[0].onhand_amount).toBe(0.001);
     }
   });
 

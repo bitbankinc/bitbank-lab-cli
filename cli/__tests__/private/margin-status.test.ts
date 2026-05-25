@@ -21,7 +21,12 @@ describe("marginStatus", () => {
       nonce: "1",
     });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.margin_rate).toBe("300.00");
+    if (result.success) {
+      expect(result.data.margin_rate).toBe(300);
+      expect(typeof result.data.margin_rate === "number" || result.data.margin_rate === null).toBe(
+        true,
+      );
+    }
   });
 
   it("propagates API error", async () => {

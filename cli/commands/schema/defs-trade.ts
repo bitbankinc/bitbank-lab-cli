@@ -4,7 +4,7 @@ const pair = p("string", "Trading pair (e.g. btc_jpy)");
 const execute = p("boolean", "Execute for real (default: dry-run)");
 const n = { type: "number" };
 const s = { type: "string" };
-const sn = { type: ["string", "null"] };
+const nn = { type: ["number", "null"] };
 const b = { type: "boolean" };
 
 export const tradeSchemas: Record<string, SchemaDef> = {
@@ -27,10 +27,10 @@ export const tradeSchemas: Record<string, SchemaDef> = {
         pair: s,
         side: s,
         type: s,
-        start_amount: sn,
-        remaining_amount: sn,
-        executed_amount: s,
-        price: sn,
+        start_amount: nn,
+        remaining_amount: nn,
+        executed_amount: n,
+        price: nn,
         post_only: b,
         status: s,
         ordered_at: n,

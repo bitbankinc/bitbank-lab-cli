@@ -26,6 +26,10 @@ describe("depth", () => {
     if (result.success) {
       expect(result.data.asks).toHaveLength(2);
       expect(result.data.bids).toHaveLength(1);
+      expect(typeof result.data.asks[0][0]).toBe("number");
+      expect(typeof result.data.asks[0][1]).toBe("number");
+      expect(result.data.asks[0][0]).toBe(100);
+      expect(result.data.asks[0][1]).toBe(1);
     }
   });
 

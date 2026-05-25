@@ -2,12 +2,13 @@ import { z } from "zod";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
+import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 
 const UnconfirmedDepositSchema = z.object({
   uuid: z.string(),
   asset: z.string(),
-  amount: z.string(),
+  amount: numStr,
   txid: z.string().nullable(),
   found_at: z.number(),
 });

@@ -8,6 +8,7 @@ const end = p("string", "End timestamp (Unix ms)");
 const n = { type: "number" };
 const s = { type: "string" };
 const sn = { type: ["string", "null"] };
+const nn = { type: ["number", "null"] };
 
 export const privateTransferSchemas: Record<string, SchemaDef> = {
   "deposit-history": {
@@ -17,7 +18,7 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
       type: "array",
       items: {
         type: "object",
-        properties: { asset: s, amount: s, txid: sn, status: s, found_at: n },
+        properties: { asset: s, amount: n, txid: sn, status: s, found_at: n },
       },
     },
   },
@@ -26,7 +27,7 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
     params: { asset },
     output: {
       type: "array",
-      items: { type: "object", properties: { asset: s, amount: s, txid: s, found_at: n } },
+      items: { type: "object", properties: { asset: s, amount: n, txid: s, found_at: n } },
     },
   },
   "deposit-originators": {
@@ -52,7 +53,7 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
       type: "array",
       items: {
         type: "object",
-        properties: { asset: s, amount: s, fee: s, txid: sn, status: s, requested_at: n },
+        properties: { asset: s, amount: n, fee: n, txid: sn, status: s, requested_at: n },
       },
     },
   },
@@ -61,7 +62,7 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
     params: {},
     output: {
       type: "object",
-      properties: { equity: s, margin: s, free_margin: s, margin_level: s, pnl: s },
+      properties: { equity: nn, margin: nn, free_margin: nn, margin_level: nn, pnl: nn },
     },
   },
   "margin-positions": {
@@ -71,7 +72,7 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
       type: "array",
       items: {
         type: "object",
-        properties: { pair: s, side: s, amount: s, open_price: s, pnl: s },
+        properties: { pair: s, side: s, amount: n, open_price: n, pnl: n },
       },
     },
   },

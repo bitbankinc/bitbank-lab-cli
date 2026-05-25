@@ -14,6 +14,30 @@
 
 ### Breaking Changes
 
+- 全コマンドの数値フィールドを CLI 出力時に `string` → `number` に正規化。
+  `cli/schema-helpers.ts` の `numStr` / `nullableNumStr` で防御的に変換し、
+  空文字・`NaN`・`Infinity` は parse error として弾く。Skill / 呼び出し側で
+  `Number(...)` / `parseFloat(...)` を挟む必要がなくなる。
+  - 対象コマンド: `depth`, `circuit-break`, `status`, `pairs`,
+    `assets`, `trade-history`, `trade-history-all`, `margin-status`,
+    `margin-positions`, `deposit-history`, `withdrawal-history`,
+    `unconfirmed-deposits`, `active-orders`, `order`, `orders-info`,
+    `trade create-order`, `trade cancel-order`, `trade cancel-orders`
+  - 主なフィールド: 価格系（`price`, `average_price`, `*_trigger_price` 等）、
+    数量系（`amount`, `start_amount`, `remaining_amount`, `executed_amount`,
+    `unit_amount`, `*_max_amount`, `min_amount`, `free_amount`,
+    `locked_amount`, `onhand_amount`, `withdrawing_amount`）、
+    手数料・レート系（`maker_fee_rate_base_quote`, `taker_fee_rate_base_quote`,
+    `fee_amount_base`, `fee_amount_quote`, `fee`, `margin_rate`,
+    `force_close_rate`）、PnL 系（`open_pnl`, `close_pnl`, `todays_pnl`,
+    `total_assets_jpy`, `margin_used`, `margin_available`）。
+  - 例: `assets` の `free_amount` は `"0.001"` → `0.001`、
+    `depth` の `asks: [["100","1.0"]]` → `[[100, 1.0]]`、
+    `margin-status` の `margin_rate: "300.00"` → `300`（null はそのまま null）。
+  - スコープ外: `cli/watch/format.ts` の WS TickerDataSchema（Wave 5 PR #9 で対応）、
+    `cli/paper-state.ts`（ローカル state で既に `z.number()` 使用）。
+  - 新規規約テスト `cli/__tests__/chaos/conventions/x14-numeric-field-typing.test.ts`
+    が「数値らしいフィールドが `z.string()` のまま」になっていないか継続検査する。
 - `trade withdraw` コマンドを削除。出金機能は bitbank Web UI / アプリで行うこと。
   関連して `cli/withdrawal-allowlist.ts` および
   `~/.bitbank/withdrawal-allowlist.json` も削除（allowlist は withdraw 専用だったため）。

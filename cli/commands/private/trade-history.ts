@@ -4,6 +4,7 @@ import { z } from "zod";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
+import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
 
@@ -13,11 +14,11 @@ const TradeSchema = z.object({
   order_id: z.number(),
   side: z.string(),
   type: z.string(),
-  amount: z.string(),
-  price: z.string(),
+  amount: numStr,
+  price: numStr,
   maker_taker: z.string(),
-  fee_amount_base: z.string(),
-  fee_amount_quote: z.string(),
+  fee_amount_base: numStr,
+  fee_amount_quote: numStr,
   executed_at: z.number(),
 });
 

@@ -6,17 +6,17 @@ const since = p("string", "Start timestamp (Unix ms)");
 const end = p("string", "End timestamp (Unix ms)");
 const n = { type: "number" };
 const s = { type: "string" };
-const sn = { type: ["string", "null"] };
+const nn = { type: ["number", "null"] };
 
 const orderProps = {
   order_id: n,
   pair: s,
   side: s,
   type: s,
-  price: sn,
-  start_amount: sn,
-  remaining_amount: sn,
-  executed_amount: s,
+  price: nn,
+  start_amount: nn,
+  remaining_amount: nn,
+  executed_amount: n,
   status: s,
 };
 
@@ -30,10 +30,10 @@ export const privateAccountSchemas: Record<string, SchemaDef> = {
         type: "object",
         properties: {
           asset: s,
-          free_amount: s,
-          locked_amount: s,
-          onhand_amount: s,
-          withdrawing_amount: s,
+          free_amount: n,
+          locked_amount: n,
+          onhand_amount: n,
+          withdrawing_amount: n,
         },
       },
     },
@@ -68,10 +68,10 @@ export const privateAccountSchemas: Record<string, SchemaDef> = {
           pair: s,
           side: s,
           type: s,
-          amount: s,
-          price: s,
-          fee_amount_base: s,
-          fee_amount_quote: s,
+          amount: n,
+          price: n,
+          fee_amount_base: n,
+          fee_amount_quote: n,
           executed_at: n,
         },
       },
@@ -84,7 +84,7 @@ export const privateAccountSchemas: Record<string, SchemaDef> = {
       type: "array",
       items: {
         type: "object",
-        properties: { trade_id: n, pair: s, side: s, amount: s, price: s, executed_at: n },
+        properties: { trade_id: n, pair: s, side: s, amount: n, price: n, executed_at: n },
       },
     },
   },

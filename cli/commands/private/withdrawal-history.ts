@@ -2,14 +2,15 @@ import { z } from "zod";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
+import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { MSG_ASSET } from "../../validators.js";
 
 const WithdrawalSchema = z.object({
   uuid: z.string(),
   asset: z.string(),
-  amount: z.string(),
-  fee: z.string(),
+  amount: numStr,
+  fee: numStr,
   label: z.string().nullable(),
   address: z.string(),
   txid: z.string().nullable(),

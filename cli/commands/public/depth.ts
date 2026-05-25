@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { type HttpOptions, publicGet } from "../../http.js";
 import { parseResponse } from "../../parse-response.js";
+import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { MSG_PAIR_DEPTH, validatePair } from "../../validators.js";
 
 const DepthSchema = z.object({
-  asks: z.array(z.tuple([z.string(), z.string()])),
-  bids: z.array(z.tuple([z.string(), z.string()])),
+  asks: z.array(z.tuple([numStr, numStr])),
+  bids: z.array(z.tuple([numStr, numStr])),
   timestamp: z.number(),
 });
 

@@ -28,8 +28,8 @@ export const publicMarketSchemas: Record<string, SchemaDef> = {
     output: {
       type: "object",
       properties: {
-        asks: { type: "array", items: { type: "array", items: s } },
-        bids: { type: "array", items: { type: "array", items: s } },
+        asks: { type: "array", items: { type: "array", items: n } },
+        bids: { type: "array", items: { type: "array", items: n } },
         timestamp: n,
       },
     },

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nullableNumStr } from "../schema-helpers.js";
+import { nullableNumStr, numStr } from "../schema-helpers.js";
 
 /** 注文レスポンスの共通スキーマ（/user/spot/order 等） */
 export const OrderSchema = z.object({
@@ -7,12 +7,12 @@ export const OrderSchema = z.object({
   pair: z.string(),
   side: z.string(),
   type: z.string(),
-  start_amount: z.string().nullable().optional(),
-  remaining_amount: z.string().nullable().optional(),
-  executed_amount: z.string(),
-  price: z.string().nullable().optional(),
+  start_amount: nullableNumStr.optional(),
+  remaining_amount: nullableNumStr.optional(),
+  executed_amount: numStr,
+  price: nullableNumStr.optional(),
   post_only: z.boolean().optional(),
-  average_price: z.string(),
+  average_price: numStr,
   ordered_at: z.number(),
   expire_at: z.number().nullable().optional(),
   status: z.string(),

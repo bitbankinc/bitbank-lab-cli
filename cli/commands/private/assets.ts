@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
+import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 
 const AssetSchema = z.object({
   asset: z.string(),
-  free_amount: z.string(),
-  locked_amount: z.string(),
-  onhand_amount: z.string(),
-  withdrawing_amount: z.string(),
+  free_amount: numStr,
+  locked_amount: numStr,
+  onhand_amount: numStr,
+  withdrawing_amount: numStr,
 });
 
 const AssetsResponseSchema = z.object({
@@ -31,7 +32,7 @@ export async function assets(
 
   const items = showAll
     ? parsed.data.assets
-    : parsed.data.assets.filter((a) => Number(a.onhand_amount) > 0);
+    : parsed.data.assets.filter((a) => a.onhand_amount > 0);
 
   return { success: true, data: items };
 }

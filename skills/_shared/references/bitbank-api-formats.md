@@ -62,8 +62,17 @@ bitbank 公開 API ドキュメント（`rest-api.md` 等）上の整理:
 ## レスポンス共通
 
 - `success: 1` で成功、`success: 0` でエラー
-- 価格・数量は**すべて文字列**で返る（数値変換が必要）
+- 価格・数量は API 側では**すべて文字列**で返る（数値変換が必要）
 - エラー時: `{ "success": 0, "data": { "code": 10000 } }`
+
+### CLI 出力での数値正規化（PR #6 以降）
+
+CLI は `cli/schema-helpers.ts` の `numStr` / `nullableNumStr` を使って
+**API レスポンスの数値フィールドを number に正規化してから返す**。
+JSON 出力で `"price": "5000000"` のような文字列はもう出ない（`"price": 5000000`
+になる）。Skill 側で `Number(...)` / `parseFloat(...)` を挟む必要はない。
+null は null のまま保持される（`nullableNumStr`）。空文字や `NaN` / `Infinity`
+が来た場合はパースエラーとして弾かれる。
 
 ## エラーコード
 

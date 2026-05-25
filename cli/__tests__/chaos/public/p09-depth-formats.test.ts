@@ -25,6 +25,10 @@ describe("Chaos P-09: depth output in all formats", () => {
       },
     );
     expect(r.success).toBe(true);
+    if (r.success) {
+      expect(typeof r.data.asks[0][0]).toBe("number");
+      expect(r.data.asks[0][0]).toBe(5001000);
+    }
     const spy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     output(r, "json");
     const out = spy.mock.calls.map((c) => c[0]).join("");

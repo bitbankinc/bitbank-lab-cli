@@ -1,17 +1,18 @@
 import { z } from "zod";
 import { type HttpOptions, publicGet } from "../../http.js";
 import { parseResponse } from "../../parse-response.js";
+import { nullableNumStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { MSG_PAIR_CIRCUIT_BREAK, validatePair } from "../../validators.js";
 
 const CircuitBreakSchema = z.object({
   mode: z.string(),
-  estimated_itayose_price: z.string().nullable().optional(),
-  estimated_itayose_amount: z.string().nullable().optional(),
-  itayose_upper_price: z.string().nullable().optional(),
-  itayose_lower_price: z.string().nullable().optional(),
-  upper_trigger_price: z.string().nullable().optional(),
-  lower_trigger_price: z.string().nullable().optional(),
+  estimated_itayose_price: nullableNumStr.optional(),
+  estimated_itayose_amount: nullableNumStr.optional(),
+  itayose_upper_price: nullableNumStr.optional(),
+  itayose_lower_price: nullableNumStr.optional(),
+  upper_trigger_price: nullableNumStr.optional(),
+  lower_trigger_price: nullableNumStr.optional(),
   fee_type: z.string(),
   timestamp: z.number(),
 });
