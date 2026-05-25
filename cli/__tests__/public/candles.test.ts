@@ -414,18 +414,27 @@ describe("candles auto-merge", () => {
   });
 
   it("computes fetch count from limit and rows-per-segment for 1hour", async () => {
-    const dayData = {
+    // 各呼び出しで unique な timestamp を返す（normalizeCandles の dedup で潰されないように）
+    const dayData = (base: number) => ({
       candlestick: [
         {
           type: "1hour",
-          ohlcv: Array.from({ length: 24 }, (_, i) => ["100", "110", "90", "105", "50", 1000 + i]),
+          ohlcv: Array.from({ length: 24 }, (_, i) => [
+            "100",
+            "110",
+            "90",
+            "105",
+            "50",
+            base + i * 3_600_000,
+          ]),
         },
       ],
-    };
+    });
     let callCount = 0;
     const fetchHours: typeof globalThis.fetch = async () => {
+      const base = callCount * 24 * 3_600_000;
       callCount++;
-      return new Response(JSON.stringify({ success: 1, data: dayData }));
+      return new Response(JSON.stringify({ success: 1, data: dayData(base) }));
     };
     const result = await candles(
       { pair: "btc_jpy", type: "1hour", limit: 200, noCache: true },

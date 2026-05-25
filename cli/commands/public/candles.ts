@@ -5,6 +5,7 @@ import type { HttpOptions } from "../../http.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
 import { type Candle, VALID_TYPES, fetchOne } from "./candles-fetch.js";
+import { augmentMeta, detectGaps, normalizeCandles } from "./candles-merge.js";
 import { candlesRange } from "./candles-range.js";
 
 export type { Candle };
@@ -73,22 +74,29 @@ async function fetchAutoMerge(
   }
   const ordered = olderChunks.filter(Boolean).reverse();
   const allRows = ([] as Candle[]).concat(...ordered, firstData);
-  const data = allRows.slice(-limit);
+  const { rows: normalized, dedupedCount } = normalizeCandles(allRows);
+  const data = normalized.slice(-limit);
+  const gaps = detectGaps(data, type);
   if (idealNeeded > HARD_MAX_SEGMENTS && !hadFetchFailure) {
     return {
       success: true,
       data,
       partial: true,
-      meta: {
+      meta: augmentMeta(dedupedCount, gaps, {
         truncated: true,
         requestedLimit: limit,
         returnedRows: data.length,
         reason: "HARD_MAX_SEGMENTS",
-      },
+      }),
     };
   }
-  if (hadFetchFailure) return { success: true, data, partial: true };
-  return { success: true, data };
+  const meta = augmentMeta(dedupedCount, gaps);
+  if (hadFetchFailure) {
+    return meta
+      ? { success: true, data, partial: true, meta }
+      : { success: true, data, partial: true };
+  }
+  return meta ? { success: true, data, meta } : { success: true, data };
 }
 
 export async function candles(args: CandlesArgs, opts?: HttpOptions): Promise<Result<Candle[]>> {
