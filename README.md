@@ -677,11 +677,22 @@ cli/
     paper/              # ペーパートレード（ライブ価格 × ローカル state、5）
     stream.ts           # リアルタイムストリーム
   __tests__/            # 全コマンドのテスト（37ファイル / 140テスト）
-skills/                 # Agent Skills（12本 + _shared/references/、.claude/skills/ から symlink）
+skills/                 # Agent Skills（12本 + _shared/references/）
 docs/                   # ADR・フェーズ管理・カスタマイズガイド
-.claude-plugin/         # Claude Code plugin manifest
-.cursor-plugin/         # Cursor plugin manifest
-.codex-plugin/          # Codex CLI plugin manifest（marketplace interface 含む）
-gemini-extension.json   # Gemini CLI extension manifest（CONTEXT.md を参照）
-CONTEXT.md              # Gemini 用エージェント指示書（CLAUDE.md への symlink）
+.contrib/               # コントリビューター向け hook tooling（clone 利用者は不要）
 ```
+
+#### エージェント連携エントリ
+
+各エージェントが固有のパス検出規約を持つため、root に複数のエントリが必要です。Markdown は `CLAUDE.md` を実体に symlink で集約しており内容の重複はありません。plugin manifest は各エージェントの仕様に合わせて個別に持っています。
+
+| エントリ | 何用か | 種別 |
+|---|---|---|
+| `CLAUDE.md` | Claude / Cursor 用エージェント指示書 | file（canonical） |
+| `AGENTS.md` → `CLAUDE.md` | Codex / Aider 等の AGENTS.md 規約 | symlink |
+| `CONTEXT.md` → `CLAUDE.md` | Gemini の `contextFileName` 規約 | symlink |
+| `.claude/` | Claude Code の local skills + rules | dir（内部に `skills` → `../skills` の symlink） |
+| `.claude-plugin/` | Claude Code plugin marketplace | dir（`plugin.json` / `marketplace.json`） |
+| `.cursor-plugin/` | Cursor plugin | dir（`plugin.json`） |
+| `.codex-plugin/` | Codex CLI plugin | dir（`plugin.json`） |
+| `gemini-extension.json` | Gemini CLI extension | file |
