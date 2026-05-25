@@ -89,29 +89,72 @@ describe("detectGaps", () => {
     ]);
   });
 
-  it("returns empty for yearly types (暦依存なので step を持たない)", () => {
-    const rows = [c(0), c(86_400_000), c(86_400_000 * 5)];
-    expect(detectGaps(rows, "1day")).toEqual([]);
-    expect(detectGaps(rows, "4hour")).toEqual([]);
-    expect(detectGaps(rows, "8hour")).toEqual([]);
-    expect(detectGaps(rows, "12hour")).toEqual([]);
-    expect(detectGaps(rows, "1week")).toEqual([]);
-    expect(detectGaps(rows, "1month")).toEqual([]);
+  it("detects gaps for 4hour (固定 4h step)", () => {
+    // 0 → 24h: 6 boundaries (4h,8h,12h,16h,20h,24h), curr に到達するのは 5 本欠損
+    expect(detectGaps([c(0), c(86_400_000)], "4hour")).toEqual([
+      { from: 0, to: 86_400_000, missing: 5 },
+    ]);
+    expect(detectGaps([c(0), c(14_400_000)], "4hour")).toEqual([]);
+  });
+
+  it("detects gaps for 8hour / 12hour (固定 step)", () => {
+    expect(detectGaps([c(0), c(86_400_000)], "8hour")).toEqual([
+      { from: 0, to: 86_400_000, missing: 2 },
+    ]);
+    expect(detectGaps([c(0), c(86_400_000)], "12hour")).toEqual([
+      { from: 0, to: 86_400_000, missing: 1 },
+    ]);
+  });
+
+  it("detects gaps for 1day (JST 日境界)", () => {
+    // Jan 1 と Jan 3 (JST 00:00) で Jan 2 が欠損
+    const jan1 = Date.UTC(2024, 0, 1) - 32_400_000;
+    const jan3 = Date.UTC(2024, 0, 3) - 32_400_000;
+    expect(detectGaps([c(jan1), c(jan3)], "1day")).toEqual([{ from: jan1, to: jan3, missing: 1 }]);
+  });
+
+  it("detects gaps for 1week (固定 7 日 step)", () => {
+    // 0 → 21日 で 7日・14日が欠損 (missing=2)
+    expect(detectGaps([c(0), c(7 * 86_400_000)], "1week")).toEqual([]);
+    expect(detectGaps([c(0), c(21 * 86_400_000)], "1week")).toEqual([
+      { from: 0, to: 21 * 86_400_000, missing: 2 },
+    ]);
+  });
+
+  it("detects gaps for 1month (暦依存・閏年含む)", () => {
+    // Jan 1 と April 1 で Feb 1・Mar 1 が欠損 (missing=2)
+    const jan1 = Date.UTC(2024, 0, 1) - 32_400_000;
+    const apr1 = Date.UTC(2024, 3, 1) - 32_400_000;
+    expect(detectGaps([c(jan1), c(apr1)], "1month")).toEqual([
+      { from: jan1, to: apr1, missing: 2 },
+    ]);
+    // 隣接月（Feb 1 → Mar 1）は閏年でも非閏年でも gap なし
+    const feb1_2024 = Date.UTC(2024, 1, 1) - 32_400_000;
+    const mar1_2024 = Date.UTC(2024, 2, 1) - 32_400_000;
+    expect(detectGaps([c(feb1_2024), c(mar1_2024)], "1month")).toEqual([]);
+    const feb1_2025 = Date.UTC(2025, 1, 1) - 32_400_000;
+    const mar1_2025 = Date.UTC(2025, 2, 1) - 32_400_000;
+    expect(detectGaps([c(feb1_2025), c(mar1_2025)], "1month")).toEqual([]);
+  });
+
+  it("detects 1month gap across year boundary (Dec → Feb 翌年)", () => {
+    // Dec 1, 2026 と Feb 1, 2027 で Jan 1, 2027 が欠損 (missing=1)
+    const dec1 = Date.UTC(2026, 11, 1) - 32_400_000;
+    const feb1 = Date.UTC(2027, 1, 1) - 32_400_000;
+    expect(detectGaps([c(dec1), c(feb1)], "1month")).toEqual([
+      { from: dec1, to: feb1, missing: 1 },
+    ]);
   });
 
   it("returns empty for unknown types", () => {
     expect(detectGaps([c(0), c(1_000_000)], "bogus")).toEqual([]);
   });
 
-  it("ignores fractional delta that does not span a full step", () => {
-    // delta = 1.5 * step (1min) → 整数の欠損本数にならないので gap として扱わない
-    expect(detectGaps([c(0), c(90_000)], "1min")).toEqual([]);
-  });
-
-  it("floors fractional delta when missing >= 1", () => {
-    // delta = 2.5 * step (1min) → missing = floor(2.5) - 1 = 1
-    const gaps = detectGaps([c(0), c(150_000)], "1min");
-    expect(gaps).toEqual([{ from: 0, to: 150_000, missing: 1 }]);
+  it("counts missing boundaries even for non-aligned timestamps", () => {
+    // delta = 1.5 * step (1min) → 0 と 90_000 の間に boundary 60_000 がある → missing=1
+    expect(detectGaps([c(0), c(90_000)], "1min")).toEqual([{ from: 0, to: 90_000, missing: 1 }]);
+    // delta = 2.5 * step → 60_000 と 120_000 が間に挟まる → missing=2
+    expect(detectGaps([c(0), c(150_000)], "1min")).toEqual([{ from: 0, to: 150_000, missing: 2 }]);
   });
 });
 

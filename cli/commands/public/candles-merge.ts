@@ -2,15 +2,6 @@ import { nextBoundaryMs } from "../../date-utils.js";
 import type { Gap, ResultMeta } from "../../types.js";
 import type { Candle } from "./candles-fetch.js";
 
-// sub-daily の step（ms）。YEARLY_TYPES（4hour 以降）は暦依存なので含めない
-const STEP_MS: Record<string, number> = {
-  "1min": 60_000,
-  "5min": 300_000,
-  "15min": 900_000,
-  "30min": 1_800_000,
-  "1hour": 3_600_000,
-};
-
 export function normalizeCandles(rows: Candle[]): { rows: Candle[]; dedupedCount: number } {
   const sorted = [...rows].sort((a, b) => a.timestamp - b.timestamp);
   const seen = new Set<number>();
@@ -27,21 +18,23 @@ export function normalizeCandles(rows: Candle[]): { rows: Candle[]; dedupedCount
   return { rows: out, dedupedCount: dups };
 }
 
+// 1month は暦依存（28〜31 日）で固定 step が使えないため、nextBoundaryMs を辿って
+// 隣接ローソク間に挟まる境界の数を数える。固定幅 type も同じロジックに乗る。
 export function detectGaps(rows: Candle[], type: string): Gap[] {
-  const step = STEP_MS[type];
-  if (!step) return [];
   const gaps: Gap[] = [];
   for (let i = 1; i < rows.length; i++) {
-    const delta = rows[i].timestamp - rows[i - 1].timestamp;
-    if (delta > step) {
-      const missing = Math.floor(delta / step) - 1;
-      if (missing <= 0) continue;
-      gaps.push({
-        from: rows[i - 1].timestamp,
-        to: rows[i].timestamp,
-        missing,
-      });
+    const prev = rows[i - 1].timestamp;
+    const curr = rows[i].timestamp;
+    let cursor = nextBoundaryMs(type, prev);
+    if (cursor === 0) continue;
+    let missing = 0;
+    while (cursor < curr) {
+      missing++;
+      const next = nextBoundaryMs(type, cursor);
+      if (next === 0 || next <= cursor) break;
+      cursor = next;
     }
+    if (missing > 0) gaps.push({ from: prev, to: curr, missing });
   }
   return gaps;
 }
