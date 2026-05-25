@@ -242,6 +242,33 @@ describe("candles auto-merge", () => {
     if (result.success) {
       expect(result.data).toHaveLength(2);
       expect(callCount).toBe(2);
+      expect(result.partial).toBe(true);
+      expect(result.meta?.truncated).toBeUndefined();
+    }
+  });
+
+  it("does not overwrite fetch failure with HARD_MAX_SEGMENTS meta", async () => {
+    const tinyData = {
+      candlestick: [{ type: "1day", ohlcv: [["1", "1", "1", "1", "1", 1000]] }],
+    };
+    let callCount = 0;
+    const errorAfterFew: typeof globalThis.fetch = async () => {
+      callCount++;
+      if (callCount <= 3) {
+        return new Response(JSON.stringify({ success: 1, data: tinyData }));
+      }
+      return new Response(JSON.stringify({ success: 0, data: { code: 10000 } }), { status: 500 });
+    };
+    // limit が極端なので idealNeeded > HARD_MAX_SEGMENTS だが、途中 fetch 失敗の方を優先したい
+    const result = await candles(
+      { pair: "btc_jpy", type: "1day", limit: 1_000_000, noCache: true },
+      { fetch: errorAfterFew, retries: 0 },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.partial).toBe(true);
+      expect(result.meta?.truncated).toBeUndefined();
+      expect(result.meta?.reason).toBeUndefined();
     }
   });
 

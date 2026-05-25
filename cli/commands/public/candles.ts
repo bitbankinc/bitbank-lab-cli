@@ -55,6 +55,7 @@ async function fetchAutoMerge(
   if (needed === 0) return { success: true, data: firstData.slice(-limit) };
   const dates = olderDates(dateStr, type, needed);
   const olderChunks: Candle[][] = new Array(dates.length);
+  let hadFetchFailure = false;
   for (let i = 0; i < dates.length; i += BATCH_SIZE) {
     const batch = dates.slice(i, i + BATCH_SIZE);
     const results = await Promise.all(batch.map((d) => fetchOne(pair, type, d, opts, noCache)));
@@ -62,6 +63,7 @@ async function fetchAutoMerge(
     for (let j = 0; j < results.length; j++) {
       const r = results[j];
       if (!r.success) {
+        hadFetchFailure = true;
         stop = true;
         break;
       }
@@ -72,7 +74,7 @@ async function fetchAutoMerge(
   const ordered = olderChunks.filter(Boolean).reverse();
   const allRows = ([] as Candle[]).concat(...ordered, firstData);
   const data = allRows.slice(-limit);
-  if (idealNeeded > HARD_MAX_SEGMENTS) {
+  if (idealNeeded > HARD_MAX_SEGMENTS && !hadFetchFailure) {
     return {
       success: true,
       data,
@@ -85,6 +87,7 @@ async function fetchAutoMerge(
       },
     };
   }
+  if (hadFetchFailure) return { success: true, data, partial: true };
   return { success: true, data };
 }
 
