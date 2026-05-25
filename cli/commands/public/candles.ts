@@ -1,5 +1,5 @@
 // 100行超: pair/type/date/range の入力検証 + 単発取得・自動マージ・範囲取得のディスパッチを 1 ファイルに集約
-import { ROWS_PER_SEGMENT, YEARLY_TYPES, shiftDate, todayDate } from "../../date-utils.js";
+import { YEARLY_TYPES, rowsPerSegment, shiftDate, todayDate } from "../../date-utils.js";
 import type { HttpOptions } from "../../http.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
@@ -58,7 +58,8 @@ async function fetchAutoMerge(
   opts?: HttpOptions,
   noCache?: boolean,
 ): Promise<Result<Candle[]>> {
-  const perSegment = ROWS_PER_SEGMENT[type] ?? Math.max(firstData.length, 1);
+  const year = YEARLY_TYPES.has(type) ? Number(dateStr) : undefined;
+  const perSegment = rowsPerSegment(type, year) || Math.max(firstData.length, 1);
   const remaining = Math.max(0, limit - firstData.length);
   const needed = Math.min(Math.ceil(remaining / perSegment), HARD_MAX_SEGMENTS);
   if (needed === 0) return { success: true, data: firstData.slice(-limit) };
