@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
+import { yearJst, ymdJst } from "./date-utils.js";
 
 const CACHE_BASE = join(homedir(), ".bitbank-cache");
 const memCache = new Map<string, unknown>();
@@ -95,14 +96,11 @@ export function clearMemCache(): void {
   memCache.clear();
 }
 
-/** 期間が完了済み（不変データ）ならキャッシュ対象 */
+/** 期間が完了済み（不変データ）ならキャッシュ対象。JST 基準で比較する */
 export function isCompletePeriod(date: string): boolean {
   const now = new Date();
   if (date.length === 4) {
-    return Number(date) < now.getFullYear();
+    return Number(date) < Number(yearJst(now.getTime()));
   }
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return date < `${y}${m}${d}`;
+  return date < ymdJst(now.getTime());
 }

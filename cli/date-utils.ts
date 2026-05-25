@@ -39,11 +39,27 @@ export function rowsPerSegment(type: string, year?: number): number {
   return base + (isLeap ? bonus : 0);
 }
 
-function formatYMD(dt: Date): string {
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, "0");
-  const d = String(dt.getDate()).padStart(2, "0");
-  return `${y}${m}${d}`;
+// bitbank API は日付境界を JST 基準で扱う（/candlestick/1hour/20260101 は JST 2026-01-01）。
+// ホスト OS の TZ に依らず JST 日付を出すため Intl.DateTimeFormat({ timeZone: "Asia/Tokyo" }) を使う。
+const JST_YMD = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Tokyo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const JST_YEAR = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Tokyo",
+  year: "numeric",
+});
+
+/** ms（UNIX epoch）を JST の YYYYMMDD 文字列で返す */
+export function ymdJst(ms: number): string {
+  return JST_YMD.format(new Date(ms)).replace(/-/g, "");
+}
+
+/** ms（UNIX epoch）を JST の YYYY 文字列で返す */
+export function yearJst(ms: number): string {
+  return JST_YEAR.format(new Date(ms));
 }
 
 /** 日付を offset 日ずらす。年タイプは offset 年ずらす */
@@ -52,12 +68,13 @@ export function shiftDate(dateStr: string, offset: number, type: string): string
   const y = Number(dateStr.slice(0, 4));
   const m = Number(dateStr.slice(4, 6)) - 1;
   const d = Number(dateStr.slice(6, 8));
-  return formatYMD(new Date(y, m, d + offset));
+  // Date.UTC で構築すれば midnight UTC = 09:00 JST となり、JST 日付は与えた y/m/d と一致する。
+  // local TZ コンストラクタを使うとホスト TZ により日付がずれるため使わない。
+  return ymdJst(Date.UTC(y, m, d + offset));
 }
 
-/** 今日の日付を YYYYMMDD（年タイプは YYYY）で返す */
+/** 今日の日付を JST 基準の YYYYMMDD（年タイプは YYYY）で返す */
 export function todayDate(type: string): string {
   const now = new Date();
-  if (YEARLY_TYPES.has(type)) return String(now.getFullYear());
-  return formatYMD(now);
+  return YEARLY_TYPES.has(type) ? yearJst(now.getTime()) : ymdJst(now.getTime());
 }
