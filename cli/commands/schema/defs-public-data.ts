@@ -82,6 +82,8 @@ export const publicDataSchemas: Record<string, SchemaDef> = {
           unit_amount: n,
           limit_max_amount: n,
           market_max_amount: n,
+          price_digits: n,
+          amount_digits: n,
         },
       },
     },

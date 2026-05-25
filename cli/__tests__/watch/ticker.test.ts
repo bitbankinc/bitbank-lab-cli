@@ -19,7 +19,7 @@ const factoryFor =
     s;
 
 describe("parseTicker", () => {
-  it("maps bitbank fields and timestamp", () => {
+  it("maps bitbank fields and timestamp into numbers", () => {
     const t = parseTicker("btc_jpy", {
       last: "100",
       buy: "99",
@@ -30,9 +30,10 @@ describe("parseTicker", () => {
       timestamp: 1746525600000,
     });
     expect(t.pair).toBe("btc_jpy");
-    expect(t.last).toBe("100");
-    expect(t.bid).toBe("99");
-    expect(t.ask).toBe("101");
+    expect(t.last).toBe(100);
+    expect(t.bid).toBe(99);
+    expect(t.ask).toBe(101);
+    expect(t.vol).toBe(1.23);
     expect(t.ts).toBe(new Date(1746525600000).toISOString());
   });
 
@@ -41,19 +42,25 @@ describe("parseTicker", () => {
     expect(t.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  it("coerces missing/null fields to empty strings without throwing", () => {
+  it("missing/null fields become null without throwing", () => {
     const t = parseTicker("btc_jpy", {});
-    expect(t.last).toBe("");
-    expect(t.bid).toBe("");
-    expect(t.ask).toBe("");
+    expect(t.last).toBeNull();
+    expect(t.bid).toBeNull();
+    expect(t.ask).toBeNull();
     expect(t.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  it("coerces non-string numeric fields to strings", () => {
+  it("coerces non-string numeric fields and treats null/non-numeric timestamp as fallback", () => {
     const t = parseTicker("btc_jpy", { last: 123, buy: null, timestamp: "bad" });
-    expect(t.last).toBe("123");
-    expect(t.bid).toBe("");
+    expect(t.last).toBe(123);
+    expect(t.bid).toBeNull();
     expect(t.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("empty-string fields become null (not parse error)", () => {
+    const t = parseTicker("btc_jpy", { last: "", buy: "  " });
+    expect(t.last).toBeNull();
+    expect(t.bid).toBeNull();
   });
 });
 
@@ -83,9 +90,7 @@ describe("startTickerSocket", () => {
       room_name: "ticker_btc_jpy",
       message: { data: { last: "200", buy: "199", sell: "201", timestamp: 1 } },
     });
-    expect(onTicker).toHaveBeenCalledWith(
-      expect.objectContaining({ pair: "btc_jpy", last: "200" }),
-    );
+    expect(onTicker).toHaveBeenCalledWith(expect.objectContaining({ pair: "btc_jpy", last: 200 }));
   });
 
   it("ignores malformed messages without throwing", () => {

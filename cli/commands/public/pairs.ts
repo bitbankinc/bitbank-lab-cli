@@ -13,6 +13,8 @@ const PairSchema = z.object({
   unit_amount: numStr,
   limit_max_amount: numStr,
   market_max_amount: numStr,
+  price_digits: z.number().int().min(0).max(100),
+  amount_digits: z.number().int().min(0).max(100),
   is_enabled: z.boolean(),
   stop_order: z.boolean(),
   stop_order_and_cancel: z.boolean(),

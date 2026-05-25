@@ -13,6 +13,8 @@ const MOCK_DATA = {
       unit_amount: "0.0001",
       limit_max_amount: "1000",
       market_max_amount: "100",
+      price_digits: 0,
+      amount_digits: 4,
       is_enabled: true,
       stop_order: true,
       stop_order_and_cancel: true,

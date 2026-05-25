@@ -50,16 +50,22 @@ export function startTickerSocket(
   };
 }
 
+function coerceNum(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  const s = String(v);
+  return s.trim() === "" ? null : s;
+}
+
 export function parseTicker(pair: string, data: Record<string, unknown>): TickerData {
   const tsMs = typeof data.timestamp === "number" ? data.timestamp : Date.now();
   return TickerDataSchema.parse({
     ts: new Date(tsMs).toISOString(),
     pair,
-    last: String(data.last ?? ""),
-    bid: String(data.buy ?? ""),
-    ask: String(data.sell ?? ""),
-    high: String(data.high ?? ""),
-    low: String(data.low ?? ""),
-    vol: String(data.vol ?? ""),
+    last: coerceNum(data.last),
+    bid: coerceNum(data.buy),
+    ask: coerceNum(data.sell),
+    high: coerceNum(data.high),
+    low: coerceNum(data.low),
+    vol: coerceNum(data.vol),
   });
 }
