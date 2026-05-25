@@ -37,7 +37,7 @@ export const publicCommands: Record<string, CommandEntry> = {
       pair: str,
       type: str,
       date: str,
-      limit: { type: "string", default: "100" },
+      limit: str,
       from: str,
       to: str,
       "no-cache": { type: "boolean", default: false },
