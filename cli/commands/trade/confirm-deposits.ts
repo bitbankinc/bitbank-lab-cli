@@ -3,6 +3,7 @@ import { type PrivatePostOptions, privatePost } from "../../http-private-post.js
 import { parseResponse } from "../../parse-response.js";
 import type { Result } from "../../types.js";
 import { IntegerStringSchema } from "../../validators.js";
+import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
 
 const ConfirmDepositsResponseSchema = z.object({
@@ -12,20 +13,29 @@ const ConfirmDepositsResponseSchema = z.object({
 
 export type ConfirmDepositsResponse = z.infer<typeof ConfirmDepositsResponseSchema>;
 
-const ConfirmDepositsInputSchema = z.object({
-  id: IntegerStringSchema,
-});
+const ConfirmDepositsInputSchema = z
+  .object({
+    id: IntegerStringSchema,
+    execute: z.boolean().optional(),
+    confirm: z.string().optional(),
+  })
+  .superRefine(refineExecuteConfirm("confirm-deposits"));
 
 export type ConfirmDepositsArgs = {
   id?: string;
   execute?: boolean;
+  confirm?: string;
 };
 
 export async function confirmDeposits(
   args: ConfirmDepositsArgs,
   opts?: PrivatePostOptions,
 ): Promise<Result<ConfirmDepositsResponse | { dryRun: true }>> {
-  const parsed = ConfirmDepositsInputSchema.safeParse({ id: args.id });
+  const parsed = ConfirmDepositsInputSchema.safeParse({
+    id: args.id,
+    execute: args.execute,
+    confirm: args.confirm,
+  });
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => i.message).join("; ");
     return { success: false, error: msg };
@@ -33,7 +43,7 @@ export async function confirmDeposits(
 
   const body = { id: parsed.data.id };
 
-  if (!args.execute) {
+  if (!parsed.data.execute) {
     return dryRunResult({
       command: "confirm-deposits",
       endpoint: "/v1/user/confirm_deposits",

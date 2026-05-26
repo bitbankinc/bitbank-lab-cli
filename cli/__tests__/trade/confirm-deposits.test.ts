@@ -10,9 +10,9 @@ describe("confirm-deposits", () => {
     writeSpy.mockRestore();
   });
 
-  it("calls API with --execute", async () => {
+  it("calls API with --execute and --confirm", async () => {
     const result = await confirmDeposits(
-      { id: "12345", execute: true },
+      { id: "12345", execute: true, confirm: "I-UNDERSTAND-CONFIRM-DEPOSITS" },
       {
         fetch: mockFetchRaw({ success: 1, data: { uuid: "abc", status: "CONFIRMED" } }),
         retries: 0,
@@ -21,6 +21,32 @@ describe("confirm-deposits", () => {
       },
     );
     expect(result.success).toBe(true);
+  });
+
+  it("rejects --execute without --confirm (no API call)", async () => {
+    const fetchSpy = vi.fn(
+      async () => new Response('{"success":1,"data":{"uuid":"x","status":"ok"}}'),
+    );
+    const result = await confirmDeposits(
+      { id: "12345", execute: true },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CONFIRM-DEPOSITS");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects --execute with wrong --confirm phrase", async () => {
+    const fetchSpy = vi.fn(
+      async () => new Response('{"success":1,"data":{"uuid":"x","status":"ok"}}'),
+    );
+    const result = await confirmDeposits(
+      { id: "12345", execute: true, confirm: "I-UNDERSTAND-CONFIRM-DEPOSITS-ALL" },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CONFIRM-DEPOSITS");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("requires id", async () => {

@@ -11,9 +11,14 @@ describe("cancel-orders", () => {
     writeSpy.mockRestore();
   });
 
-  it("calls API with --execute", async () => {
+  it("calls API with --execute and --confirm", async () => {
     const result = await cancelOrders(
-      { pair: "btc_jpy", orderIds: "1,2", execute: true },
+      {
+        pair: "btc_jpy",
+        orderIds: "1,2",
+        execute: true,
+        confirm: "I-UNDERSTAND-CANCEL-ORDERS",
+      },
       {
         fetch: mockFetchRaw({
           success: 1,
@@ -44,6 +49,33 @@ describe("cancel-orders", () => {
       },
     );
     expect(result.success).toBe(true);
+  });
+
+  it("rejects --execute without --confirm (no API call)", async () => {
+    const fetchSpy = vi.fn(async () => new Response('{"success":1,"data":{"orders":[]}}'));
+    const result = await cancelOrders(
+      { pair: "btc_jpy", orderIds: "1,2", execute: true },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CANCEL-ORDERS");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects --execute with wrong --confirm phrase", async () => {
+    const fetchSpy = vi.fn(async () => new Response('{"success":1,"data":{"orders":[]}}'));
+    const result = await cancelOrders(
+      {
+        pair: "btc_jpy",
+        orderIds: "1,2",
+        execute: true,
+        confirm: "I-UNDERSTAND-CANCEL-ORDER",
+      },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CANCEL-ORDERS");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("rejects more than 30 order IDs", async () => {

@@ -39,7 +39,25 @@ describe("create-order", () => {
     writeSpy.mockRestore();
   });
 
-  it("calls API when --execute is set", async () => {
+  it("calls API when --execute and --confirm are set", async () => {
+    const result = await createOrder(
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "limit",
+        price: "5000000",
+        amount: "0.001",
+        execute: true,
+        confirm: "I-UNDERSTAND-CREATE-ORDER",
+      },
+      { fetch: mockFetchRaw(VALID_RESPONSE), retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) expect((result.data as Record<string, unknown>).order_id).toBe(123);
+  });
+
+  it("rejects --execute without --confirm (no API call)", async () => {
+    const fetchSpy = vi.fn(mockFetchRaw(VALID_RESPONSE));
     const result = await createOrder(
       {
         pair: "btc_jpy",
@@ -49,10 +67,44 @@ describe("create-order", () => {
         amount: "0.001",
         execute: true,
       },
-      { fetch: mockFetchRaw(VALID_RESPONSE), retries: 0, credentials: TEST_CREDS, nonce: "1" },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
-    expect(result.success).toBe(true);
-    if (result.success) expect((result.data as Record<string, unknown>).order_id).toBe(123);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CREATE-ORDER");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects --execute with wrong --confirm phrase (no API call)", async () => {
+    const fetchSpy = vi.fn(mockFetchRaw(VALID_RESPONSE));
+    const result = await createOrder(
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "limit",
+        price: "5000000",
+        amount: "0.001",
+        execute: true,
+        confirm: "i-understand-create-order",
+      },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CREATE-ORDER");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("dry-run output includes the confirm phrase requirement", async () => {
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await createOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+    });
+    const output = writeSpy.mock.calls.map((c) => c[0]).join("");
+    expect(output).toContain("--confirm=I-UNDERSTAND-CREATE-ORDER");
+    writeSpy.mockRestore();
   });
 
   it("validates price required for limit order", async () => {
@@ -198,6 +250,7 @@ describe("create-order", () => {
         triggerPrice: "11000000",
         amount: "0.001",
         execute: true,
+        confirm: "I-UNDERSTAND-CREATE-ORDER",
       },
       {
         fetch: mockFetchRaw(stopMarketResponse),

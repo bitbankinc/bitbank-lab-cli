@@ -2,6 +2,7 @@ import { z } from "zod";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { Result } from "../../types.js";
+import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
 
 const ConfirmDepositsAllResponseSchema = z.object({
@@ -10,15 +11,32 @@ const ConfirmDepositsAllResponseSchema = z.object({
 
 export type ConfirmDepositsAllResponse = z.infer<typeof ConfirmDepositsAllResponseSchema>;
 
+const ConfirmDepositsAllInputSchema = z
+  .object({
+    execute: z.boolean().optional(),
+    confirm: z.string().optional(),
+  })
+  .superRefine(refineExecuteConfirm("confirm-deposits-all"));
+
 export type ConfirmDepositsAllArgs = {
   execute?: boolean;
+  confirm?: string;
 };
 
 export async function confirmDepositsAll(
   args: ConfirmDepositsAllArgs,
   opts?: PrivatePostOptions,
 ): Promise<Result<ConfirmDepositsAllResponse | { dryRun: true }>> {
-  if (!args.execute) {
+  const parsed = ConfirmDepositsAllInputSchema.safeParse({
+    execute: args.execute,
+    confirm: args.confirm,
+  });
+  if (!parsed.success) {
+    const msg = parsed.error.issues.map((i) => i.message).join("; ");
+    return { success: false, error: msg };
+  }
+
+  if (!parsed.data.execute) {
     return dryRunResult({
       command: "confirm-deposits-all",
       endpoint: "/v1/user/confirm_deposits_all",

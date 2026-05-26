@@ -12,9 +12,14 @@ describe("cancel-order", () => {
     writeSpy.mockRestore();
   });
 
-  it("calls API with --execute", async () => {
+  it("calls API with --execute and --confirm", async () => {
     const result = await cancelOrder(
-      { pair: "btc_jpy", orderId: "123", execute: true },
+      {
+        pair: "btc_jpy",
+        orderId: "123",
+        execute: true,
+        confirm: "I-UNDERSTAND-CANCEL-ORDER",
+      },
       {
         fetch: mockFetchRaw({
           success: 1,
@@ -33,6 +38,28 @@ describe("cancel-order", () => {
       },
     );
     expect(result.success).toBe(true);
+  });
+
+  it("rejects --execute without --confirm (no API call)", async () => {
+    const fetchSpy = vi.fn(async () => new Response('{"success":1,"data":{}}'));
+    const result = await cancelOrder(
+      { pair: "btc_jpy", orderId: "123", execute: true },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CANCEL-ORDER");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects --execute with wrong --confirm phrase", async () => {
+    const fetchSpy = vi.fn(async () => new Response('{"success":1,"data":{}}'));
+    const result = await cancelOrder(
+      { pair: "btc_jpy", orderId: "123", execute: true, confirm: "wrong" },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("I-UNDERSTAND-CANCEL-ORDER");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("requires pair", async () => {

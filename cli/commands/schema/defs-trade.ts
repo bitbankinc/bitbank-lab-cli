@@ -2,6 +2,7 @@ import { type SchemaDef, p } from "./types.js";
 
 const pair = p("string", "Trading pair (e.g. btc_jpy)");
 const execute = p("boolean", "Execute for real (default: dry-run)");
+const confirm = p("string", "Confirmation phrase (required with --execute, see trading-safety.md)");
 const n = { type: "number" };
 const s = { type: "string" };
 const nn = { type: ["number", "null"] };
@@ -19,6 +20,7 @@ export const tradeSchemas: Record<string, SchemaDef> = {
       "trigger-price": p("string", "Trigger price (required for stop/stop_limit)"),
       "post-only": p("boolean", "Post-only flag"),
       execute,
+      confirm,
     },
     output: {
       type: "object",
@@ -39,12 +41,12 @@ export const tradeSchemas: Record<string, SchemaDef> = {
   },
   "cancel-order": {
     category: "trade",
-    params: { pair, "order-id": p("string", "Order ID to cancel"), execute },
+    params: { pair, "order-id": p("string", "Order ID to cancel"), execute, confirm },
     output: { type: "object", properties: { order_id: n, pair: s, side: s, type: s, status: s } },
   },
   "cancel-orders": {
     category: "trade",
-    params: { pair, "order-ids": p("string", "Comma-separated order IDs"), execute },
+    params: { pair, "order-ids": p("string", "Comma-separated order IDs"), execute, confirm },
     output: {
       type: "array",
       items: { type: "object", properties: { order_id: n, pair: s, status: s } },
@@ -52,12 +54,12 @@ export const tradeSchemas: Record<string, SchemaDef> = {
   },
   "confirm-deposits": {
     category: "trade",
-    params: { id: p("string", "Deposit ID to confirm"), execute },
+    params: { id: p("string", "Deposit ID to confirm"), execute, confirm },
     output: { type: "object", properties: { id: n, status: s } },
   },
   "confirm-deposits-all": {
     category: "trade",
-    params: { execute },
+    params: { execute, confirm },
     output: { type: "object", properties: { status: s } },
   },
 };

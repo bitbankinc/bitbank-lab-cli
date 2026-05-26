@@ -104,7 +104,7 @@ bitbank profile remove sub --confirm --format=json --machine
 
 ```bash
 bitbank --profile=sub assets --format=json --machine
-bitbank --profile=sub --execute trade create-order ...
+bitbank --profile=sub trade create-order ... --execute --confirm=I-UNDERSTAND-CREATE-ORDER
 ```
 
 #### `--machine` を付けない例外: `profile add`

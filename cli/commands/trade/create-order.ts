@@ -4,6 +4,7 @@ import { parseResponse } from "../../parse-response.js";
 import type { Result } from "../../types.js";
 import { PairSchema, PositiveDecimalSchema } from "../../validators.js";
 import { OrderSchema } from "../shared-schemas.js";
+import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
 
 const SideEnum = z.enum(["buy", "sell"]);
@@ -18,6 +19,8 @@ const CreateOrderInputSchema = z
     amount: PositiveDecimalSchema,
     triggerPrice: PositiveDecimalSchema.optional(),
     postOnly: z.boolean().optional(),
+    execute: z.boolean().optional(),
+    confirm: z.string().optional(),
   })
   .superRefine((val, ctx) => {
     if ((val.type === "limit" || val.type === "stop_limit") && !val.price) {
@@ -26,6 +29,7 @@ const CreateOrderInputSchema = z
     if ((val.type === "stop" || val.type === "stop_limit") && !val.triggerPrice) {
       ctx.addIssue({ code: "custom", message: `trigger-price is required for type=${val.type}` });
     }
+    refineExecuteConfirm("create-order")(val, ctx);
   });
 
 export type OrderResponse = z.infer<typeof OrderSchema>;
@@ -39,6 +43,7 @@ export type CreateOrderArgs = {
   triggerPrice?: string;
   postOnly?: boolean;
   execute?: boolean;
+  confirm?: string;
 };
 
 export async function createOrder(
@@ -53,6 +58,8 @@ export async function createOrder(
     amount: args.amount,
     triggerPrice: args.triggerPrice,
     postOnly: args.postOnly,
+    execute: args.execute,
+    confirm: args.confirm,
   });
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => i.message).join("; ");
@@ -69,7 +76,7 @@ export async function createOrder(
   if (parsed.data.triggerPrice) body.trigger_price = parsed.data.triggerPrice;
   if (parsed.data.postOnly) body.post_only = true;
 
-  if (!args.execute) {
+  if (!parsed.data.execute) {
     return dryRunResult({
       command: "create-order",
       endpoint: "/v1/user/spot/order",

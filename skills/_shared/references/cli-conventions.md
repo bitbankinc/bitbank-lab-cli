@@ -118,8 +118,9 @@ bitbank assets --format=json --machine
 ## trade コマンド
 
 - 資金影響系（`trade create-order` 等）はドライランがデフォルト。skill から
-  実発注をしたい場合は `--execute` を明示する
-- 詳細は `.claude/rules/trading-safety.md` を参照
+  実発注をしたい場合は `--execute` に加えてコマンドごとの固定フレーズを
+  `--confirm=<phrase>` で渡す二段確認が必要（例: `--confirm=I-UNDERSTAND-CREATE-ORDER`）
+- 詳細とフレーズ一覧は `.claude/rules/trading-safety.md` を参照
 
 ## paper コマンド
 

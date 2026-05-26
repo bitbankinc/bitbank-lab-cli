@@ -37,6 +37,7 @@ describe("trade log integration", () => {
         price: "5000000",
         amount: "0.01",
         execute: true,
+        confirm: "I-UNDERSTAND-CREATE-ORDER",
       },
       {
         fetch: mockFetchRaw({
@@ -112,6 +113,7 @@ describe("trade log integration", () => {
         price: "5000000",
         amount: "0.01",
         execute: true,
+        confirm: "I-UNDERSTAND-CREATE-ORDER",
       },
       {
         fetch: mockFetchRaw({ success: 0, data: { code: 10001 } }, 400),

@@ -10,12 +10,40 @@
 
 - `--execute` フラグなしでは **API を叩かない**
 - `cli/commands/trade/dry-run.ts` でドライラン出力を生成
-- ドライラン時は「これはドライランです。実際に実行するには --execute を付けてください」と表示
+- ドライラン時は「実行するには --execute と --confirm=<phrase> を付けてください」と表示
 
 ## --execute フラグ
 
 - 付与時のみ実際の API リクエストを送信
-- コマンド実装では必ず `options.execute` を確認してからリクエスト送信
+- ただし `--execute` 単独では POST に到達しない。下記 `--confirm` も必須
+- コマンド実装では Zod スキーマで `execute` / `confirm` を一括検証してから送信
+
+## --confirm=<phrase> フラグ（二段確認）
+
+- `--execute` と同時に固定フレーズを渡したときだけ実 POST に到達する
+- LLM / スクリプト / 誤コピーから confirm なしで実注文・キャンセル・入金確認が
+  発火するリスクを下げるための二段ロック
+- フレーズは `cli/commands/trade/confirm-guard.ts` の `CONFIRM_PHRASES` が
+  単一ソース。コマンドハンドラで生 if 比較せず、`refineExecuteConfirm()` を
+  各 Zod スキーマの `.superRefine()` から呼ぶ
+- フレーズは secret ではなく flag 値（shell 履歴に残るのは許容）
+
+| コマンド | フレーズ |
+|---|---|
+| `trade create-order` | `I-UNDERSTAND-CREATE-ORDER` |
+| `trade cancel-order` | `I-UNDERSTAND-CANCEL-ORDER` |
+| `trade cancel-orders` | `I-UNDERSTAND-CANCEL-ORDERS` |
+| `trade confirm-deposits` | `I-UNDERSTAND-CONFIRM-DEPOSITS` |
+| `trade confirm-deposits-all` | `I-UNDERSTAND-CONFIRM-DEPOSITS-ALL` |
+
+挙動マトリクス:
+
+| `--execute` | `--confirm=<correct>` | 結果 |
+|:-:|:-:|---|
+| なし | -（任意） | ドライラン |
+| あり | なし | error（API を叩かない） |
+| あり | 不一致 | error（API を叩かない） |
+| あり | 一致 | 実 POST |
 
 ## POST のリトライ無効化（冪等性の保護）
 
@@ -34,4 +62,9 @@
 1. `dry-run.ts` のドライラン表示を実装
 2. `--execute` なしでドライランになることをテストで確認
 3. 資金移動を伴う場合は `--confirm` ガードも追加
-4. テストでは実 API を叩かない（モック使用）
+   3.5. `cli/commands/trade/confirm-guard.ts` の `CONFIRM_PHRASES` に
+        コマンドごとの固定フレーズ（例: `I-UNDERSTAND-<COMMAND-NAME>`）を追加し、
+        Zod スキーマの `.superRefine()` から `refineExecuteConfirm(command)`
+        を呼ぶ
+4. テストでは実 API を叩かない（モック使用）。`--execute` 単独 / `--confirm`
+   不一致でも fetch が呼ばれないことを mock で検証する

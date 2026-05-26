@@ -58,11 +58,11 @@ _bitbank() {
     opts="$common_opts"
     if [[ "$cmd" == "trade" ]]; then
       case "$sub" in
-        create-order) opts="$opts --pair --side --type --price --amount --trigger-price --post-only --execute" ;;
-        cancel-order) opts="$opts --pair --order-id --execute" ;;
-        cancel-orders) opts="$opts --pair --order-ids --execute" ;;
-        confirm-deposits) opts="$opts --id --execute" ;;
-        confirm-deposits-all) opts="$opts --execute" ;;
+        create-order) opts="$opts --pair --side --type --price --amount --trigger-price --post-only --execute --confirm" ;;
+        cancel-order) opts="$opts --pair --order-id --execute --confirm" ;;
+        cancel-orders) opts="$opts --pair --order-ids --execute --confirm" ;;
+        confirm-deposits) opts="$opts --id --execute --confirm" ;;
+        confirm-deposits-all) opts="$opts --execute --confirm" ;;
       esac
     elif [[ "$cmd" == "paper" ]]; then
       case "$sub" in
@@ -180,11 +180,11 @@ _bitbank() {
     opts="$common_opts"
     if [[ "$cmd" == "trade" ]]; then
       case "$sub" in
-      create-order) opts="$opts --pair --side --type --price --amount --trigger-price --post-only --execute" ;;
-      cancel-order) opts="$opts --pair --order-id --execute" ;;
-      cancel-orders) opts="$opts --pair --order-ids --execute" ;;
-      confirm-deposits) opts="$opts --id --execute" ;;
-      confirm-deposits-all) opts="$opts --execute" ;;
+      create-order) opts="$opts --pair --side --type --price --amount --trigger-price --post-only --execute --confirm" ;;
+      cancel-order) opts="$opts --pair --order-id --execute --confirm" ;;
+      cancel-orders) opts="$opts --pair --order-ids --execute --confirm" ;;
+      confirm-deposits) opts="$opts --id --execute --confirm" ;;
+      confirm-deposits-all) opts="$opts --execute --confirm" ;;
       esac
     elif [[ "$cmd" == "paper" ]]; then
       case "$sub" in
