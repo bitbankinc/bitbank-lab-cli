@@ -8,8 +8,10 @@ const MOCK_DATA = {
       name: "btc_jpy",
       base_asset: "btc",
       quote_asset: "jpy",
-      maker_fee_rate_base_quote: "-0.02",
-      taker_fee_rate_base_quote: "0.12",
+      maker_fee_rate_base: "0",
+      taker_fee_rate_base: "0",
+      maker_fee_rate_quote: "0",
+      taker_fee_rate_quote: "0.0012",
       unit_amount: "0.0001",
       limit_max_amount: "1000",
       market_max_amount: "100",
@@ -30,6 +32,16 @@ describe("pairs", () => {
       expect(result.data[0].name).toBe("btc_jpy");
       expect(result.data[0].is_enabled).toBe(true);
     }
+  });
+
+  it("requests api.bitbank.cc (not public.bitbank.cc)", async () => {
+    let capturedUrl = "";
+    const captureFetch: typeof globalThis.fetch = async (input) => {
+      capturedUrl = input.toString();
+      return new Response(JSON.stringify({ success: 1, data: MOCK_DATA }));
+    };
+    await pairs({ fetch: captureFetch, retries: 0 });
+    expect(capturedUrl).toBe("https://api.bitbank.cc/v1/spot/pairs");
   });
 
   it("propagates API error", async () => {
