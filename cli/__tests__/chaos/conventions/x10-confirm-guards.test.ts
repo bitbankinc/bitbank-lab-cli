@@ -42,12 +42,13 @@ describe("Chaos X-10b: trade commands enforce --execute + --confirm via Zod", ()
   it("every trade command applies refineExecuteConfirm(<command>) (not just imports it)", () => {
     const files = tradeCommandFiles();
     expect(files.length, "expected to discover trade command files").toBeGreaterThan(0);
-    // Match an actual call with a string-literal argument, e.g.
+    // Match an actual call with a string-literal argument, accepting both quote styles, e.g.
     //   refineExecuteConfirm("create-order")
+    //   refineExecuteConfirm('create-order')
     //   .superRefine(refineExecuteConfirm("cancel-order"))
     // This excludes bare imports / comments that happen to mention the symbol.
     const missing = files.filter((f) => {
-      const hit = execSync(`grep -E 'refineExecuteConfirm\\("[a-z-]+"\\)' ${f} || true`, {
+      const hit = execSync(`grep -E "refineExecuteConfirm\\([\\"'][a-z-]+[\\"']\\)" ${f} || true`, {
         encoding: "utf-8",
       }).trim();
       return hit === "";
