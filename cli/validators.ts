@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EXIT } from "./exit-codes.js";
 import type { Result } from "./types.js";
 
 function msg(field: string, example: string): string {
@@ -66,10 +67,14 @@ export function validatePair(
   pair: string | undefined,
   missingMessage: string = MSG_PAIR,
 ): Result<string> {
-  if (!pair) return { success: false, error: missingMessage };
+  if (!pair) return { success: false, error: missingMessage, exitCode: EXIT.PARAM };
   const parsed = PairSchema.safeParse(pair);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues.map((i) => i.message).join("; ") };
+    return {
+      success: false,
+      error: parsed.error.issues.map((i) => i.message).join("; "),
+      exitCode: EXIT.PARAM,
+    };
   }
   return { success: true, data: parsed.data };
 }

@@ -15,15 +15,17 @@ describe("Chaos R-07: global flags mixed with subcommand flags", () => {
   it("--format=json before subcommand is parsed (ticker no pair → error)", async () => {
     // ticker without pair returns validation error — no network call
     const { stderr, exitCode } = await run("--format=json", "ticker");
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(4);
     expect(stderr).toContain("pair is required");
   });
 
   it("--machine flag wraps subcommand error as JSON", async () => {
-    const { stdout } = await run("--machine", "ticker");
+    const { stdout, exitCode } = await run("--machine", "ticker");
+    expect(exitCode).toBe(4);
     const parsed = JSON.parse(stdout);
     expect(parsed.success).toBe(false);
     expect(parsed.error).toContain("pair is required");
+    expect(parsed.exitCode).toBe(4);
   });
 
   it("--help after global flags still shows help", async () => {
@@ -35,7 +37,7 @@ describe("Chaos R-07: global flags mixed with subcommand flags", () => {
   it("--format=table with subcommand error does not crash", async () => {
     // depth without pair → validation error, table format doesn't matter
     const { stderr, exitCode } = await run("--format=table", "depth");
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(4);
     expect(stderr).toContain("pair is required");
   });
 });

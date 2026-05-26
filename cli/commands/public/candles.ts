@@ -1,6 +1,7 @@
 // 100行超: pair/type/date/range の入力検証 + 単発取得・自動マージ・範囲取得のディスパッチを 1 ファイルに集約
 import { YEARLY_TYPES, rowsPerSegment, shiftDate, todayDate } from "../../date-utils.js";
 import { validateDateFormat } from "../../date-validators.js";
+import { EXIT } from "../../exit-codes.js";
 import type { HttpOptions } from "../../http.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
@@ -19,9 +20,19 @@ export { shiftDate } from "../../date-utils.js";
 
 const BATCH_SIZE = 10; // candles-range と同じ並列数（throttle.ts の lowWaterMark 配慮）
 const HARD_MAX_SEGMENTS = 100; // --limit が極端に大きい場合の暴走防止
-function validateType(type: string | undefined): string | null {
-  if (!type || !VALID_TYPES.includes(type as (typeof VALID_TYPES)[number])) return null;
-  return type;
+function validateType(type: string | undefined): Result<string> {
+  const valid = VALID_TYPES.join(", ");
+  if (type === undefined || type === "") {
+    return { success: false, error: `--type is required. Valid: ${valid}`, exitCode: EXIT.PARAM };
+  }
+  if (!VALID_TYPES.includes(type as (typeof VALID_TYPES)[number])) {
+    return {
+      success: false,
+      error: `Invalid --type "${type}". Valid: ${valid}`,
+      exitCode: EXIT.PARAM,
+    };
+  }
+  return { success: true, data: type };
 }
 
 type CandlesArgs = {
@@ -119,16 +130,23 @@ export async function candles(args: CandlesArgs, opts?: HttpOptions): Promise<Re
   if (!pv.success) return pv;
   const pair = pv.data;
   const { type, date, limit, from, to, noCache } = args;
-  const validType = validateType(type);
-  if (!validType) {
-    return { success: false, error: `--type is required. Valid: ${VALID_TYPES.join(", ")}` };
-  }
+  const tv = validateType(type);
+  if (!tv.success) return tv;
+  const validType = tv.data;
 
   if ((from || to) && date) {
-    return { success: false, error: "--date and --from/--to cannot be used together" };
+    return {
+      success: false,
+      error: "--date and --from/--to cannot be used together",
+      exitCode: EXIT.PARAM,
+    };
   }
   if ((from && !to) || (!from && to)) {
-    return { success: false, error: "--from and --to must both be specified" };
+    return {
+      success: false,
+      error: "--from and --to must both be specified",
+      exitCode: EXIT.PARAM,
+    };
   }
 
   if (from && to) {
@@ -136,7 +154,13 @@ export async function candles(args: CandlesArgs, opts?: HttpOptions): Promise<Re
     if (!fv.success) return fv;
     const tov = validateDateFormat(to, validType, "--to");
     if (!tov.success) return tov;
-    if (from > to) return { success: false, error: "--from must be before or equal to --to" };
+    if (from > to) {
+      return {
+        success: false,
+        error: "--from must be before or equal to --to",
+        exitCode: EXIT.PARAM,
+      };
+    }
     return candlesRange(pair, validType, from, to, opts, noCache);
   }
 
