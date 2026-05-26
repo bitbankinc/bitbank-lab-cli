@@ -45,6 +45,8 @@ export async function startPrivateStream(
   pubnub.setToken(sub.data.pubnub_token);
 
   pubnub.addListener({
+    // private は event_type が多種で schema 化のスコープが大きいため、現状 raw のまま流す。
+    // public stream は channel-parsers/ で数値正規化済み（bitbank-api-formats.md 参照）。
     message: (event) => {
       const data = event.message as Record<string, unknown>;
       const eventType = String(data.event_type ?? event.channel);

@@ -1,5 +1,6 @@
 import { type Socket, io } from "socket.io-client";
 import type { Result } from "../../types.js";
+import { parseChannelData } from "./channel-parsers/index.js";
 import { type StreamFormat, writeStreamMessage } from "./format.js";
 
 // bitbank 公開 WebSocket エンドポイント
@@ -31,9 +32,15 @@ export function startPublicStream(opts: PublicStreamOptions): Result<{ stop: () 
     process.stderr.write(`Connected. Subscribed: ${resolved.data.join(", ")}\n`);
   });
 
+  const warned = new Set<string>();
   socket.on("message", (msg: { room_name: string; message: { data: unknown } }) => {
+    const parsed = parseChannelData(msg.room_name, msg.message.data);
+    if (parsed.warning && !warned.has(msg.room_name)) {
+      warned.add(msg.room_name);
+      process.stderr.write(`${parsed.warning}\n`);
+    }
     writeStreamMessage(
-      { channel: msg.room_name, timestamp: Date.now(), data: msg.message.data },
+      { channel: msg.room_name, timestamp: Date.now(), data: parsed.data },
       opts.format,
     );
   });

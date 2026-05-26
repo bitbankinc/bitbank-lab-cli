@@ -115,6 +115,20 @@ JSON 出力で `"price": "5000000"` のような文字列はもう出ない（`"
 null は null のまま保持される（`nullableNumStr`）。空文字や `NaN` / `Infinity`
 が来た場合はパースエラーとして弾かれる。
 
+#### WebSocket ストリームでの数値正規化
+
+`bitbank stream <pair>`（public）も REST と同じ正規化を通る。`cli/commands/stream/channel-parsers/`
+配下の channel schema で `ticker_<pair>` / `transactions_<pair>` / `depth_diff_<pair>` /
+`depth_whole_<pair>` / `circuit_break_info_<pair>` の数値フィールドを number に変換する。
+`bitbank watch ticker <pair>` も同様に正規化済み（`cli/watch/format.ts` の `TickerDataSchema`）。
+
+未登録 channel や schema が合わない payload は **raw のまま流す + stderr に 1 回 warning** という
+fallback 設計。Skill 側は stdout の JSONL を素直に `JSON.parse` してよく、数値は number 型として扱える。
+
+なお、`bitbank stream --private` は PubNub 経由で多種類の event_type が流れる構造上、
+**現時点では raw のまま**になっている。private イベントを Skill から消費する場合は
+`Number(...)` / `parseFloat(...)` を明示的に挟む必要がある。
+
 ## エラーコード
 
 エラーコードの一覧は公式の [bitbank-api-docs/errors.md](https://github.com/bitbankinc/bitbank-api-docs/blob/master/errors.md) を参照（CLI 側のマッピングは `cli/error-codes.ts`）。
