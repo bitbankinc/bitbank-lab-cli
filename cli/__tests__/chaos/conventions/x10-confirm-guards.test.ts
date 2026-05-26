@@ -46,11 +46,13 @@ describe("Chaos X-10b: trade commands enforce --execute + --confirm via Zod", ()
     //   refineExecuteConfirm("create-order")
     //   refineExecuteConfirm('create-order')
     //   .superRefine(refineExecuteConfirm("cancel-order"))
-    // This excludes bare imports / comments that happen to mention the symbol.
+    // This excludes bare imports / single-line comments / block-comment body
+    // (`// ...`, `/* ...`, ` * ...`) that happen to mention the symbol.
     const missing = files.filter((f) => {
-      const hit = execSync(`grep -E "refineExecuteConfirm\\([\\"'][a-z-]+[\\"']\\)" ${f} || true`, {
-        encoding: "utf-8",
-      }).trim();
+      const hit = execSync(
+        `grep -E "refineExecuteConfirm\\([\\"'][a-z-]+[\\"']\\)" ${f} | grep -Ev "^\\s*(//|/\\*|\\*)" || true`,
+        { encoding: "utf-8" },
+      ).trim();
       return hit === "";
     });
     expect(
