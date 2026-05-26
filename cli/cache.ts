@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve, sep } from "node:path";
-import { yearJst, ymdJst } from "./date-utils.js";
+import { yearUtc, ymdUtc } from "./date-utils.js";
 
 const CACHE_BASE = join(homedir(), ".bitbank-cache");
 const memCache = new Map<string, unknown>();
@@ -96,11 +96,11 @@ export function clearMemCache(): void {
   memCache.clear();
 }
 
-/** 期間が完了済み（不変データ）ならキャッシュ対象。JST 基準で比較する */
+/** 期間が完了済み（不変データ）ならキャッシュ対象。UTC 基準で比較する */
 export function isCompletePeriod(date: string): boolean {
   const now = new Date();
   if (date.length === 4) {
-    return Number(date) < Number(yearJst(now.getTime()));
+    return Number(date) < Number(yearUtc(now.getTime()));
   }
-  return date < ymdJst(now.getTime());
+  return date < ymdUtc(now.getTime());
 }

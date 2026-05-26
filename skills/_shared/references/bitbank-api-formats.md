@@ -37,6 +37,22 @@ bitbank 公開 API ドキュメント（`rest-api.md` 等）上の整理:
 `YYYYMMDD` を渡す（または逆）と CLI が reject するので、Skill から組み立てる
 際は時間軸と日付形式の対応を必ず確認する。
 
+### 日付キーのタイムゾーン（UTC 基準）
+
+**重要:** bitbank の candlestick endpoint で渡す `YYYYMMDD` / `YYYY` は **UTC 基準**。
+公式 docs は timezone を明記していないが、実 API で確認済み:
+
+- `GET /btc_jpy/candlestick/1hour/20260101` の先頭 timestamp = `1767225600000`
+  = `2026-01-01T00:00:00Z`（UTC 00:00）
+- `1day/2026` の 1 本目も UTC 2026-01-01 00:00 起点
+
+ローソク足の `timestamp`（ミリ秒 UNIX）もそのまま UTC で、`1day` 足は UTC 月初/年初に揃う。
+**JST は表示・説明用にのみ使う**こと（例: 「UTC 14:00 / JST 23:00」のような併記）。
+API キーや境界判定には JST を持ち込まない。
+
+実装は `cli/date-utils.ts` の `ymdUtc` / `yearUtc` / `todayDate` / `nextBoundaryMs`
+を経由する。`cache.ts` の `isCompletePeriod` も UTC 基準で「今日」と比較する。
+
 ### レスポンス形式
 
 ```json

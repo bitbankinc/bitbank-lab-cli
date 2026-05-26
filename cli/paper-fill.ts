@@ -3,7 +3,7 @@
 // 移す。テスト時は fetchCandles / nowMs を注入し、本番用デフォルトは
 // public candles API を叩く。
 import { type Candle, fetchOne } from "./commands/public/candles-fetch.js";
-import { ymdJst } from "./date-utils.js";
+import { ymdUtc } from "./date-utils.js";
 import type { HttpOptions } from "./http.js";
 import {
   DEFAULT_TAKER_FEE_RATE,
@@ -152,9 +152,11 @@ function applyFill(
 
 function defaultFetchCandles(httpOpts?: HttpOptions): FetchCandles {
   return async (pair, fromMs, toMs) => {
-    // bitbank の 1min candle は JST 基準の YYYYMMDD で配信されるため
-    // ホスト TZ ではなく JST で日付セグメントを組み立てる。
-    const dates = new Set<string>([ymdJst(fromMs), ymdJst(toMs)]);
+    // bitbank の 1min candle は UTC 基準の YYYYMMDD で配信されるため
+    // ホスト TZ ではなく UTC で日付セグメントを組み立てる。
+    // fromMs〜toMs は呼び出し側で 24h 以内に cap されているので
+    // UTC 日付は最大 2 つ（同日 or 隣接日）にしかならない。
+    const dates = new Set<string>([ymdUtc(fromMs), ymdUtc(toMs)]);
     const all: Candle[] = [];
     for (const d of [...dates].sort()) {
       const r = await fetchOne(pair, "1min", d, httpOpts, true);

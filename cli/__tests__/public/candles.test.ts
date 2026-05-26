@@ -180,26 +180,34 @@ describe("nextBoundaryMs", () => {
     expect(nextBoundaryMs("1week", 0)).toBe(7 * 86_400_000);
   });
 
-  it("returns JST first-of-next-month for 1month", () => {
-    // 2026-01-01 00:00 JST = Date.UTC(2026, 0, 1) - 9h
-    const jan1 = Date.UTC(2026, 0, 1) - 32_400_000;
-    const feb1 = Date.UTC(2026, 1, 1) - 32_400_000;
+  it("returns UTC first-of-next-month for 1month", () => {
+    const jan1 = Date.UTC(2026, 0, 1);
+    const feb1 = Date.UTC(2026, 1, 1);
     expect(nextBoundaryMs("1month", jan1)).toBe(feb1);
   });
 
   it("handles December → January year rollover for 1month", () => {
-    const dec1_2026 = Date.UTC(2026, 11, 1) - 32_400_000;
-    const jan1_2027 = Date.UTC(2027, 0, 1) - 32_400_000;
+    const dec1_2026 = Date.UTC(2026, 11, 1);
+    const jan1_2027 = Date.UTC(2027, 0, 1);
     expect(nextBoundaryMs("1month", dec1_2026)).toBe(jan1_2027);
   });
 
   it("handles February in leap and non-leap years for 1month", () => {
-    const feb1_2024 = Date.UTC(2024, 1, 1) - 32_400_000;
-    const mar1_2024 = Date.UTC(2024, 2, 1) - 32_400_000;
+    const feb1_2024 = Date.UTC(2024, 1, 1);
+    const mar1_2024 = Date.UTC(2024, 2, 1);
     expect(nextBoundaryMs("1month", feb1_2024)).toBe(mar1_2024);
-    const feb1_2025 = Date.UTC(2025, 1, 1) - 32_400_000;
-    const mar1_2025 = Date.UTC(2025, 2, 1) - 32_400_000;
+    const feb1_2025 = Date.UTC(2025, 1, 1);
+    const mar1_2025 = Date.UTC(2025, 2, 1);
     expect(nextBoundaryMs("1month", feb1_2025)).toBe(mar1_2025);
+  });
+
+  // 実 API 観測値: GET /btc_jpy/candlestick/1day/2026 の先頭 timestamp
+  // = 1767225600000 = 2026-01-01T00:00:00Z（UTC 00:00 起点であることの回帰確認）
+  it("matches real-API observed UTC 00:00 anchor for 1day/1month", () => {
+    const jan1Utc = 1767225600000;
+    expect(jan1Utc).toBe(Date.UTC(2026, 0, 1));
+    expect(nextBoundaryMs("1day", jan1Utc)).toBe(jan1Utc + 86_400_000);
+    expect(nextBoundaryMs("1month", jan1Utc)).toBe(Date.UTC(2026, 1, 1));
   });
 
   it("returns 0 for unknown type", () => {
@@ -210,15 +218,15 @@ describe("nextBoundaryMs", () => {
 describe("candles meta.lastIsIncomplete", () => {
   it("sets lastIsIncomplete: true when --date today and last candle period is current", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-05-25T03:30:00Z")); // 12:30 JST
+    vi.setSystemTime(new Date("2026-05-25T03:30:00Z")); // UTC 03:30
     try {
       const mock = {
         candlestick: [
           {
             type: "1hour",
             ohlcv: [
-              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 25, 2, 0)], // 11:00 JST → done
-              ["105", "115", "95", "110", "60", Date.UTC(2026, 4, 25, 3, 0)], // 12:00 JST → incomplete
+              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 25, 2, 0)], // UTC 02:00 → done
+              ["105", "115", "95", "110", "60", Date.UTC(2026, 4, 25, 3, 0)], // UTC 03:00 → incomplete
             ],
           },
         ],
@@ -299,7 +307,7 @@ describe("candles meta.lastIsIncomplete", () => {
           {
             type: "1min",
             ohlcv: [
-              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 25, 3, 30)], // 12:30 JST
+              ["100", "110", "90", "105", "50", Date.UTC(2026, 4, 25, 3, 30)], // UTC 03:30
             ],
           },
         ],
@@ -315,16 +323,16 @@ describe("candles meta.lastIsIncomplete", () => {
     }
   });
 
-  it("works for 1day boundary (incomplete when within today's JST day)", async () => {
+  it("works for 1day boundary (incomplete when within today's UTC day)", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-05-25T03:30:00Z")); // 12:30 JST 2026-05-25
+    vi.setSystemTime(new Date("2026-05-25T03:30:00Z")); // UTC 03:30 on 2026-05-25
     try {
-      const todayJst = Date.UTC(2026, 4, 25) - 32_400_000; // 00:00 JST 2026-05-25
+      const todayUtc = Date.UTC(2026, 4, 25); // UTC 00:00 on 2026-05-25
       const mock = {
         candlestick: [
           {
             type: "1day",
-            ohlcv: [["100", "110", "90", "105", "50", todayJst]],
+            ohlcv: [["100", "110", "90", "105", "50", todayUtc]],
           },
         ],
       };
@@ -339,11 +347,11 @@ describe("candles meta.lastIsIncomplete", () => {
     }
   });
 
-  it("works for 1month boundary (incomplete during current JST month)", async () => {
+  it("works for 1month boundary (incomplete during current UTC month)", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-05-15T03:00:00Z")); // mid-May JST
+    vi.setSystemTime(new Date("2026-05-15T03:00:00Z")); // mid-May UTC
     try {
-      const may1 = Date.UTC(2026, 4, 1) - 32_400_000; // 2026-05-01 00:00 JST
+      const may1 = Date.UTC(2026, 4, 1); // 2026-05-01 00:00 UTC
       const mock = {
         candlestick: [
           {

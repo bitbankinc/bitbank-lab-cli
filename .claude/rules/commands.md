@@ -42,3 +42,13 @@ profile は実 API を叩かないが、`remove` のみ `--confirm` を必須に
 - private GET → `cli/http-private.ts`（HMAC 認証 GET）
 - private POST → `cli/http-private-post.ts`（HMAC 認証 POST）
 - trade コマンドは POST ヘルパーを使う
+
+## 日付キーのタイムゾーン
+
+bitbank の candlestick endpoint で使う `YYYYMMDD` / `YYYY` は **UTC 基準**。
+公式 docs は timezone 未記載だが、実 API で `/candlestick/1hour/20260101` が
+UTC 2026-01-01 00:00〜23:00、`/candlestick/1day/2026` が UTC 月初起点なのを確認済み。
+
+CLI 内では `cli/date-utils.ts` の `ymdUtc` / `yearUtc` / `todayDate` / `nextBoundaryMs`
+（および `cache.ts` の `isCompletePeriod`）が UTC 基準で動く。JST は表示・説明用に
+のみ使い、API キー組み立てや境界判定には持ち込まない。

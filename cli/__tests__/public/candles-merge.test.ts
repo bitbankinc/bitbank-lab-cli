@@ -106,10 +106,10 @@ describe("detectGaps", () => {
     ]);
   });
 
-  it("detects gaps for 1day (JST 日境界)", () => {
-    // Jan 1 と Jan 3 (JST 00:00) で Jan 2 が欠損
-    const jan1 = Date.UTC(2024, 0, 1) - 32_400_000;
-    const jan3 = Date.UTC(2024, 0, 3) - 32_400_000;
+  it("detects gaps for 1day (UTC 日境界)", () => {
+    // Jan 1 と Jan 3 (UTC 00:00) で Jan 2 が欠損
+    const jan1 = Date.UTC(2024, 0, 1);
+    const jan3 = Date.UTC(2024, 0, 3);
     expect(detectGaps([c(jan1), c(jan3)], "1day")).toEqual([{ from: jan1, to: jan3, missing: 1 }]);
   });
 
@@ -121,26 +121,26 @@ describe("detectGaps", () => {
     ]);
   });
 
-  it("detects gaps for 1month (暦依存・閏年含む)", () => {
+  it("detects gaps for 1month (暦依存・閏年含む, UTC 月初)", () => {
     // Jan 1 と April 1 で Feb 1・Mar 1 が欠損 (missing=2)
-    const jan1 = Date.UTC(2024, 0, 1) - 32_400_000;
-    const apr1 = Date.UTC(2024, 3, 1) - 32_400_000;
+    const jan1 = Date.UTC(2024, 0, 1);
+    const apr1 = Date.UTC(2024, 3, 1);
     expect(detectGaps([c(jan1), c(apr1)], "1month")).toEqual([
       { from: jan1, to: apr1, missing: 2 },
     ]);
     // 隣接月（Feb 1 → Mar 1）は閏年でも非閏年でも gap なし
-    const feb1_2024 = Date.UTC(2024, 1, 1) - 32_400_000;
-    const mar1_2024 = Date.UTC(2024, 2, 1) - 32_400_000;
+    const feb1_2024 = Date.UTC(2024, 1, 1);
+    const mar1_2024 = Date.UTC(2024, 2, 1);
     expect(detectGaps([c(feb1_2024), c(mar1_2024)], "1month")).toEqual([]);
-    const feb1_2025 = Date.UTC(2025, 1, 1) - 32_400_000;
-    const mar1_2025 = Date.UTC(2025, 2, 1) - 32_400_000;
+    const feb1_2025 = Date.UTC(2025, 1, 1);
+    const mar1_2025 = Date.UTC(2025, 2, 1);
     expect(detectGaps([c(feb1_2025), c(mar1_2025)], "1month")).toEqual([]);
   });
 
-  it("detects 1month gap across year boundary (Dec → Feb 翌年)", () => {
+  it("detects 1month gap across year boundary (Dec → Feb 翌年, UTC)", () => {
     // Dec 1, 2026 と Feb 1, 2027 で Jan 1, 2027 が欠損 (missing=1)
-    const dec1 = Date.UTC(2026, 11, 1) - 32_400_000;
-    const feb1 = Date.UTC(2027, 1, 1) - 32_400_000;
+    const dec1 = Date.UTC(2026, 11, 1);
+    const feb1 = Date.UTC(2027, 1, 1);
     expect(detectGaps([c(dec1), c(feb1)], "1month")).toEqual([
       { from: dec1, to: feb1, missing: 1 },
     ]);
@@ -237,30 +237,30 @@ describe("detectLastIncomplete", () => {
     expect(detectLastIncomplete([c(last)], "1min", last + 60_000)).toBe(false);
   });
 
-  it("works for 1day in JST", () => {
-    // last = 2026-01-01 00:00 JST, now = 2026-01-01 12:00 JST → 日中なので未確定
-    const last = Date.UTC(2026, 0, 1) - 32_400_000;
+  it("works for 1day in UTC", () => {
+    // last = 2026-01-01 00:00 UTC, now = 2026-01-01 12:00 UTC → 日中なので未確定
+    const last = Date.UTC(2026, 0, 1);
     const now = last + 12 * 3_600_000;
     expect(detectLastIncomplete([c(last)], "1day", now)).toBe(true);
-    // now = 2026-01-02 00:00 JST → 確定済み
+    // now = 2026-01-02 00:00 UTC → 確定済み
     expect(detectLastIncomplete([c(last)], "1day", last + 86_400_000)).toBe(false);
   });
 
-  it("works for 1month (JST 翌月 1 日 00:00 で判定)", () => {
-    // last = 2026-01-01 00:00 JST (January candle)
-    const last = Date.UTC(2026, 0, 1) - 32_400_000;
+  it("works for 1month (UTC 翌月 1 日 00:00 で判定)", () => {
+    // last = 2026-01-01 00:00 UTC (January candle)
+    const last = Date.UTC(2026, 0, 1);
     // now = 2026-01-15 → January はまだ未確定
     expect(detectLastIncomplete([c(last)], "1month", last + 14 * 86_400_000)).toBe(true);
-    // now = 2026-02-01 00:00 JST → January 完了
-    const feb1 = Date.UTC(2026, 1, 1) - 32_400_000;
+    // now = 2026-02-01 00:00 UTC → January 完了
+    const feb1 = Date.UTC(2026, 1, 1);
     expect(detectLastIncomplete([c(last)], "1month", feb1)).toBe(false);
-    // now = 2026-01-31 23:59 JST → まだ未確定
+    // now = 2026-01-31 23:59 UTC → まだ未確定
     expect(detectLastIncomplete([c(last)], "1month", feb1 - 60_000)).toBe(true);
   });
 
-  it("handles December → January rollover for 1month", () => {
-    const last = Date.UTC(2026, 11, 1) - 32_400_000;
-    const jan1 = Date.UTC(2027, 0, 1) - 32_400_000;
+  it("handles December → January rollover for 1month (UTC)", () => {
+    const last = Date.UTC(2026, 11, 1);
+    const jan1 = Date.UTC(2027, 0, 1);
     expect(detectLastIncomplete([c(last)], "1month", jan1 - 60_000)).toBe(true);
     expect(detectLastIncomplete([c(last)], "1month", jan1)).toBe(false);
   });

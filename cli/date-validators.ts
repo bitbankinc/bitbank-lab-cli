@@ -1,11 +1,11 @@
-import { YEARLY_TYPES, daysInMonth, yearJst } from "./date-utils.js";
+import { YEARLY_TYPES, daysInMonth, yearUtc } from "./date-utils.js";
 import type { Result } from "./types.js";
 
 const MIN_YEAR = 2010;
 const YEAR_LOOKAHEAD = 5;
 
 function maxYear(): number {
-  return Number(yearJst(Date.now())) + YEAR_LOOKAHEAD;
+  return Number(yearUtc(Date.now())) + YEAR_LOOKAHEAD;
 }
 
 function checkYearRange(yStr: string, label: string): string | null {

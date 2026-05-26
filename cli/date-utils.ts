@@ -1,4 +1,4 @@
-// 100行超: JST 基準の日付演算・足周期・次境界判定を 1 ファイルに集約
+// 100行超: UTC 基準の日付演算・足周期・次境界判定を 1 ファイルに集約
 export const YEARLY_TYPES = new Set(["4hour", "8hour", "12hour", "1day", "1week", "1month"]);
 
 // 非うるう年での 1 セグメント（短期足は 1 日分、年タイプは 1 年分）あたりのローソク本数
@@ -48,27 +48,22 @@ export function rowsPerSegment(type: string, year?: number): number {
   return base + (isLeap ? bonus : 0);
 }
 
-// bitbank API は日付境界を JST 基準で扱う（/candlestick/1hour/20260101 は JST 2026-01-01）。
-// ホスト OS の TZ に依らず JST 日付を出すため Intl.DateTimeFormat({ timeZone: "Asia/Tokyo" }) を使う。
-const JST_YMD = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Asia/Tokyo",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-const JST_YEAR = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Asia/Tokyo",
-  year: "numeric",
-});
+// bitbank API は日付境界を UTC 基準で扱う（/candlestick/1hour/20260101 は UTC 2026-01-01 00:00〜23:00）。
+// 公式 docs は timezone 未記載だが、実 API で 1hour/1day いずれも UTC 00:00 起点を確認済み。
+// ホスト OS の TZ に依存しないよう、文字列化は getUTCxxx 系で行う。
 
-/** ms（UNIX epoch）を JST の YYYYMMDD 文字列で返す */
-export function ymdJst(ms: number): string {
-  return JST_YMD.format(new Date(ms)).replace(/-/g, "");
+/** ms（UNIX epoch）を UTC の YYYYMMDD 文字列で返す */
+export function ymdUtc(ms: number): string {
+  const d = new Date(ms);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  return `${y}${String(m).padStart(2, "0")}${String(day).padStart(2, "0")}`;
 }
 
-/** ms（UNIX epoch）を JST の YYYY 文字列で返す */
-export function yearJst(ms: number): string {
-  return JST_YEAR.format(new Date(ms));
+/** ms（UNIX epoch）を UTC の YYYY 文字列で返す */
+export function yearUtc(ms: number): string {
+  return String(new Date(ms).getUTCFullYear());
 }
 
 /** 日付を offset 日ずらす。年タイプは offset 年ずらす */
@@ -77,15 +72,14 @@ export function shiftDate(dateStr: string, offset: number, type: string): string
   const y = Number(dateStr.slice(0, 4));
   const m = Number(dateStr.slice(4, 6)) - 1;
   const d = Number(dateStr.slice(6, 8));
-  // Date.UTC で構築すれば midnight UTC = 09:00 JST となり、JST 日付は与えた y/m/d と一致する。
-  // local TZ コンストラクタを使うとホスト TZ により日付がずれるため使わない。
-  return ymdJst(Date.UTC(y, m, d + offset));
+  // Date.UTC で構築して getUTC* で取り出せば、ホスト TZ に依らず UTC 日付がそのまま返る。
+  return ymdUtc(Date.UTC(y, m, d + offset));
 }
 
-/** 今日の日付を JST 基準の YYYYMMDD（年タイプは YYYY）で返す */
+/** 今日の日付を UTC 基準の YYYYMMDD（年タイプは YYYY）で返す */
 export function todayDate(type: string): string {
   const now = new Date();
-  return YEARLY_TYPES.has(type) ? yearJst(now.getTime()) : ymdJst(now.getTime());
+  return YEARLY_TYPES.has(type) ? yearUtc(now.getTime()) : ymdUtc(now.getTime());
 }
 
 // 足 1 本あたりの周期（ms）。1month は可変なので含めない（nextBoundaryMs で別処理）。
@@ -104,15 +98,15 @@ const STEP_MS_PER_TYPE: Record<string, number> = {
 
 /**
  * 足の timestamp が属する期間の終端 epoch ms を返す。
- * 1month は JST 基準の翌月 1 日 00:00 で判定（暦依存）。未知 type は 0。
+ * 1month は UTC 基準の翌月 1 日 00:00 で判定（暦依存）。未知 type は 0。
  */
 export function nextBoundaryMs(type: string, ts: number): number {
   const step = STEP_MS_PER_TYPE[type];
   if (step) return ts + step;
   if (type !== "1month") return 0;
-  const ymd = ymdJst(ts);
-  const y = Number(ymd.slice(0, 4));
-  const m = Number(ymd.slice(4, 6));
-  // JST 00:00 = UTC -9h. Date.UTC(...) から 9h 引くと JST 00:00 の epoch ms。
-  return Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 1) - 32_400_000;
+  const d = new Date(ts);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth(); // 0-11
+  // Date.UTC は UTC 00:00 を返す。bitbank の 1month 足は UTC 月初 00:00 起点。
+  return Date.UTC(m === 11 ? y + 1 : y, m === 11 ? 0 : m + 1, 1);
 }

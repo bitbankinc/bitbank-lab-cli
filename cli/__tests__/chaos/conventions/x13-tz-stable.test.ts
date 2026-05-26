@@ -1,15 +1,21 @@
 import { execSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { isCompletePeriod } from "../../../cache.js";
-import { todayDate, yearJst, ymdJst } from "../../../date-utils.js";
+import { todayDate, ymdUtc, yearUtc } from "../../../date-utils.js";
 
-// bitbank API は JST 基準で日付境界を扱うため、CLI 内の日付フォーマッタは
-// ホスト TZ に依存してはならない。回帰例: UTC ホストで 22:00 UTC（JST 翌日 07:00）
-// に paper tick を回すと、JST 翌日のはずの 1min candle を UTC 当日（JST 前日）の
-// 日付で fetch して全件除外され、指値が静かに約定しない。
+// bitbank API は UTC 基準で日付境界を扱う（公式 docs は timezone 未記載だが実 API で確認済み:
+// /candlestick/1hour/20260101 は UTC 2026-01-01 00:00〜23:00）。
+// CLI 内の日付フォーマッタはホスト TZ に依存してはならない。
+// 回帰例: JST ホストで 06:00 JST（= 前日 21:00 UTC）に paper tick を回すと、UTC 前日の
+// はずの 1min candle を JST 当日（UTC 翌日）の日付で fetch して空配列が返り、指値が
+// 静かに約定しない。
 
-// 2026-01-01T22:00:00Z = 2026-01-02 07:00 JST（UTC では「同日」、JST では「翌日」）
+// 2026-01-01T22:00:00Z = JST 翌日 07:00（UTC では「同日」、JST では「翌日」）
 const REGRESSION_MS = Date.parse("2026-01-01T22:00:00Z");
+
+// 実 API 観測値: GET /btc_jpy/candlestick/1hour/20260101 の先頭 timestamp
+// = 1767225600000 = 2026-01-01T00:00:00Z → UTC date "20260101"
+const REAL_API_JAN1_UTC = 1767225600000;
 
 function runUnderTz(tz: string, code: string): string {
   return execSync(`npx tsx -e ${JSON.stringify(code)}`, {
@@ -18,31 +24,37 @@ function runUnderTz(tz: string, code: string): string {
   });
 }
 
-describe("Chaos X-13: date utilities are TZ-stable (JST 固定)", () => {
-  it("ymdJst returns the JST date even when host is UTC", () => {
-    expect(ymdJst(REGRESSION_MS)).toBe("20260102");
-    // JST 境界の前後を確認
-    expect(ymdJst(Date.parse("2026-01-01T14:59:59Z"))).toBe("20260101");
-    expect(ymdJst(Date.parse("2026-01-01T15:00:00Z"))).toBe("20260102");
+describe("Chaos X-13: date utilities are TZ-stable (UTC 固定)", () => {
+  it("ymdUtc returns the UTC date even when host is JST", () => {
+    // 22:00 UTC は UTC 上ではまだ 01-01。JST では 01-02。
+    expect(ymdUtc(REGRESSION_MS)).toBe("20260101");
+    // UTC 境界の前後を確認
+    expect(ymdUtc(Date.parse("2026-01-01T23:59:59Z"))).toBe("20260101");
+    expect(ymdUtc(Date.parse("2026-01-02T00:00:00Z"))).toBe("20260102");
   });
 
-  it("yearJst returns the JST year across UTC year boundary", () => {
-    // 2025-12-31T20:00 JST = 2025-12-31T11:00 UTC → JST 年は 2025
-    expect(yearJst(Date.parse("2025-12-31T11:00:00Z"))).toBe("2025");
-    // 2026-01-01T00:00 JST = 2025-12-31T15:00 UTC → JST 年は 2026
-    expect(yearJst(Date.parse("2025-12-31T15:00:00Z"))).toBe("2026");
+  it("yearUtc returns the UTC year across JST year boundary", () => {
+    // 2026-01-01T00:00 JST = 2025-12-31T15:00 UTC → UTC 年は 2025
+    expect(yearUtc(Date.parse("2025-12-31T15:00:00Z"))).toBe("2025");
+    // 2026-01-01T00:00 UTC → UTC 年は 2026
+    expect(yearUtc(Date.parse("2026-01-01T00:00:00Z"))).toBe("2026");
   });
 
-  it("ymdJst output is identical under TZ=UTC and TZ=Asia/Tokyo", () => {
-    const code = `import('./cli/date-utils.ts').then(({ ymdJst }) => process.stdout.write(ymdJst(${REGRESSION_MS})))`;
+  it("ymdUtc matches real-API observed timestamp 1767225600000 → '20260101'", () => {
+    expect(ymdUtc(REAL_API_JAN1_UTC)).toBe("20260101");
+    expect(yearUtc(REAL_API_JAN1_UTC)).toBe("2026");
+  });
+
+  it("ymdUtc output is identical under TZ=UTC and TZ=Asia/Tokyo", () => {
+    const code = `import('./cli/date-utils.ts').then(({ ymdUtc }) => process.stdout.write(ymdUtc(${REGRESSION_MS})))`;
     const utc = runUnderTz("UTC", code);
     const jst = runUnderTz("Asia/Tokyo", code);
     expect(utc).toBe(jst);
-    expect(utc).toBe("20260102");
+    expect(utc).toBe("20260101");
   });
 
   it("todayDate and isCompletePeriod are identical under TZ=UTC and TZ=Asia/Tokyo", () => {
-    // 子プロセスを 2 回 spawn する間に JST 日付境界をまたぐと todayDate が
+    // 子プロセスを 2 回 spawn する間に UTC 日付境界をまたぐと todayDate が
     // ズレて flake する。Date.now() / new Date() を REGRESSION_MS に固定して回避。
     const code = [
       `const FIXED = ${REGRESSION_MS};`,
@@ -67,9 +79,9 @@ describe("Chaos X-13: date utilities are TZ-stable (JST 固定)", () => {
     const utc = runUnderTz("UTC", code);
     const jst = runUnderTz("Asia/Tokyo", code);
     expect(utc).toBe(jst);
-    // FIXED = 2026-01-01T22:00Z = JST 2026-01-02 07:00 で計算される値
+    // FIXED = 2026-01-01T22:00Z で計算される値（UTC 基準）
     const parsed = JSON.parse(utc);
-    expect(parsed.today1h).toBe("20260102");
+    expect(parsed.today1h).toBe("20260101");
     expect(parsed.today1d).toBe("2026");
   });
 
