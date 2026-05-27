@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { EXIT } from "../../exit-codes.js";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
 import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
-import { MSG_ASSET } from "../../validators.js";
+import { AssetSchema, MSG_ASSET } from "../../validators.js";
+import { CountSchema, TimestampMsSchema, formatZodError, refineSinceEnd } from "./input-schemas.js";
 
 const WithdrawalSchema = z.object({
   uuid: z.string(),
@@ -22,18 +24,37 @@ const ResponseSchema = z.object({
   withdrawals: z.array(WithdrawalSchema),
 });
 
+const RequestSchema = z
+  .object({
+    asset: AssetSchema.optional(),
+    count: CountSchema.optional(),
+    since: TimestampMsSchema.optional(),
+    end: TimestampMsSchema.optional(),
+  })
+  .superRefine((val, ctx) => {
+    if (val.asset === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MSG_ASSET, path: ["asset"] });
+    }
+    refineSinceEnd(val, ctx);
+  });
+
 export type Withdrawal = z.infer<typeof WithdrawalSchema>;
+export type WithdrawalHistoryArgs = z.infer<typeof RequestSchema>;
 
 export async function withdrawalHistory(
-  args: { asset: string | undefined; count?: string; since?: string; end?: string },
+  args: WithdrawalHistoryArgs,
   opts?: PrivateHttpOptions,
 ): Promise<Result<Withdrawal[]>> {
-  const { asset, count, since, end } = args;
-  if (!asset) {
-    return { success: false, error: MSG_ASSET };
+  const parsed = RequestSchema.safeParse(args);
+  if (!parsed.success) {
+    return { success: false, error: formatZodError(parsed.error), exitCode: EXIT.PARAM };
   }
-  const params = compactParams({ asset, count, since, end });
-
+  const params = compactParams({
+    asset: parsed.data.asset,
+    count: parsed.data.count,
+    since: parsed.data.since,
+    end: parsed.data.end,
+  });
   const result = await privateGet<unknown>("/user/withdrawal_history", params, opts);
   return parseResponse(result, ResponseSchema, "withdrawals");
 }

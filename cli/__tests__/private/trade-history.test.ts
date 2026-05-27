@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
 import { tradeHistory, tradeHistoryDispatch } from "../../commands/private/trade-history.js";
-import { TEST_CREDS, mockFetchData } from "../test-helpers.js";
+import { TEST_CREDS, mockFetchData, mockFetchDataCapture } from "../test-helpers.js";
 
 vi.mock("../../commands/private/trade-history-all.js", () => ({
   tradeHistoryAll: vi.fn(async (args: { pair?: string }) => {
@@ -46,6 +46,70 @@ describe("tradeHistory", () => {
     );
     expect(result.success).toBe(true);
     if (result.success) expect(result.data).toHaveLength(1);
+  });
+
+  const failFetch = (() => {
+    throw new Error("fetch should not be called");
+  }) as unknown as typeof fetch;
+
+  it("rejects negative count", async () => {
+    const r = await tradeHistory(
+      { pair: "btc_jpy", count: "-1" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error).toContain("count");
+  });
+
+  it("rejects count=0", async () => {
+    const r = await tradeHistory(
+      { pair: "btc_jpy", count: "0" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error).toContain("count");
+  });
+
+  it("rejects non-integer count", async () => {
+    const r = await tradeHistory(
+      { pair: "btc_jpy", count: "10.5" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects since > end", async () => {
+    const r = await tradeHistory(
+      { pair: "btc_jpy", since: "2000", end: "1000" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error).toContain("since must be ≤ end");
+  });
+
+  it("rejects unknown order value", async () => {
+    const r = await tradeHistory(
+      { pair: "btc_jpy", order: "ascending" as "asc" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("passes validated params through to URL", async () => {
+    const cap = mockFetchDataCapture(MOCK);
+    const r = await tradeHistory(
+      { pair: "btc_jpy", count: "10", order: "asc", since: "1000", end: "2000" },
+      { fetch: cap.fetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(true);
+    expect(cap.urls).toHaveLength(1);
+    const url = cap.urls[0];
+    expect(url).toContain("/user/spot/trade_history");
+    expect(url).toContain("pair=btc_jpy");
+    expect(url).toContain("count=10");
+    expect(url).toContain("order=asc");
+    expect(url).toContain("since=1000");
+    expect(url).toContain("end=2000");
   });
 });
 

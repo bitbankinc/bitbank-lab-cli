@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { withdrawalHistory } from "../../commands/private/withdrawal-history.js";
-import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
+import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
   withdrawals: [
@@ -76,5 +76,65 @@ describe("withdrawalHistory", () => {
     );
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Invalid response");
+  });
+
+  const failFetch = (() => {
+    throw new Error("fetch should not be called");
+  }) as unknown as typeof fetch;
+
+  it("rejects negative count", async () => {
+    const r = await withdrawalHistory(
+      { asset: "btc", count: "-3" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects count=0", async () => {
+    const r = await withdrawalHistory(
+      { asset: "btc", count: "0" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects since > end", async () => {
+    const r = await withdrawalHistory(
+      { asset: "btc", since: "5000", end: "1000" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error).toContain("since must be ≤ end");
+  });
+
+  it("rejects malformed asset (uppercase)", async () => {
+    const r = await withdrawalHistory(
+      { asset: "BTC" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects non-integer since (negative)", async () => {
+    const r = await withdrawalHistory(
+      { asset: "btc", since: "-1" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("passes validated params through to URL", async () => {
+    const cap = mockFetchDataCapture(MOCK);
+    const r = await withdrawalHistory(
+      { asset: "btc", count: "30", since: "100", end: "500" },
+      { fetch: cap.fetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(true);
+    const url = cap.urls[0];
+    expect(url).toContain("/user/withdrawal_history");
+    expect(url).toContain("asset=btc");
+    expect(url).toContain("count=30");
+    expect(url).toContain("since=100");
+    expect(url).toContain("end=500");
   });
 });

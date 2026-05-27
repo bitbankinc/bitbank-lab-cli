@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { depositHistory } from "../../commands/private/deposit-history.js";
-import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
+import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
   deposits: [
@@ -82,5 +82,65 @@ describe("depositHistory", () => {
     );
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Invalid response");
+  });
+
+  const failFetch = (() => {
+    throw new Error("fetch should not be called");
+  }) as unknown as typeof fetch;
+
+  it("rejects negative count", async () => {
+    const r = await depositHistory(
+      { asset: "btc", count: "-1" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects non-integer count", async () => {
+    const r = await depositHistory(
+      { asset: "btc", count: "abc" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects since > end", async () => {
+    const r = await depositHistory(
+      { asset: "btc", since: "9999", end: "1" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error).toContain("since must be ≤ end");
+  });
+
+  it("rejects malformed asset (uppercase)", async () => {
+    const r = await depositHistory(
+      { asset: "BTC" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects asset with symbols", async () => {
+    const r = await depositHistory(
+      { asset: "bt-c" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("passes validated params through to URL", async () => {
+    const cap = mockFetchDataCapture(MOCK);
+    const r = await depositHistory(
+      { asset: "btc", count: "20", since: "100", end: "200" },
+      { fetch: cap.fetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(true);
+    const url = cap.urls[0];
+    expect(url).toContain("/user/deposit_history");
+    expect(url).toContain("asset=btc");
+    expect(url).toContain("count=20");
+    expect(url).toContain("since=100");
+    expect(url).toContain("end=200");
   });
 });
