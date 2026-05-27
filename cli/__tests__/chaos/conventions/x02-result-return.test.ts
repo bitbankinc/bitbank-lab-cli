@@ -2,7 +2,12 @@ import { execSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
 /** Helpers that don't return Result (display-only, types, etc.) */
-const EXCLUDED = new Set(["dry-run.ts", "candles-merge.ts", "confirm-guard.ts"]);
+const EXCLUDED = new Set([
+  "dry-run.ts",
+  "candles-merge.ts",
+  "confirm-guard.ts",
+  "input-schemas.ts",
+]);
 
 /** Find .ts files missing Promise<Result< in a directory */
 function findMissing(dir: string): string[] {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { unconfirmedDeposits } from "../../commands/private/unconfirmed-deposits.js";
-import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
+import { EXIT } from "../../exit-codes.js";
+import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
   deposits: [{ uuid: "abc", asset: "btc", amount: "0.1", txid: "tx123", found_at: 1234567890123 }],
@@ -59,5 +60,48 @@ describe("unconfirmedDeposits", () => {
     );
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Invalid response");
+  });
+
+  const failFetch = (() => {
+    throw new Error("fetch should not be called");
+  }) as unknown as typeof fetch;
+
+  it("rejects malformed asset (uppercase)", async () => {
+    const r = await unconfirmedDeposits(
+      { asset: "BTC" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
+  });
+
+  it("rejects asset with symbols", async () => {
+    const r = await unconfirmedDeposits(
+      { asset: "bt_c" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
+  });
+
+  it("rejects empty asset string", async () => {
+    const r = await unconfirmedDeposits(
+      { asset: "" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
+  });
+
+  it("passes validated asset through to URL", async () => {
+    const cap = mockFetchDataCapture(MOCK);
+    const r = await unconfirmedDeposits(
+      { asset: "eth" },
+      { fetch: cap.fetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(true);
+    const url = cap.urls[0];
+    expect(url).toContain("/user/unconfirmed_deposits");
+    expect(url).toContain("asset=eth");
   });
 });

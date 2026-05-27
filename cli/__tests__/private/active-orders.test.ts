@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { activeOrders } from "../../commands/private/active-orders.js";
-import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
+import { EXIT } from "../../exit-codes.js";
+import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
   orders: [
@@ -87,5 +88,69 @@ describe("activeOrders", () => {
     );
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("Invalid response");
+  });
+
+  const failFetch = (() => {
+    throw new Error("fetch should not be called");
+  }) as unknown as typeof fetch;
+
+  it("rejects negative count before fetching", async () => {
+    const r = await activeOrders(
+      { pair: "btc_jpy", count: "-5" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("count");
+    }
+  });
+
+  it("rejects count above API limit", async () => {
+    const r = await activeOrders(
+      { pair: "btc_jpy", count: "10000" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("count");
+    }
+  });
+
+  it("rejects since > end", async () => {
+    const r = await activeOrders(
+      { pair: "btc_jpy", since: "5000", end: "1000" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("since must be ≤ end");
+    }
+  });
+
+  it("rejects malformed pair", async () => {
+    const r = await activeOrders(
+      { pair: "BTC_JPY" },
+      { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
+  });
+
+  it("passes validated params through to URL", async () => {
+    const cap = mockFetchDataCapture(MOCK);
+    const r = await activeOrders(
+      { pair: "btc_jpy", count: "5", since: "1000", end: "2000" },
+      { fetch: cap.fetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(r.success).toBe(true);
+    const url = cap.urls[0];
+    expect(url).toContain("/user/spot/active_orders");
+    expect(url).toContain("pair=btc_jpy");
+    expect(url).toContain("count=5");
+    expect(url).toContain("since=1000");
+    expect(url).toContain("end=2000");
   });
 });

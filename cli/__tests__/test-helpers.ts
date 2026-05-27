@@ -11,6 +11,19 @@ export function mockFetchData(data: unknown): typeof globalThis.fetch {
   return async () => new Response(JSON.stringify({ success: 1, data }));
 }
 
+/** mockFetchData の URL 記録版。最後にフェッチされた URL を読める */
+export function mockFetchDataCapture(data: unknown): {
+  fetch: typeof globalThis.fetch;
+  urls: string[];
+} {
+  const urls: string[] = [];
+  const fetch: typeof globalThis.fetch = async (input) => {
+    urls.push(typeof input === "string" ? input : input.toString());
+    return new Response(JSON.stringify({ success: 1, data }));
+  };
+  return { fetch, urls };
+}
+
 /** paper create-order の unit_amount 検証用ペア定義（テスト時の既定値） */
 export const MOCK_PAIRS: CachedPair[] = [
   {
