@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
 import { tradeHistory, tradeHistoryDispatch } from "../../commands/private/trade-history.js";
+import { EXIT } from "../../exit-codes.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture } from "../test-helpers.js";
 
 vi.mock("../../commands/private/trade-history-all.js", () => ({
@@ -32,6 +33,7 @@ describe("tradeHistory", () => {
   it("returns error when pair is missing", async () => {
     const result = await tradeHistory({ pair: undefined });
     expect(result.success).toBe(false);
+    if (!result.success) expect(result.exitCode).toBe(EXIT.PARAM);
   });
 
   it("returns trade history", async () => {
@@ -58,7 +60,10 @@ describe("tradeHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("count");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("count");
+    }
   });
 
   it("rejects count=0", async () => {
@@ -67,7 +72,10 @@ describe("tradeHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("count");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("count");
+    }
   });
 
   it("rejects non-integer count", async () => {
@@ -76,6 +84,7 @@ describe("tradeHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects since > end", async () => {
@@ -84,7 +93,10 @@ describe("tradeHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("since must be ≤ end");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("since must be ≤ end");
+    }
   });
 
   it("rejects unknown order value", async () => {
@@ -93,6 +105,7 @@ describe("tradeHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("passes validated params through to URL", async () => {

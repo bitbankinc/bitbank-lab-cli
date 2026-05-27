@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { unconfirmedDeposits } from "../../commands/private/unconfirmed-deposits.js";
+import { EXIT } from "../../exit-codes.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
@@ -71,6 +72,7 @@ describe("unconfirmedDeposits", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects asset with symbols", async () => {
@@ -79,6 +81,7 @@ describe("unconfirmedDeposits", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects empty asset string", async () => {
@@ -87,6 +90,7 @@ describe("unconfirmedDeposits", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("passes validated asset through to URL", async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { depositHistory } from "../../commands/private/deposit-history.js";
+import { EXIT } from "../../exit-codes.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
@@ -94,6 +95,7 @@ describe("depositHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects non-integer count", async () => {
@@ -102,6 +104,7 @@ describe("depositHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects since > end", async () => {
@@ -110,7 +113,10 @@ describe("depositHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("since must be ≤ end");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("since must be ≤ end");
+    }
   });
 
   it("rejects malformed asset (uppercase)", async () => {
@@ -119,6 +125,7 @@ describe("depositHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects asset with symbols", async () => {
@@ -127,6 +134,7 @@ describe("depositHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("passes validated params through to URL", async () => {

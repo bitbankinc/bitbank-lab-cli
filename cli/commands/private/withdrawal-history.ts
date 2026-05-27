@@ -5,7 +5,7 @@ import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
 import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
-import { AssetSchema, MSG_ASSET } from "../../validators.js";
+import { AssetSchema } from "../../validators.js";
 import { CountSchema, TimestampMsSchema, formatZodError, refineSinceEnd } from "./input-schemas.js";
 
 const WithdrawalSchema = z.object({
@@ -26,17 +26,12 @@ const ResponseSchema = z.object({
 
 const RequestSchema = z
   .object({
-    asset: AssetSchema.optional(),
+    asset: AssetSchema,
     count: CountSchema.optional(),
     since: TimestampMsSchema.optional(),
     end: TimestampMsSchema.optional(),
   })
-  .superRefine((val, ctx) => {
-    if (val.asset === undefined) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MSG_ASSET, path: ["asset"] });
-    }
-    refineSinceEnd(val, ctx);
-  });
+  .superRefine(refineSinceEnd);
 
 export type Withdrawal = z.infer<typeof WithdrawalSchema>;
 export type WithdrawalHistoryArgs = z.infer<typeof RequestSchema>;

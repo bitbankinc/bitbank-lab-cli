@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { withdrawalHistory } from "../../commands/private/withdrawal-history.js";
+import { EXIT } from "../../exit-codes.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
@@ -20,8 +21,9 @@ const MOCK = {
 
 describe("withdrawalHistory", () => {
   it("returns error when asset is missing", async () => {
-    const result = await withdrawalHistory({ asset: undefined });
+    const result = await withdrawalHistory({ asset: undefined as unknown as string });
     expect(result.success).toBe(false);
+    if (!result.success) expect(result.exitCode).toBe(EXIT.PARAM);
   });
 
   it("returns withdrawal history", async () => {
@@ -88,6 +90,7 @@ describe("withdrawalHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects count=0", async () => {
@@ -96,6 +99,7 @@ describe("withdrawalHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects since > end", async () => {
@@ -104,7 +108,10 @@ describe("withdrawalHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("since must be ≤ end");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("since must be ≤ end");
+    }
   });
 
   it("rejects malformed asset (uppercase)", async () => {
@@ -113,6 +120,7 @@ describe("withdrawalHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("rejects non-integer since (negative)", async () => {
@@ -121,6 +129,7 @@ describe("withdrawalHistory", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("passes validated params through to URL", async () => {

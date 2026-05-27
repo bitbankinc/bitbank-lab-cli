@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { activeOrders } from "../../commands/private/active-orders.js";
+import { EXIT } from "../../exit-codes.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
@@ -99,7 +100,10 @@ describe("activeOrders", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("count");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("count");
+    }
   });
 
   it("rejects count above API limit", async () => {
@@ -108,7 +112,10 @@ describe("activeOrders", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("count");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("count");
+    }
   });
 
   it("rejects since > end", async () => {
@@ -117,7 +124,10 @@ describe("activeOrders", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error).toContain("since must be ≤ end");
+    if (!r.success) {
+      expect(r.exitCode).toBe(EXIT.PARAM);
+      expect(r.error).toContain("since must be ≤ end");
+    }
   });
 
   it("rejects malformed pair", async () => {
@@ -126,6 +136,7 @@ describe("activeOrders", () => {
       { fetch: failFetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
     );
     expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.PARAM);
   });
 
   it("passes validated params through to URL", async () => {
