@@ -44,6 +44,7 @@ export const privateCommands: Record<string, CommandEntry> = {
       end: str,
       order: str,
       all: bool(),
+      "max-pages": str,
     },
     handler: handler("./private/trade-history.js", "tradeHistoryDispatch", (_a, v) => ({
       pair: valStr(v, "pair"),
@@ -53,15 +54,17 @@ export const privateCommands: Record<string, CommandEntry> = {
       end: valStr(v, "end"),
       order: valStr(v, "order"),
       all: !!v.all,
+      maxPages: valStr(v, "max-pages"),
     })),
   },
   "trade-history-all": {
-    description: "Get all trade history (paginated)",
-    options: { pair: str, since: str, end: str },
+    description: "Get all trade history (paginated; default cap 1000 pages)",
+    options: { pair: str, since: str, end: str, "max-pages": str },
     handler: handler("./private/trade-history-all.js", "tradeHistoryAll", (_a, v) => ({
       pair: valStr(v, "pair"),
       since: valStr(v, "since"),
       end: valStr(v, "end"),
+      maxPages: valStr(v, "max-pages"),
     })),
   },
   "margin-status": {

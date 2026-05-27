@@ -111,6 +111,75 @@ describe("watch handler", () => {
     );
   });
 
+  it("defaults --max-retries to a finite cap (100) when not specified", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    await handler(["ticker", "btc_jpy"], {}, "json");
+    expect(mockWatchCommand).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 100 }));
+  });
+
+  it("accepts --max-retries=0 (no retry on first failure)", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    await handler(["ticker", "btc_jpy"], { "max-retries": "0" }, "json");
+    expect(mockWatchCommand).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0 }));
+  });
+
+  it("accepts --max-retries=infinite (opt-in to unbounded retries)", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    await handler(["ticker", "btc_jpy"], { "max-retries": "infinite" }, "json");
+    expect(mockWatchCommand).toHaveBeenCalledWith(
+      expect.objectContaining({ maxRetries: Number.POSITIVE_INFINITY }),
+    );
+  });
+
+  it("rejects --max-retries=-1 (negative not allowed)", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    await handler(["ticker", "btc_jpy"], { "max-retries": "-1" }, "json");
+    expect(mockWatchCommand).not.toHaveBeenCalled();
+    expect(mockOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, error: expect.stringContaining("max-retries") }),
+      "json",
+    );
+  });
+
+  it("rejects --max-retries=1.5 (non-integer not allowed)", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    await handler(["ticker", "btc_jpy"], { "max-retries": "1.5" }, "json");
+    expect(mockWatchCommand).not.toHaveBeenCalled();
+    expect(mockOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, error: expect.stringContaining("max-retries") }),
+      "json",
+    );
+  });
+
+  it("rejects --max-retries with digits that overflow to Infinity (safe-integer guard)", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    const huge = "9".repeat(400);
+    await handler(["ticker", "btc_jpy"], { "max-retries": huge }, "json");
+    expect(mockWatchCommand).not.toHaveBeenCalled();
+    expect(mockOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, error: expect.stringContaining("safe integer") }),
+      "json",
+    );
+  });
+
+  it("rejects --max-retries just above Number.MAX_SAFE_INTEGER", async () => {
+    setTTY(false);
+    process.argv = ["node", "cli", "watch", "ticker", "btc_jpy"];
+    // 2^53 = 9007199254740992, the first integer that loses precision.
+    await handler(["ticker", "btc_jpy"], { "max-retries": "9007199254740992" }, "json");
+    expect(mockWatchCommand).not.toHaveBeenCalled();
+    expect(mockOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, error: expect.stringContaining("safe integer") }),
+      "json",
+    );
+  });
+
   it("calls output() when watchCommand returns failure", async () => {
     setTTY(false);
     process.argv = ["node", "cli", "watch", "foo", "btc_jpy"];

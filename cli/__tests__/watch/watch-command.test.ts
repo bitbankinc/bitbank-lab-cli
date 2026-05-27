@@ -136,6 +136,50 @@ describe("watchCommand", () => {
     if (!r.success) expect(r.exitCode).toBe(EXIT.NETWORK);
   });
 
+  it("with maxRetries=0 exits NETWORK on first disconnect (no retry)", async () => {
+    const { factory, emit } = makeFakeFactory();
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const promise = watchCommand({
+      channel: "ticker",
+      pair: "btc_jpy",
+      format: "json",
+      idleTimeout: 0,
+      maxRetries: 0,
+      backoffCap: 32,
+      ioFactory: factory,
+    });
+    emit("onDisconnect", "first");
+    const r = await promise;
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.exitCode).toBe(EXIT.NETWORK);
+  });
+
+  it("with maxRetries=Infinity keeps reconnecting past prior finite cap", async () => {
+    const { factory, emit } = makeFakeFactory();
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const promise = watchCommand({
+      channel: "ticker",
+      pair: "btc_jpy",
+      format: "json",
+      duration: 200,
+      idleTimeout: 0,
+      maxRetries: Number.POSITIVE_INFINITY,
+      backoffCap: 1,
+      ioFactory: factory,
+    });
+    // Trigger more disconnects than any finite default would tolerate.
+    for (let i = 0; i < 150; i++) {
+      emit("onDisconnect", `dc${i}`);
+      await vi.advanceTimersByTimeAsync(1000);
+    }
+    // Should still be alive (no max-retries fail). Drain via duration.
+    await vi.advanceTimersByTimeAsync(200_000);
+    const r = await promise;
+    expect(r.success).toBe(true);
+  });
+
   it("exits cleanly on SIGINT", async () => {
     const { factory } = makeFakeFactory();
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);

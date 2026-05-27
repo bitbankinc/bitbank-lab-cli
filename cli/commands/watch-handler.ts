@@ -4,6 +4,7 @@ import type { Result } from "../types.js";
 import type { WatchFormat } from "../watch/format.js";
 import type { CommandEntry, ParsedValues } from "./handler-types.js";
 import { str, valStr } from "./handler-types.js";
+import { MAX_RETRIES_DEFAULT, parseMaxRetries } from "./watch/input-schemas.js";
 
 function parseNum(
   v: ParsedValues,
@@ -60,7 +61,7 @@ export const watchCommands: Record<string, CommandEntry> = {
         duration: parseNum(values, "duration", undefined),
         count: parseNum(values, "count", undefined),
         idleTimeout: parseNum(values, "idle-timeout", 30),
-        maxRetries: parseNum(values, "max-retries", Number.POSITIVE_INFINITY),
+        maxRetries: parseMaxRetries(values),
         backoffCap: parseNum(values, "backoff-cap", 32),
       };
       for (const r of Object.values(nums)) {
@@ -77,9 +78,7 @@ export const watchCommands: Record<string, CommandEntry> = {
         duration: nums.duration.success ? nums.duration.data : undefined,
         count: nums.count.success ? nums.count.data : undefined,
         idleTimeout: (nums.idleTimeout.success ? nums.idleTimeout.data : 30) ?? 30,
-        maxRetries:
-          (nums.maxRetries.success ? nums.maxRetries.data : Number.POSITIVE_INFINITY) ??
-          Number.POSITIVE_INFINITY,
+        maxRetries: nums.maxRetries.success ? nums.maxRetries.data : MAX_RETRIES_DEFAULT,
         backoffCap: (nums.backoffCap.success ? nums.backoffCap.data : 32) ?? 32,
       });
       if (!r.success) output(r, outFmt);
