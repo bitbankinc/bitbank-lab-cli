@@ -79,7 +79,12 @@ export const privateAccountSchemas: Record<string, SchemaDef> = {
   },
   "trade-history-all": {
     category: "private",
-    params: { pair, since, end },
+    params: {
+      pair,
+      since,
+      end,
+      "max-pages": p("string", "Max pages to fetch (default: 1000; positive integer)"),
+    },
     output: {
       type: "array",
       items: {

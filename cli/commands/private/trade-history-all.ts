@@ -1,17 +1,25 @@
 // trade-history.ts を自動ページングで全件取得するラッパー
 // CLI では `trade-history --all` で呼び出される
+import { z } from "zod";
+import { EXIT } from "../../exit-codes.js";
 import type { PrivateHttpOptions } from "../../http-private.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
+import { formatZodError } from "./input-schemas.js";
 import { type Trade, tradeHistory } from "./trade-history.js";
 
 // bitbank API の1リクエストあたり最大取得件数
 const PAGE_SIZE = 1000;
+// 既定の最大ページ数。誤起動・API 仕様変更で無限化しないための安全弁
+export const MAX_PAGES_DEFAULT = 1000;
+
+const MaxPagesSchema = z.string().regex(/^[1-9]\d*$/, "max-pages must be a positive integer");
 
 type TradeHistoryAllArgs = {
   pair: string | undefined;
   since?: string;
   end?: string;
+  maxPages?: string;
 };
 
 export async function tradeHistoryAll(
@@ -21,11 +29,20 @@ export async function tradeHistoryAll(
   const pv = validatePair(args.pair);
   if (!pv.success) return pv;
 
+  let maxPages = MAX_PAGES_DEFAULT;
+  if (args.maxPages !== undefined) {
+    const parsed = MaxPagesSchema.safeParse(args.maxPages);
+    if (!parsed.success) {
+      return { success: false, error: formatZodError(parsed.error), exitCode: EXIT.PARAM };
+    }
+    maxPages = Number(parsed.data);
+  }
+
   const allTrades: Trade[] = [];
   const seen = new Set<number>();
   let since = args.since;
 
-  for (;;) {
+  for (let page = 0; page < maxPages; page++) {
     const result = await tradeHistory(
       {
         pair: pv.data,
@@ -48,12 +65,17 @@ export async function tradeHistoryAll(
       }
     }
 
-    if (trades.length < PAGE_SIZE) break;
-    if (added === 0) break;
+    if (trades.length < PAGE_SIZE) return { success: true, data: allTrades };
+    if (added === 0) return { success: true, data: allTrades };
 
     const last = trades[trades.length - 1];
     since = String(last.executed_at);
   }
 
-  return { success: true, data: allTrades };
+  return {
+    success: true,
+    data: allTrades,
+    partial: true,
+    meta: { truncated: true, reason: "MAX_PAGES", returnedRows: allTrades.length },
+  };
 }

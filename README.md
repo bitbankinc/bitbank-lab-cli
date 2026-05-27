@@ -298,7 +298,7 @@ bitbank active-orders --pair=btc_jpy
 | `order` | 注文情報照会 | `order --pair=btc_jpy --order-id=123` |
 | `orders-info` | 複数注文照会 | `orders-info --pair=btc_jpy --order-ids=1,2,3` |
 | `active-orders` | アクティブ注文 | `active-orders --pair=btc_jpy` |
-| `trade-history` | 約定履歴 | `trade-history --pair=btc_jpy` |
+| `trade-history` | 約定履歴（`--all` で全件ページング） | `trade-history --pair=btc_jpy --all` |
 | `deposit-history` | 入金履歴 | `deposit-history --asset=btc` |
 | `unconfirmed-deposits` | 未確認入金 | `unconfirmed-deposits` |
 | `deposit-originators` | 入金元情報 | `deposit-originators --asset=btc` |
@@ -306,6 +306,12 @@ bitbank active-orders --pair=btc_jpy
 | `withdrawal-history` | 出金履歴 | `withdrawal-history --asset=btc` |
 | `margin-status` | 証拠金ステータス | `margin-status` |
 | `margin-positions` | ポジション情報 | `margin-positions --pair=btc_jpy` |
+
+> `trade-history --all` / `trade-history-all` は自動でページングします。
+> 既定の上限は `--max-pages=1000`（API 仕様変更などで無限化しないための
+> 安全弁）。上限到達時は途中までのデータと共に `partial: true` /
+> `meta.truncated: true` / `meta.reason: "MAX_PAGES"` を返します。
+> 重複検出による停止ロジックは従来通り動作します。
 
 ### Trade（資金操作 — ドライランデフォルト）
 
@@ -378,7 +384,9 @@ bitbank watch ticker btc_jpy --duration=10 --format=json | jq -r '.last'
 
 - 終了条件: `--duration=<秒>` / `--count=<n>` / SIGINT
 - 切断時は指数バックオフで自動再接続（1, 2, 4, 8, 16, 32, 32...）。
-  上限は `--max-retries=<n>`、上限到達時は `EXIT.NETWORK`（exit code 5）
+  上限は `--max-retries=<n>`（既定 100、有限）。`--max-retries=0` で
+  「リトライしない」、`--max-retries=infinite` で明示 opt-in した場合のみ
+  無限化する。上限到達時は `EXIT.NETWORK`（exit code 5）
 - 無音検出は `--idle-timeout=<秒>`（既定 30）で発火し再接続フローへ
 - depth / transactions など他チャネルは MVP 対象外（`bitbank stream` を使う）
 

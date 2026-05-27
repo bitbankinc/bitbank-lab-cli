@@ -9,7 +9,7 @@ const RateLimitSchema = z.object({
 
 export type RateLimitInfo = z.infer<typeof RateLimitSchema>;
 
-export type TruncationReason = "MAX_RANGE_FETCHES" | "HARD_MAX_SEGMENTS";
+export type TruncationReason = "MAX_RANGE_FETCHES" | "HARD_MAX_SEGMENTS" | "MAX_PAGES";
 
 export type Gap = { from: number; to: number; missing: number };
 
