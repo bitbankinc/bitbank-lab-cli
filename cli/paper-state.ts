@@ -7,6 +7,7 @@ import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { z } from "zod";
+import { sanitizeErrorMessage } from "./error-sanitize.js";
 import type { Result } from "./types.js";
 
 export const PaperHistoryEntrySchema = z.object({
@@ -158,15 +159,17 @@ export async function loadState(path = defaultStatePath()): Promise<Result<Paper
     const json = JSON.parse(buf) as unknown;
     const parsed = PaperStateAnySchema.safeParse(json);
     if (!parsed.success) {
-      return { success: false, error: `Invalid paper state: ${parsed.error.message}` };
+      return {
+        success: false,
+        error: sanitizeErrorMessage(`Invalid paper state: ${parsed.error.message}`),
+      };
     }
     return { success: true, data: migrateToV3(parsed.data) };
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") {
       return { success: true, data: null };
     }
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: `Failed to read paper state: ${msg}` };
+    return { success: false, error: `Failed to read paper state: ${sanitizeErrorMessage(e)}` };
   }
 }
 
@@ -192,8 +195,7 @@ export async function saveState(
     return { success: true, data: { saved: true } };
   } catch (e) {
     await unlink(tmp).catch(() => {});
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: `Failed to write paper state: ${msg}` };
+    return { success: false, error: `Failed to write paper state: ${sanitizeErrorMessage(e)}` };
   }
 }
 
@@ -205,7 +207,6 @@ export async function deleteState(path = defaultStatePath()): Promise<Result<{ d
     if ((e as NodeJS.ErrnoException).code === "ENOENT") {
       return { success: true, data: { deleted: true } };
     }
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: `Failed to delete paper state: ${msg}` };
+    return { success: false, error: `Failed to delete paper state: ${sanitizeErrorMessage(e)}` };
   }
 }

@@ -16,6 +16,7 @@ import {
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { z } from "zod";
+import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { EXIT } from "./exit-codes.js";
 import type { Result } from "./types.js";
 
@@ -69,22 +70,28 @@ export function loadProfiles(path = defaultProfilesPath()): Result<ProfilesFile>
     if ((e as NodeJS.ErrnoException).code === "ENOENT") {
       return { success: true, data: emptyProfilesFile() };
     }
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: `Failed to read profiles: ${msg}`, exitCode: EXIT.GENERAL };
+    return {
+      success: false,
+      error: `Failed to read profiles: ${sanitizeErrorMessage(e)}`,
+      exitCode: EXIT.GENERAL,
+    };
   }
   warnIfInsecure(path);
   let json: unknown;
   try {
     json = JSON.parse(buf);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: `Invalid profiles JSON: ${msg}`, exitCode: EXIT.GENERAL };
+    return {
+      success: false,
+      error: `Invalid profiles JSON: ${sanitizeErrorMessage(e)}`,
+      exitCode: EXIT.GENERAL,
+    };
   }
   const parsed = ProfilesFileSchema.safeParse(json);
   if (!parsed.success) {
     return {
       success: false,
-      error: `Invalid profiles file at ${path}: schema mismatch`,
+      error: sanitizeErrorMessage(`Invalid profiles file at ${path}: schema mismatch`),
       exitCode: EXIT.GENERAL,
     };
   }
@@ -123,7 +130,10 @@ export function saveProfiles(
     } catch {
       // tmp may not exist; ignore cleanup failure
     }
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: `Failed to write profiles: ${msg}`, exitCode: EXIT.GENERAL };
+    return {
+      success: false,
+      error: `Failed to write profiles: ${sanitizeErrorMessage(e)}`,
+      exitCode: EXIT.GENERAL,
+    };
   }
 }

@@ -2,6 +2,7 @@
 import { parseArgs } from "node:util";
 import type { RuntimeContext } from "./commands/handler-types.js";
 import { COMMON_OPTIONS } from "./common-options.js";
+import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
 import { showHelp, showPaperHelp, showProfileHelp, showTradeHelp } from "./help-print.js";
 import { machineOutput } from "./output.js";
@@ -84,7 +85,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((e: unknown) => {
-  const msg = e instanceof Error ? e.message : String(e);
-  process.stderr.write(`Fatal: ${msg}\n`);
+  process.stderr.write(`Fatal: ${sanitizeErrorMessage(e)}\n`);
   process.exit(EXIT.GENERAL);
 });

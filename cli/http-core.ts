@@ -1,5 +1,6 @@
 // 100行超: リトライ判定・指数バックオフ＋ジッター・fetch 本体を一箇所に集約しているため。
 import { apiErrorExitCode, formatApiError } from "./error-codes.js";
+import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
 import { extractRateLimit } from "./rate-limit.js";
 import { type Bucket, detectBucket, updateRateLimit, waitForSlot } from "./throttle.js";
@@ -76,8 +77,7 @@ async function attemptOnce<T>(
     };
     return { kind: "done", result };
   } catch (e) {
-    const error = e instanceof Error ? e.message : String(e);
-    return { kind: "retry", res: null, error, exitCode: EXIT.NETWORK };
+    return { kind: "retry", res: null, error: sanitizeErrorMessage(e), exitCode: EXIT.NETWORK };
   } finally {
     clearTimeout(timer);
   }
