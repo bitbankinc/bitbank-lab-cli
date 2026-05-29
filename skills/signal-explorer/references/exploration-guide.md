@@ -226,7 +226,7 @@ backtest skill の Step 3.5 と同じ哲学:
 ### 3.3 candles との結合手順
 
 1. CLI で candles を `--format=json --machine` で取得
-2. envelope の `success` を確認後、`data.candlestick[0].ohlcv` から各行を抽出。
+2. envelope の `success` を確認後、`data` 配列から各行 `{open, high, low, close, vol, timestamp}` を抽出（CLI が数値正規化済み、timestamp はミリ秒 UTC、配列は昇順＝古い順）。
    `meta.lastIsIncomplete: true` なら末尾足を除外、`gaps` があれば欠損区間を外す
 3. 各行から `timestamp_ms` を抽出
 4. 入力 JSON と **left-join**（candles を左、外部データを右）

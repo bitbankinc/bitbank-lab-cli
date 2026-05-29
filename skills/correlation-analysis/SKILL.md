@@ -93,8 +93,9 @@ bitbank candles btc_jpy --type=1day --from=20240101 --to=20241231 --format=json 
 
 ### 整列（inner join）
 
-- envelope の `success` を確認後、`data.candlestick[0].ohlcv` から OHLCV を
-  取り出し、`close` と `timestamp` を数値変換
+- envelope の `success` を確認後、`data` 配列から各行
+  `{open, high, low, close, vol, timestamp}` を取り出す（CLI が数値正規化済み、
+  timestamp はミリ秒 UTC、配列は昇順＝古い順）。本 skill は `close` と `timestamp` を使う
 - 各ペアの **`meta.lastIsIncomplete: true` なら末尾足をリターン計算から除外**
   （未確定足を含めると当日の相関が安定しない）。`gaps` がある場合は欠損
   区間を取り除いてから inner join する

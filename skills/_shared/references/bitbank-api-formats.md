@@ -53,7 +53,7 @@ API キーや境界判定には JST を持ち込まない。
 実装は `cli/date-utils.ts` の `ymdUtc` / `yearUtc` / `todayDate` / `nextBoundaryMs`
 を経由する。`cache.ts` の `isCompletePeriod` も UTC 基準で「今日」と比較する。
 
-### レスポンス形式
+### レスポンス形式（bitbank raw — `--machine` 出力ではない）
 
 ```json
 {
@@ -75,25 +75,45 @@ API キーや境界判定には JST を持ち込まない。
 - `timestamp` はミリ秒 UNIX タイムスタンプ（数値）
 - 配列は**古い順**（先頭が最も古いデータ）
 
+> これは bitbank API の **raw** 形式。CLI の `--machine` 出力では `data` がこの
+> nested 構造ではなく平坦な `Candle[]`（各行 `{open, high, low, close, vol, timestamp}`、
+> CLI が数値正規化済み、`type` 時間軸ラベルは落ちる）になる。詳細は下記
+> 「CLI machine output envelope」節。
+
 ## レスポンス共通
 
 - `success: 1` で成功、`success: 0` でエラー
 - 価格・数量は API 側では**すべて文字列**で返る（数値変換が必要）
 - エラー時: `{ "success": 0, "data": { "code": 10000 } }`
 
+## 配列順序（エンドポイント別）
+
+各エンドポイントが返す配列の並び順（ライブ確認済み）:
+
+| エンドポイント | 並び順 |
+|---|---|
+| `candles` | **昇順（古い順）**。先頭が最古・末尾が最新。CLI が結合時に timestamp 昇順へ正規化する（`cli/commands/public/candles-merge.ts`）ため、`--machine` の平坦 `data` 配列も昇順が保証される |
+| `transactions` | **降順（新しい順）**。先頭が最新の約定 |
+| `depth` | `asks` は**価格昇順**（最安の売り板が先頭）、`bids` は**価格降順**（最高の買い板が先頭） |
+
 ## CLI machine output envelope（`--machine`）
 
 skill から one-shot コマンドを呼ぶときは `--format=json --machine` を併用する
 （規約は `cli-conventions.md`）。`--machine` で吐かれるのは bitbank API の
-raw レスポンス（上記の `success: 1 / data: ...`）を **CLI 側の Result envelope
-で包んだ二重構造** で、形は以下:
+レスポンス本体（`data`）を **CLI 側の Result envelope で包んだ構造**。多くの
+エンドポイントは `data` をほぼそのまま（数値正規化のみ）通すが、**candles は
+例外**で、CLI が上記 raw の `candlestick[].ohlcv` を平坦な `Candle[]` に整形して
+返す（API が返す `type` 時間軸ラベルは落ちる）。形は以下（candles の例）:
 
 成功時:
 
 ```json
 {
   "success": true,
-  "data": { "candlestick": [{ "type": "1day", "ohlcv": [...] }] },
+  "data": [
+    { "open": 100, "high": 110, "low": 90, "close": 105, "vol": 50, "timestamp": 1000 },
+    { "open": 105, "high": 115, "low": 95, "close": 110, "vol": 60, "timestamp": 2000 }
+  ],
   "meta": {
     "lastIsIncomplete": true,
     "gaps": [{ "from": 1735603200000, "to": 1735776000000, "missing": 2 }],
@@ -111,8 +131,10 @@ raw レスポンス（上記の `success: 1 / data: ...`）を **CLI 側の Resu
 
 - 外側の `success` / `error` / `exitCode` は **CLI 側の Result**。
   `success === true` でなければ `data` を読まない
-- 内側の `data` は bitbank API のレスポンス本体（`data.candlestick[0].ohlcv` 等）。
-  CLI が数値正規化済みのため文字列 → 数値変換は不要（後述）
+- 内側の `data` は bitbank API のレスポンス本体に CLI が数値正規化を施したもの。
+  **ただし candles は例外**で、CLI が nested `candlestick[].ohlcv` を平坦な
+  `Candle[]`（各行 `{open, high, low, close, vol, timestamp}`）に整形して返す（API が
+  返す `type` 時間軸ラベルは落ちる）。数値正規化済みのため文字列 → 数値変換は不要（後述）
 - `meta` は CLI が付与する補助情報。candles なら `lastIsIncomplete` / `gaps` /
   `dedupedCount` / `truncated` が入りうる。読み方は `cli-conventions.md`
   「`--machine` envelope の読み方」を参照

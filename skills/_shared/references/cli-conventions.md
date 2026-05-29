@@ -37,7 +37,10 @@ bitbank candles btc_jpy --type=1day --format=json --machine
 ```json
 {
   "success": true,
-  "data": { "candlestick": [{ "type": "1day", "ohlcv": [...] }] },
+  "data": [
+    { "open": 100, "high": 110, "low": 90, "close": 105, "vol": 50, "timestamp": 1000 },
+    { "open": 105, "high": 115, "low": 95, "close": 110, "vol": 60, "timestamp": 2000 }
+  ],
   "meta": {
     "lastIsIncomplete": true,
     "gaps": [{ "from": 1735603200000, "to": 1735776000000, "missing": 2 }],
@@ -56,7 +59,10 @@ skill 側のパース規律:
 
 - **必ず `success` を先に確認**してから値を読む（`false` なら `error` 文字列を見て、
   必要に応じて [`error-catalog.md`](./error-catalog.md) のカテゴリで分岐）
-- 値は `data` 配下から取り出す（candles なら `result.data.candlestick[0].ohlcv`）
+- 値は `data` から取り出す。candles の `data` は平坦な配列で、各行は
+  `{open, high, low, close, vol, timestamp}` オブジェクト（`result.data[0].open` の
+  ように直接読む。timestamp はミリ秒 UNIX/UTC、配列は昇順＝古い順。`data.candlestick`
+  は存在しない）。エンドポイント別の配列順序は `bitbank-api-formats.md` の「配列順序」を参照
 - `meta` が存在する場合は **必ず確認** する。とくに candles では以下を扱う:
   - `lastIsIncomplete: true` → 末尾足が未確定。指標・統計から落とすか「未確定」を明示
   - `gaps: [...]` → 欠損足あり。区間と件数をユーザーに報告し、結合・補間の要否を判断

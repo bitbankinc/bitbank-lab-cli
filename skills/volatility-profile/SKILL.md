@@ -80,10 +80,10 @@ bitbank candles eth_jpy --type=15min --limit=5000 --format=json --machine
 ユーザーが片方の足種だけを指定した場合は、その足種だけで計算し、
 **√T スケーリング項目はスキップ**する（残り 4 項目は計算）。
 
-envelope の `success` を確認後、`data.candlestick[0].ohlcv` 配列から OHLCV
-を取り出す。各要素は `[open, high, low, close, volume, timestamp]`。
-価格・出来高は文字列で返るので **数値変換してから計算する**（Gotchas 参照）。
-配列は **古い順**（先頭が最古）。
+envelope の `success` を確認後、`data` 配列から各行
+`{open, high, low, close, vol, timestamp}` を取り出す（CLI が数値正規化済み、
+timestamp はミリ秒 UNIX/UTC。`--machine` の `data` は平坦な配列で
+`data.candlestick` は存在しない）。配列は **昇順（古い順）**（先頭が最古）。
 
 `meta.lastIsIncomplete: true` なら末尾足は未確定。**分布統計を歪めるため
 リターン計算から除外する**（リターン定義 `log(close[t]/close[t-1])` で
@@ -241,8 +241,9 @@ Spearman: 0.51
 
 1. ペアと（指定があれば）期間・足種を確認
 2. 短期足・長期足それぞれを CLI で取得（`--format=json --machine`）
-3. envelope の `success` を確認後、`data.candlestick[0].ohlcv` から OHLCV を取り出し、
-   文字列を数値変換。`meta.lastIsIncomplete: true` なら末尾足を除外、
+3. envelope の `success` を確認後、`data` 配列から各行
+   `{open, high, low, close, vol, timestamp}` を取り出す（CLI が数値正規化済み、
+   timestamp はミリ秒 UTC、配列は昇順＝古い順）。`meta.lastIsIncomplete: true` なら末尾足を除外、
    `gaps` があれば欠損区間を系列から外しサマリーに明示
 4. 対数リターン `log(close[t]/close[t-1])` を計算（先頭は欠損）
 5. 5 セットの分析を計算（短期足のみ指定時は √T 以外の 4 セット）

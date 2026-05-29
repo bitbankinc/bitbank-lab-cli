@@ -258,7 +258,7 @@ ATR とは独立しているので「ボラ × モメンタム」の組み合わ
 1. シグナル指定経路（A/B/C）と評価対象を確定。経路 C なら JSON フォーマットを確認
 2. ペア・足種・期間を確認。指定がなければ「BTC/JPY 1hour、過去 9 ヶ月」をデフォルト提案
 3. CLI でローソク足を取得（`--format=json --machine`）。必要本数 = 期間 + max(window, max_lag) のバッファ。
-   envelope の `success` を確認後、`data.candlestick[0].ohlcv` を取り出す。
+   envelope の `success` を確認後、`data` 配列から各行 `{open, high, low, close, vol, timestamp}` を取り出す（CLI が数値正規化済み、timestamp はミリ秒 UTC、配列は昇順＝古い順）。
    `meta.lastIsIncomplete: true` なら末尾足は **必ず除外**（将来リターン
    `r_fwd[t]` を計算する直前足はリーク源になりやすいため、未確定足を含めない）。
    `gaps` がある場合は欠損区間を取り除いてから将来リターンとシグナルを整列する
