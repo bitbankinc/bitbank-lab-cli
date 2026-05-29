@@ -75,7 +75,9 @@ skill 側のパース規律:
 
 - one-shot CLI は `--machine` 経由で `{ success, data, partial?, meta? }` /
   `{ success: false, error, exitCode }` の envelope を返す（上記参照）
-- `error` は文字列（例: `"60001: 残高不足"`）。先頭の数値がエラーコード
+- `error` は文字列（通常例: `"60001: 残高不足"`）。通常は先頭の数値がエラーコード。
+  **public / private とも同じ `"<code>: <和訳>"` 形式**で返る。ただしコードマッピング
+  未登録時は `"API error: <code>"`（先頭が数値にならない例外）
 - skill 側のリトライ戦略・カテゴリ別ハンドリングは
   [`error-catalog.md`](./error-catalog.md) に集約。
   「rate_limit はどう待つか」「POST はなぜ自動再送しないか」等はここを見る
