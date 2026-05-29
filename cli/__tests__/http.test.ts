@@ -13,7 +13,7 @@ describe("publicGet", () => {
   it("returns error on API failure", async () => {
     const fetch = mockFetchRaw({ success: 0, data: { code: 10000 } });
     const result = await publicGet("/bad", { fetch, retries: 0 });
-    expect(result).toMatchObject({ success: false, error: "10000" });
+    expect(result).toMatchObject({ success: false, error: "10000: URL不正" });
   });
 
   it("returns error on HTTP failure after retries", async () => {
@@ -115,13 +115,12 @@ describe("publicGet", () => {
     vi.useRealTimers();
   });
 
-  it("returns code-only error on 60001 via publicGet's parseError contract", async () => {
-    // publicGet は parseError でコードのみ返す（http.ts）。
-    // formatApiError 経由の "60001: 残高不足" は privateGet 側の責務で、
-    // http-private.test.ts でカバーする。
+  it("maps 60001 to coded message via publicGet's parseError contract", async () => {
+    // publicGet も private と共通でコードマッピング（formatApiError）を通す。
+    // public/private のエラー文字列は同形式 "<code>: <和訳>" に揃っている。
     const fetch: typeof globalThis.fetch = async () =>
       new Response(JSON.stringify({ success: 0, data: { code: 60001 } }));
     const result = await publicGet("/test", { fetch, retries: 0 });
-    expect(result).toMatchObject({ success: false, error: "60001" });
+    expect(result).toMatchObject({ success: false, error: "60001: 残高不足" });
   });
 });
