@@ -7,7 +7,8 @@ describe("cancel-orders", () => {
   it("returns dryRun without --execute", async () => {
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const result = await cancelOrders({ pair: "btc_jpy", orderIds: "1,2,3" });
-    expect(result).toEqual({ success: true, data: { dryRun: true } });
+    expect(result).toMatchObject({ success: true, data: { dryRun: true } });
+    expect(writeSpy).not.toHaveBeenCalled();
     writeSpy.mockRestore();
   });
 
@@ -116,7 +117,8 @@ describe("cancel-orders", () => {
   it("accepts whitespace-padded ids", async () => {
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const result = await cancelOrders({ pair: "btc_jpy", orderIds: "1, 2 ,3" });
-    expect(result).toEqual({ success: true, data: { dryRun: true } });
+    expect(result).toMatchObject({ success: true, data: { dryRun: true } });
+    expect(writeSpy).not.toHaveBeenCalled();
     writeSpy.mockRestore();
   });
 

@@ -55,7 +55,7 @@ describe("trade audit default logging", () => {
     expect(writeTradeLog).not.toHaveBeenCalled();
   });
 
-  it("writes warning to stderr when log write fails", async () => {
+  it("writes warning to stderr when log write fails (human mode)", async () => {
     writeTradeLog.mockClear();
     writeTradeLog.mockResolvedValueOnce({
       success: false,
@@ -70,9 +70,36 @@ describe("trade audit default logging", () => {
     errSpy.mockRestore();
   });
 
+  it("does not write the non-JSON log-failure warning to stderr in machine mode (#7)", async () => {
+    writeTradeLog.mockClear();
+    writeTradeLog.mockResolvedValueOnce({
+      success: false,
+      error: "Failed to write trade log: EACCES",
+    });
+    const cap = captureStdout();
+    const errSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const th = makeTh();
+    await th([], { pair: "btc_jpy", "order-id": "1", machine: true }, "json");
+    const out = cap.read();
+    cap.restore();
+    errSpy.mockRestore();
+    // stdout stays a single valid JSON envelope; stderr is not polluted with a raw line.
+    expect(JSON.parse(out).success).toBe(true);
+    expect(errSpy).not.toHaveBeenCalled();
+  });
+
   it("does not log on dry-run even with default enabled", async () => {
     writeTradeLog.mockClear();
-    mockCancel.mockResolvedValueOnce({ success: true, data: { dryRun: true } } as never);
+    mockCancel.mockResolvedValueOnce({
+      success: true,
+      data: {
+        dryRun: true,
+        endpoint: "/v1/user/spot/cancel_order",
+        body: { pair: "btc_jpy", order_id: 1 },
+        executeHint: "npx bitbank trade cancel-order --execute --confirm=I-UNDERSTAND-CANCEL-ORDER",
+        confirmPhrase: "I-UNDERSTAND-CANCEL-ORDER",
+      },
+    } as never);
     const cap = captureStdout();
     const th = makeTh();
     await th([], { pair: "btc_jpy", "order-id": "1" }, "json");

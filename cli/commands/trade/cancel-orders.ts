@@ -2,7 +2,7 @@ import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
-import type { Result } from "../../types.js";
+import type { DryRunData, Result } from "../../types.js";
 import { MSG_ORDER_IDS, PairSchema } from "../../validators.js";
 import { CancelOrderSchema } from "../shared-schemas.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
@@ -58,7 +58,7 @@ export type CancelOrdersArgs = {
 export async function cancelOrders(
   args: CancelOrdersArgs,
   opts?: PrivatePostOptions,
-): Promise<Result<CancelOrdersResponse | { dryRun: true }>> {
+): Promise<Result<CancelOrdersResponse | DryRunData>> {
   const parsed = CancelOrdersInputSchema.safeParse({
     pair: args.pair,
     orderIds: args.orderIds,

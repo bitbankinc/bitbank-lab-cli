@@ -2,7 +2,7 @@ import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
-import type { Result } from "../../types.js";
+import type { DryRunData, Result } from "../../types.js";
 import { PairSchema, PositiveDecimalSchema } from "../../validators.js";
 import { OrderSchema } from "../shared-schemas.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
@@ -50,7 +50,7 @@ export type CreateOrderArgs = {
 export async function createOrder(
   args: CreateOrderArgs,
   opts?: PrivatePostOptions,
-): Promise<Result<OrderResponse | { dryRun: true }>> {
+): Promise<Result<OrderResponse | DryRunData>> {
   const parsed = CreateOrderInputSchema.safeParse({
     pair: args.pair,
     side: args.side,

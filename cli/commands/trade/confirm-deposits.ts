@@ -2,7 +2,7 @@ import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
-import type { Result } from "../../types.js";
+import type { DryRunData, Result } from "../../types.js";
 import { IntegerStringSchema } from "../../validators.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
@@ -31,7 +31,7 @@ export type ConfirmDepositsArgs = {
 export async function confirmDeposits(
   args: ConfirmDepositsArgs,
   opts?: PrivatePostOptions,
-): Promise<Result<ConfirmDepositsResponse | { dryRun: true }>> {
+): Promise<Result<ConfirmDepositsResponse | DryRunData>> {
   const parsed = ConfirmDepositsInputSchema.safeParse({
     id: args.id,
     execute: args.execute,

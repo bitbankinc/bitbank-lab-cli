@@ -48,3 +48,13 @@ export type Result<T> =
   | { success: false; error: string; exitCode?: ExitCode };
 
 export type Format = "json" | "table" | "csv";
+
+/** Trade dry-run のプレビュー構造化データ。--machine では envelope の data に載り、
+ *  human 表示では output-dry-run.ts が整形ボックスへ描画する。 */
+export type DryRunData = {
+  dryRun: true;
+  endpoint: string;
+  body: Record<string, unknown>;
+  executeHint: string;
+  confirmPhrase?: string;
+};

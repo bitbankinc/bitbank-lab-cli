@@ -24,7 +24,7 @@ const VALID_RESPONSE = {
 };
 
 describe("create-order", () => {
-  it("returns dryRun when --execute is not set", async () => {
+  it("returns dryRun when --execute is not set (executeHint carries --execute)", async () => {
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const result = await createOrder({
       pair: "btc_jpy",
@@ -33,10 +33,11 @@ describe("create-order", () => {
       price: "5000000",
       amount: "0.001",
     });
-    expect(result).toEqual({ success: true, data: { dryRun: true } });
-    const output = writeSpy.mock.calls.map((c) => c[0]).join("");
-    expect(output).toContain("DRY RUN");
-    expect(output).toContain("--execute");
+    expect(result).toMatchObject({
+      success: true,
+      data: { dryRun: true, executeHint: expect.stringContaining("--execute") },
+    });
+    expect(writeSpy).not.toHaveBeenCalled();
     writeSpy.mockRestore();
   });
 
@@ -94,18 +95,22 @@ describe("create-order", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("dry-run output includes the confirm phrase requirement", async () => {
-    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    await createOrder({
+  it("dry-run result conveys the confirm phrase requirement", async () => {
+    const result = await createOrder({
       pair: "btc_jpy",
       side: "buy",
       type: "limit",
       price: "5000000",
       amount: "0.001",
     });
-    const output = writeSpy.mock.calls.map((c) => c[0]).join("");
-    expect(output).toContain("--confirm=I-UNDERSTAND-CREATE-ORDER");
-    writeSpy.mockRestore();
+    expect(result).toMatchObject({
+      success: true,
+      data: {
+        dryRun: true,
+        confirmPhrase: "I-UNDERSTAND-CREATE-ORDER",
+        executeHint: expect.stringContaining("--confirm=I-UNDERSTAND-CREATE-ORDER"),
+      },
+    });
   });
 
   it("validates price required for limit order", async () => {
@@ -241,7 +246,7 @@ describe("create-order", () => {
       type: "market",
       amount: "0.001",
     });
-    expect(result).toEqual({ success: true, data: { dryRun: true } });
+    expect(result).toMatchObject({ success: true, data: { dryRun: true } });
     writeSpy.mockRestore();
   });
 

@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { isDryRunData } from "../output-dry-run.js";
 import { output } from "../output.js";
 import { buildLogRecord, writeTradeLog } from "../trade-log.js";
 import type { CommandHandler, ParsedValues, RuntimeContext } from "./handler-types.js";
@@ -32,11 +33,7 @@ export function handler(
   };
 }
 
-function isDryRun(r: { success: boolean; data?: unknown }): boolean {
-  return r.success && typeof r.data === "object" && r.data !== null && "dryRun" in r.data;
-}
-
-/** Trade 用: module を動的 import して fn(params, opts) → isDryRun check → output + log */
+/** Trade 用: module を動的 import → output（dry-run も machine 分岐込みで通す）→ 実行時のみ監査ログ */
 export function tradeHandler(
   modulePath: string,
   fnName: string,
@@ -47,14 +44,15 @@ export function tradeHandler(
     const params = extract(values);
     const opts = ctxOpts(ctx);
     const r = await mod[fnName](params, opts);
-    if (isDryRun(r)) return;
-    output(r, fmt, values.raw === true, values.machine === true);
-    if (values["no-log"] !== true) {
-      const logFile = valStr(values, "log-file") ?? DEFAULT_TRADE_LOG;
-      const logResult = await writeTradeLog(logFile, buildLogRecord(fnName, params, r));
-      if (!logResult.success) {
-        process.stderr.write(`${logResult.error}\n`);
-      }
+    const machine = values.machine === true;
+    output(r, fmt, values.raw === true, machine);
+    // dry-run は実行していないので監査ログを書かない。実行時（成功/失敗）のみ記録する。
+    if ((r.success && isDryRunData(r.data)) || values["no-log"] === true) return;
+    const logFile = valStr(values, "log-file") ?? DEFAULT_TRADE_LOG;
+    const logResult = await writeTradeLog(logFile, buildLogRecord(fnName, params, r));
+    // machine では stdout/stderr の機械可読性を保つため、非 JSON の警告行を stderr に出さない。
+    if (!logResult.success && !machine) {
+      process.stderr.write(`${logResult.error}\n`);
     }
   };
 }

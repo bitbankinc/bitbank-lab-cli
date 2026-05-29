@@ -4,12 +4,11 @@ import { EXIT } from "../../exit-codes.js";
 import { TEST_CREDS, mockFetchRaw } from "../test-helpers.js";
 
 describe("cancel-order", () => {
-  it("returns dryRun without --execute", async () => {
+  it("returns dryRun without --execute (output layer renders the box, not the command)", async () => {
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const result = await cancelOrder({ pair: "btc_jpy", orderId: "123" });
-    expect(result).toEqual({ success: true, data: { dryRun: true } });
-    const output = writeSpy.mock.calls.map((c) => c[0]).join("");
-    expect(output).toContain("DRY RUN");
+    expect(result).toMatchObject({ success: true, data: { dryRun: true } });
+    expect(writeSpy).not.toHaveBeenCalled();
     writeSpy.mockRestore();
   });
 

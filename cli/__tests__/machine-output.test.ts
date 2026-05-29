@@ -72,6 +72,30 @@ describe("machine mode", () => {
       expect(parsed).toEqual({ success: true, data: "ok" });
       expect("meta" in parsed).toBe(false);
     });
+
+    it("emits dry-run data as a single JSON envelope, not the human box", () => {
+      output(
+        {
+          success: true,
+          data: {
+            dryRun: true,
+            endpoint: "/v1/user/spot/order",
+            body: { pair: "btc_jpy" },
+            executeHint: "run --execute",
+            confirmPhrase: "I-UNDERSTAND-CREATE-ORDER",
+          },
+        },
+        "json",
+        false,
+        true,
+      );
+      const parsed = JSON.parse(stdout);
+      expect(parsed.success).toBe(true);
+      expect(parsed.data.dryRun).toBe(true);
+      expect(parsed.data.endpoint).toBe("/v1/user/spot/order");
+      expect(stdout).not.toContain("DRY RUN");
+      expect(stderr).toBe("");
+    });
   });
 
   describe("machineOutput standalone", () => {

@@ -1,3 +1,4 @@
+import { isDryRunData, printDryRunBox } from "./output-dry-run.js";
 import { printCsv, printTable } from "./output-tabular.js";
 import type { Format, Result } from "./types.js";
 
@@ -9,6 +10,11 @@ export function output<T>(result: Result<T>, format: Format, raw = false, machin
   if (!result.success) {
     process.stderr.write(`Error: ${result.error}\n`);
     process.exitCode = result.exitCode ?? 1;
+    return;
+  }
+  // dry-run プレビューは human では整形ボックスで表示（machine は冒頭の envelope 経路）。
+  if (isDryRunData(result.data)) {
+    printDryRunBox(result.data);
     return;
   }
   if (result.meta?.truncated) {

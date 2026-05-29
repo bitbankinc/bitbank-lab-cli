@@ -6,7 +6,8 @@ describe("confirm-deposits", () => {
   it("returns dryRun without --execute", async () => {
     const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const result = await confirmDeposits({ id: "12345" });
-    expect(result).toEqual({ success: true, data: { dryRun: true } });
+    expect(result).toMatchObject({ success: true, data: { dryRun: true } });
+    expect(writeSpy).not.toHaveBeenCalled();
     writeSpy.mockRestore();
   });
 

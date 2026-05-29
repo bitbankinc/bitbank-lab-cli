@@ -60,7 +60,7 @@ describe("Chaos T-08: market order with --price (should be ignored or ok)", () =
       type: "market",
       amount: "0.001",
     });
-    expect(r).toEqual({ success: true, data: { dryRun: true } });
+    expect(r).toMatchObject({ success: true, data: { dryRun: true } });
     spy.mockRestore();
   });
 });

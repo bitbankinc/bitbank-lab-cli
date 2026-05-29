@@ -1,36 +1,7 @@
+import type { DryRunData } from "../../types.js";
 import { CONFIRM_PHRASES, type TradeCommandKey } from "./confirm-guard.js";
 
-export type DryRunInfo = {
-  endpoint: string;
-  body: Record<string, unknown>;
-  executeHint: string;
-  confirmPhrase?: string;
-};
-
 const SENSITIVE_FLAGS = new Set(["token", "otp_token"]);
-
-export function printDryRun(info: DryRunInfo): void {
-  const lines = [
-    "🔍 DRY RUN（実際のAPIは叩きません）",
-    "",
-    "リクエスト内容:",
-    `  エンドポイント: POST ${info.endpoint}`,
-    "  ボディ:",
-  ];
-  for (const [k, v] of Object.entries(info.body)) {
-    const display = SENSITIVE_FLAGS.has(k) ? '"***"' : JSON.stringify(v);
-    lines.push(`    ${k}: ${display}`);
-  }
-  lines.push("");
-  const phrase = info.confirmPhrase;
-  lines.push(
-    phrase
-      ? `実行するには --execute と --confirm=${phrase} を付けてください:`
-      : "実行するには --execute を付けてください:",
-  );
-  lines.push(`  ${info.executeHint}`);
-  process.stdout.write(`${lines.join("\n")}\n`);
-}
 
 export type TradeDryRunInput = {
   command: TradeCommandKey;
@@ -57,15 +28,27 @@ export function buildExecuteHint(input: TradeDryRunInput): string {
   return `npx bitbank trade ${input.command} ${flags.join(" ")}`;
 }
 
-export function dryRunResult(input: TradeDryRunInput): {
-  success: true;
-  data: { dryRun: true };
-} {
-  printDryRun({
-    endpoint: input.endpoint,
-    body: input.body,
-    executeHint: buildExecuteHint(input),
-    confirmPhrase: CONFIRM_PHRASES[input.command],
-  });
-  return { success: true, data: { dryRun: true } };
+/** body の機微フラグ（token 等）をマスクする。--machine の envelope にも載るため、
+ *  描画側ではなくデータ生成時にマスクして秘匿を保証する。 */
+function maskBody(body: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(body)) {
+    out[k] = SENSITIVE_FLAGS.has(k) ? "***" : v;
+  }
+  return out;
+}
+
+/** dry-run の構造化データを返す（描画はしない）。
+ *  出力層（output.ts / output-dry-run.ts）が machine=envelope / human=box に振り分ける。 */
+export function dryRunResult(input: TradeDryRunInput): { success: true; data: DryRunData } {
+  return {
+    success: true,
+    data: {
+      dryRun: true,
+      endpoint: input.endpoint,
+      body: maskBody(input.body),
+      executeHint: buildExecuteHint(input),
+      confirmPhrase: CONFIRM_PHRASES[input.command],
+    },
+  };
 }

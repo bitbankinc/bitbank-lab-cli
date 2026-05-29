@@ -109,25 +109,50 @@ describe("handler request context (meta)", () => {
   });
 });
 
-describe("tradeHandler", () => {
-  it("skips output on dry run result", async () => {
-    const cap = captureStdout();
+describe("tradeHandler dry-run", () => {
+  const dryData = {
+    success: true,
+    data: {
+      dryRun: true,
+      endpoint: "/v1/user/spot/cancel_order",
+      body: { pair: "btc_jpy", order_id: 123 },
+      executeHint:
+        "npx bitbank trade cancel-order --pair=btc_jpy --order-id=123 --execute --confirm=I-UNDERSTAND-CANCEL-ORDER",
+      confirmPhrase: "I-UNDERSTAND-CANCEL-ORDER",
+    },
+  };
 
-    const th = tradeHandler(
+  function makeTh() {
+    return tradeHandler(
       new URL("../commands/trade/cancel-order.js", import.meta.url).pathname,
       "cancelOrder",
       (v) => ({ pair: v.pair as string, orderId: v["order-id"] as string }),
     );
+  }
 
-    vi.spyOn(await import("../commands/trade/cancel-order.js"), "cancelOrder").mockResolvedValue({
-      success: true,
-      data: { dryRun: true },
-    });
-
-    await th([], { pair: "btc_jpy", "order-id": "123" }, "json");
-    const output = cap.read();
+  it("renders the human DRY RUN box by default (json) without printing JSON", async () => {
+    const cap = captureStdout();
+    vi.spyOn(await import("../commands/trade/cancel-order.js"), "cancelOrder").mockResolvedValue(
+      dryData as never,
+    );
+    await makeTh()([], { pair: "btc_jpy", "order-id": "123" }, "json");
+    const out = cap.read();
     cap.restore();
     vi.restoreAllMocks();
-    expect(output).toBe("");
+    expect(out).toContain("🔍 DRY RUN");
+    expect(out).toContain("POST /v1/user/spot/cancel_order");
+  });
+
+  it("emits a single JSON envelope with --machine (no human text)", async () => {
+    const cap = captureStdout();
+    vi.spyOn(await import("../commands/trade/cancel-order.js"), "cancelOrder").mockResolvedValue(
+      dryData as never,
+    );
+    await makeTh()([], { pair: "btc_jpy", "order-id": "123", machine: true }, "json");
+    const out = cap.read();
+    cap.restore();
+    vi.restoreAllMocks();
+    expect(out).not.toContain("DRY RUN");
+    expect(JSON.parse(out)).toEqual(dryData);
   });
 });

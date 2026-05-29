@@ -140,4 +140,35 @@ describe("output", () => {
     expect(stderr).toContain("MAX_RANGE_FETCHES");
     expect(stderr).not.toContain("partial data returned");
   });
+
+  it("renders the human DRY RUN box for dry-run data instead of JSON (default json)", () => {
+    output(
+      {
+        success: true,
+        data: {
+          dryRun: true,
+          endpoint: "/v1/user/spot/order",
+          body: { pair: "btc_jpy" },
+          executeHint: "run --execute",
+          confirmPhrase: "I-UNDERSTAND-CREATE-ORDER",
+        },
+      },
+      "json",
+    );
+    expect(stdout).toContain("🔍 DRY RUN");
+    expect(stdout).toContain("POST /v1/user/spot/order");
+    // The human box is intentionally not JSON (back-compat).
+    expect(() => JSON.parse(stdout)).toThrow();
+  });
+
+  it("renders the DRY RUN box regardless of the human format (table)", () => {
+    output(
+      {
+        success: true,
+        data: { dryRun: true, endpoint: "/x", body: {}, executeHint: "run --execute" },
+      },
+      "table",
+    );
+    expect(stdout).toContain("DRY RUN");
+  });
 });
