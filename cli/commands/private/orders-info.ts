@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { Result } from "../../types.js";
@@ -19,13 +20,14 @@ export async function ordersInfo(
   if (!pv.success) return pv;
   const { orderIds } = args;
   if (!orderIds) {
-    return { success: false, error: MSG_ORDER_IDS_INFO };
+    return { success: false, error: MSG_ORDER_IDS_INFO, exitCode: EXIT.PARAM };
   }
   const parts = orderIds.split(",").map((s) => s.trim());
   if (parts.some((p) => !/^[1-9]\d*$/.test(p))) {
     return {
       success: false,
       error: "order-ids must be comma-separated positive integers. Example: --order-ids=123,456",
+      exitCode: EXIT.PARAM,
     };
   }
   const ids = parts.map(Number);

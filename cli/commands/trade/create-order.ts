@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { Result } from "../../types.js";
@@ -63,7 +64,7 @@ export async function createOrder(
   });
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => i.message).join("; ");
-    return { success: false, error: msg };
+    return { success: false, error: msg, exitCode: EXIT.PARAM };
   }
 
   const body: Record<string, unknown> = {

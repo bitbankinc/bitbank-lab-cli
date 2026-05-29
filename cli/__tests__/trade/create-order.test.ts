@@ -1,6 +1,7 @@
 // 100行超: trade create-order の分岐を網羅
 import { describe, expect, it, vi } from "vitest";
 import { createOrder } from "../../commands/trade/create-order.js";
+import { EXIT } from "../../exit-codes.js";
 import { TEST_CREDS, mockFetchRaw } from "../test-helpers.js";
 
 const VALID_RESPONSE = {
@@ -182,6 +183,22 @@ describe("create-order", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("pair must be like btc_jpy");
+  });
+
+  // Regression (QA repro #2): `trade create-order --pair=BTCJPY ...` は pair 形式不正。
+  // 入力検証エラーなので exit 4 (PARAM) を返し、検証段階で fetch を叩かない。
+  it("rejects bad pair format → exit PARAM, no API call (repro: --pair=BTCJPY)", async () => {
+    const fetchSpy = vi.fn(mockFetchRaw(VALID_RESPONSE));
+    const result = await createOrder(
+      { pair: "BTCJPY", side: "buy", type: "market", amount: "0.001" },
+      { fetch: fetchSpy, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("pair must be like btc_jpy");
+      expect(result.exitCode).toBe(EXIT.PARAM);
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("rejects negative price", async () => {

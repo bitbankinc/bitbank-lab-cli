@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EXIT } from "../../exit-codes.js";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { parseResponse } from "../../parse-response.js";
 import type { Result } from "../../types.js";
@@ -24,7 +25,7 @@ export async function depositOriginators(
 ): Promise<Result<DepositOriginator[]>> {
   const { asset } = args;
   if (!asset) {
-    return { success: false, error: MSG_ASSET };
+    return { success: false, error: MSG_ASSET, exitCode: EXIT.PARAM };
   }
   const params: Record<string, string> = { asset };
 
