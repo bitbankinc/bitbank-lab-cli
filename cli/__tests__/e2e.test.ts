@@ -95,6 +95,27 @@ describe("CLI E2E", () => {
     expect(stdout).toContain("Usage: bitbank trade create-order");
   });
 
+  // Regression (QA repro): trade コマンドの入力検証エラーは exit 4 (PARAM)。
+  // 以前は exit 1 (GENERAL) で、bot が内部エラーと誤認してリトライしうる不具合だった。
+  it("trade cancel-order without --pair exits 4 (repro #1)", async () => {
+    const { stderr, exitCode } = await run("trade", "cancel-order", "--order-id=123");
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("pair is required");
+  });
+
+  it("trade create-order with malformed --pair exits 4 (repro #2)", async () => {
+    const { stderr, exitCode } = await run(
+      "trade",
+      "create-order",
+      "--pair=BTCJPY",
+      "--side=buy",
+      "--type=market",
+      "--amount=0.001",
+    );
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("pair must be like btc_jpy");
+  });
+
   const describeE2E = process.env.TEST_E2E === "1" ? describe : describe.skip;
 
   describeE2E("live API (TEST_E2E=1)", () => {
