@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nullableNumStr, numStr } from "../schema-helpers.js";
+import { nullableNumStr, numStr, safeId } from "../schema-helpers.js";
 
 describe("numStr", () => {
   it("rejects empty string", () => {
@@ -95,5 +95,45 @@ describe("nullableNumStr", () => {
     const result = nullableNumStr.safeParse("1e10");
     expect(result.success).toBe(true);
     if (result.success) expect(result.data).toBe(10_000_000_000);
+  });
+});
+
+describe("safeId", () => {
+  it("accepts a 10-digit safe integer (typical transaction_id)", () => {
+    const result = safeId.safeParse(1230957746);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toBe(1230957746);
+  });
+
+  it("accepts MAX_SAFE_INTEGER (upper boundary)", () => {
+    const result = safeId.safeParse(Number.MAX_SAFE_INTEGER);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it("rejects 2 ** 53 loudly (>= 2^53, precision may be lost)", () => {
+    const result = safeId.safeParse(2 ** 53);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.message).toContain("safe integer");
+  });
+
+  it("rejects a value beyond 2^53", () => {
+    const result = safeId.safeParse(2 ** 53 + 2);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a non-integer", () => {
+    const result = safeId.safeParse(1.5);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a string id (number-only by design; union not used)", () => {
+    const result = safeId.safeParse("1230957746");
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects NaN and Infinity", () => {
+    expect(safeId.safeParse(Number.NaN).success).toBe(false);
+    expect(safeId.safeParse(Number.POSITIVE_INFINITY).success).toBe(false);
   });
 });

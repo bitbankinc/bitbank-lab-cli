@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { type HttpOptions, publicGet } from "../../http.js";
 import { parseResponse } from "../../parse-response.js";
-import { numStr } from "../../schema-helpers.js";
+import { numStr, safeId } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { MSG_PAIR_TRANSACTIONS, validatePair } from "../../validators.js";
 
 const TransactionSchema = z.object({
-  transaction_id: z.number(),
+  transaction_id: safeId,
   side: z.string(),
   price: numStr,
   amount: numStr,

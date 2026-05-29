@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { nullableNumStr, numStr } from "../schema-helpers.js";
+import { nullableNumStr, numStr, safeId } from "../schema-helpers.js";
 
 /** 注文レスポンスの共通スキーマ（/user/spot/order 等） */
 export const OrderSchema = z.object({
-  order_id: z.number(),
+  order_id: safeId,
   pair: z.string(),
   side: z.string(),
   type: z.string(),

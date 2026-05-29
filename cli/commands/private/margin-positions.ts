@@ -2,12 +2,12 @@ import { z } from "zod";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
-import { numStr } from "../../schema-helpers.js";
+import { numStr, safeId } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
 
 const PositionSchema = z.object({
-  position_id: z.number(),
+  position_id: safeId,
   pair: z.string(),
   side: z.string(),
   amount: numStr,

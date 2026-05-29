@@ -5,7 +5,7 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
-import { numStr } from "../../schema-helpers.js";
+import { numStr, safeId } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { IntegerStringSchema, MSG_PAIR, PairSchema } from "../../validators.js";
 import {
@@ -17,9 +17,9 @@ import {
 } from "./input-schemas.js";
 
 const TradeSchema = z.object({
-  trade_id: z.number(),
+  trade_id: safeId,
   pair: z.string(),
-  order_id: z.number(),
+  order_id: safeId,
   side: z.string(),
   type: z.string(),
   amount: numStr,
