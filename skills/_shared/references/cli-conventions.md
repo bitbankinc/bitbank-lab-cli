@@ -65,6 +65,10 @@ skill 側のパース規律:
   `{open, high, low, close, vol, timestamp}` オブジェクト（`result.data[0].open` の
   ように直接読む。timestamp はミリ秒 UNIX/UTC、配列は昇順＝古い順。`data.candlestick`
   は存在しない）。エンドポイント別の配列順序は `bitbank-api-formats.md` の「配列順序」を参照
+- 数値フィールドは CLI が number に正規化済みで `Number(...)` / `parseFloat(...)` は不要。
+  ただし末尾ゼロ・極小値・極大桁では表現/精度の限界がある（`bitbank-api-formats.md`
+  「精度・表現の限界」参照）。RSI / SMA 等の指標計算は float64 で問題ないが、桁固定の
+  表示・桁数まで含めた照合には raw 確認 or 丸め前提で臨む
 - `meta` が存在する場合は **必ず確認** する。とくに candles では以下を扱う:
   - `lastIsIncomplete: true` → 末尾足が未確定。指標・統計から落とすか「未確定」を明示
   - `gaps: [...]` → 欠損足あり。区間と件数をユーザーに報告し、結合・補間の要否を判断
