@@ -141,6 +141,7 @@ describe("tradeHandler dry-run", () => {
     vi.restoreAllMocks();
     expect(out).toContain("🔍 DRY RUN");
     expect(out).toContain("POST /v1/user/spot/cancel_order");
+    expect(() => JSON.parse(out)).toThrow();
   });
 
   it("emits a single JSON envelope with --machine (no human text)", async () => {

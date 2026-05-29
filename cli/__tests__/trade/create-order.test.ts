@@ -247,6 +247,7 @@ describe("create-order", () => {
       amount: "0.001",
     });
     expect(result).toMatchObject({ success: true, data: { dryRun: true } });
+    expect(writeSpy).not.toHaveBeenCalled();
     writeSpy.mockRestore();
   });
 

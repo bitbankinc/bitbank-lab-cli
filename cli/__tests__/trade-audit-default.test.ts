@@ -82,10 +82,11 @@ describe("trade audit default logging", () => {
     await th([], { pair: "btc_jpy", "order-id": "1", machine: true }, "json");
     const out = cap.read();
     cap.restore();
-    errSpy.mockRestore();
     // stdout stays a single valid JSON envelope; stderr is not polluted with a raw line.
+    // (assert before mockRestore — Vitest's mockRestore clears the call history)
     expect(JSON.parse(out).success).toBe(true);
     expect(errSpy).not.toHaveBeenCalled();
+    errSpy.mockRestore();
   });
 
   it("does not log on dry-run even with default enabled", async () => {

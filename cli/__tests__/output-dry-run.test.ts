@@ -13,6 +13,12 @@ describe("isDryRunData", () => {
     expect(isDryRunData("dryRun")).toBe(false);
     expect(isDryRunData(undefined)).toBe(false);
   });
+
+  it("rejects a bare { dryRun: true } missing the required shape (fail-closed)", () => {
+    expect(isDryRunData({ dryRun: true })).toBe(false);
+    expect(isDryRunData({ dryRun: true, endpoint: "/x" })).toBe(false);
+    expect(isDryRunData({ dryRun: true, endpoint: "/x", body: {}, executeHint: 1 })).toBe(false);
+  });
 });
 
 describe("printDryRunBox", () => {

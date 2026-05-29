@@ -119,7 +119,7 @@ describe("CLI E2E", () => {
   // Regression (QA): trade dry-run (既定の安全経路) を --machine で取得すると、以前は
   // 人間向け日本語テキストが stdout に出て JSON.parse が壊れた。単一 JSON envelope を期待する。
   it("trade create-order dry-run --machine emits a single JSON envelope on stdout", async () => {
-    const { stdout, exitCode } = await run(
+    const { stdout, stderr, exitCode } = await run(
       "trade",
       "create-order",
       "--pair=btc_jpy",
@@ -130,6 +130,7 @@ describe("CLI E2E", () => {
       "--machine",
     );
     expect(exitCode).toBe(0);
+    expect(stderr).toBe("");
     const parsed = JSON.parse(stdout);
     expect(parsed.success).toBe(true);
     expect(parsed.data.dryRun).toBe(true);

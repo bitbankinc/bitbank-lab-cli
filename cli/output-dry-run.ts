@@ -1,10 +1,18 @@
 import type { DryRunData } from "./types.js";
 
 /** result.data が trade dry-run のプレビューか判定する type guard。
- *  machine は machineOutput が envelope を出すので、これは human 経路の分岐に使う。 */
+ *  human 経路の分岐と監査ログのスキップ判定に使うため、dryRun フラグだけでなく
+ *  shape も検証して fail-closed にする（実 API レスポンスの誤判定を防ぐ）。 */
 export function isDryRunData(data: unknown): data is DryRunData {
+  if (typeof data !== "object" || data === null) return false;
+  const v = data as Record<string, unknown>;
   return (
-    typeof data === "object" && data !== null && (data as { dryRun?: unknown }).dryRun === true
+    v.dryRun === true &&
+    typeof v.endpoint === "string" &&
+    typeof v.executeHint === "string" &&
+    typeof v.body === "object" &&
+    v.body !== null &&
+    (v.confirmPhrase === undefined || typeof v.confirmPhrase === "string")
   );
 }
 
