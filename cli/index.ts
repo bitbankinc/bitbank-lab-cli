@@ -9,6 +9,7 @@ import { machineOutput } from "./output.js";
 import { handleSpecialCommand, resolveCommand, runCommandHelp } from "./router.js";
 import { resolveStartupCredentials } from "./startup-credentials.js";
 import type { Format } from "./types.js";
+import { unknownLongFlags } from "./unknown-flags.js";
 
 function fail(machine: boolean, msg: string, code: ExitCode): void {
   if (machine) machineOutput({ success: false, error: msg, exitCode: code });
@@ -31,12 +32,19 @@ async function main(): Promise<void> {
 
   const { isTrade, isPaper, isProfile, command, entry } = resolveCommand(p1);
   const merged = { ...COMMON_OPTIONS, ...(entry?.options ?? {}) };
-  const { values, positionals } = parseArgs({
+  const { values, positionals, tokens } = parseArgs({
     allowPositionals: true,
     options: merged,
     strict: false,
+    tokens: true,
   });
   const machine = values.machine === true;
+  const unknown = unknownLongFlags(tokens, merged);
+  if (unknown.length > 0) {
+    const msg = `Unknown option(s): ${unknown.join(", ")}. Run with --help for usage.`;
+    fail(machine, msg, EXIT.PARAM);
+    return;
+  }
   const profileFlag = typeof values.profile === "string" ? values.profile : undefined;
   const credsResult = resolveStartupCredentials(profileFlag);
   if (!credsResult.success) {

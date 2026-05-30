@@ -153,6 +153,72 @@ describe("CLI E2E", () => {
     expect(stdout).toContain("--execute");
   });
 
+  // Regression (QA repro): 未知/タイポの long-flag は黙殺せず PARAM(4) で弾く。
+  // 以前は parseArgs が strict:false のため無警告で無視され、bot が「機械出力の
+  // つもり」で人間向け出力を exit 0 で受け取り検知できなかった。
+  it("rejects a typo'd flag --machien with exit 4 (repro #1)", async () => {
+    const { stderr, exitCode } = await run("ticker", "btc_jpy", "--machien");
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("Unknown option");
+    expect(stderr).toContain("--machien");
+  });
+
+  it("rejects a nonexistent flag --json with exit 4 (repro #2)", async () => {
+    const { stderr, exitCode } = await run("ticker", "btc_jpy", "--json");
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("Unknown option");
+  });
+
+  it("emits the unknown-flag error as a JSON envelope with --machine", async () => {
+    const { stdout, exitCode } = await run("--machine", "ticker", "btc_jpy", "--machien");
+    expect(exitCode).toBe(4);
+    const parsed = JSON.parse(stdout);
+    expect(parsed.success).toBe(false);
+    expect(parsed.error).toContain("Unknown option");
+    expect(parsed.exitCode).toBe(4);
+  });
+
+  it("lists multiple distinct unknown flags", async () => {
+    const { stderr, exitCode } = await run("ticker", "btc_jpy", "--foo", "--bar");
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("--foo");
+    expect(stderr).toContain("--bar");
+  });
+
+  // Object.prototype 継承名（--toString 等）も黙殺せず弾く。`in` 判定だと取りこぼす回帰。
+  it("rejects inherited prototype names like --toString with exit 4", async () => {
+    const { stderr, exitCode } = await run("ticker", "btc_jpy", "--toString");
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("Unknown option");
+  });
+
+  // 正常系の非回帰: 正規 flag は従来どおり受理する（schema は network 不要で exit 0）。
+  it("still accepts --format=table on a valid command (exit 0)", async () => {
+    const { stderr, exitCode } = await run("schema", "--format=table");
+    expect(exitCode).toBe(0);
+    expect(stderr).not.toContain("Unknown option");
+  });
+
+  it("still accepts --machine on a valid command (exit 0)", async () => {
+    const { exitCode } = await run("schema", "--machine");
+    expect(exitCode).toBe(0);
+  });
+
+  // short-flag は対象外。未定義の short flag は従来どおり黙って無視し、PARAM にしない。
+  it("does not flag short flags (-m) as unknown options", async () => {
+    const { stderr, exitCode } = await run("ticker", "btc_jpy", "-m");
+    expect(stderr).not.toContain("Unknown option");
+    expect(exitCode).not.toBe(4);
+  });
+
+  // `--` 区切り後は positional 扱い。--json は unknown option ではなく pair として渡る。
+  it("treats flags after -- as positionals, not unknown options", async () => {
+    const { stderr, exitCode } = await run("ticker", "--", "--json");
+    expect(stderr).not.toContain("Unknown option");
+    expect(stderr).toContain("pair must be like btc_jpy");
+    expect(exitCode).toBe(4);
+  });
+
   const describeE2E = process.env.TEST_E2E === "1" ? describe : describe.skip;
 
   describeE2E("live API (TEST_E2E=1)", () => {
