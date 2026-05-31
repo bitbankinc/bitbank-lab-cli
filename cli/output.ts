@@ -1,3 +1,4 @@
+import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { isDryRunData, printDryRunBox } from "./output-dry-run.js";
 import { printCsv, printTable } from "./output-tabular.js";
 import type { Format, Result } from "./types.js";
@@ -8,7 +9,8 @@ export function output<T>(result: Result<T>, format: Format, raw = false, machin
     return;
   }
   if (!result.success) {
-    process.stderr.write(`Error: ${result.error}\n`);
+    // index.ts の Fatal 経路と整合させ、human stderr でも制御文字/secret/パスを無害化
+    process.stderr.write(`Error: ${sanitizeErrorMessage(result.error)}\n`);
     process.exitCode = result.exitCode ?? 1;
     return;
   }

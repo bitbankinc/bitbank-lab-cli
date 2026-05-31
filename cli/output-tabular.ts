@@ -1,5 +1,6 @@
 // 人間向けの table / csv 整形。Result envelope の serialization（output.ts）とは
 // 責務が異なるため分離。どちらも data 本体だけを受け取り、meta には触れない。
+import { escapeControlChars, escapeControlCharsForCsv } from "./sanitize-control.js";
 
 function toRows(data: unknown): Record<string, unknown>[] {
   if (Array.isArray(data)) return data as Record<string, unknown>[];
@@ -12,13 +13,13 @@ export function printTable(data: unknown): void {
   if (rows.length === 0) return;
   const keys = Object.keys(rows[0]);
 
-  // 列幅を1パスで計算
+  // 列幅を1パスで計算（制御文字エスケープ後の表示長で揃える）
   const widths = keys.map((k) => k.length);
   const cells: string[][] = [];
   for (const row of rows) {
     const rowCells: string[] = [];
     for (let i = 0; i < keys.length; i++) {
-      const s = String(row[keys[i]] ?? "");
+      const s = escapeControlChars(String(row[keys[i]] ?? ""));
       if (s.length > widths[i]) widths[i] = s.length;
       rowCells.push(s);
     }
@@ -50,7 +51,10 @@ export function printCsv(data: unknown): void {
   const keys = Object.keys(rows[0]);
   const parts: string[] = [keys.map(escapeCsvField).join(",")];
   for (const row of rows) {
-    parts.push(keys.map((k) => escapeCsvField(String(row[k] ?? ""))).join(","));
+    // 制御文字エスケープ → CSV クォート判定の順（TAB/CR/LF は CSV 防御に温存）
+    parts.push(
+      keys.map((k) => escapeCsvField(escapeControlCharsForCsv(String(row[k] ?? "")))).join(","),
+    );
   }
   process.stdout.write(`${parts.join("\n")}\n`);
 }
