@@ -1,5 +1,9 @@
 # 取引安全ガード
 
+ここで定義する個々のガード（ドライラン / `--execute` / `--confirm` / POST 非冪等）を、
+read-only profile → paper → dry-run → 本番という 1 本の運用手順に連結したものが
+[`docs/botter-runbook.md`](../../docs/botter-runbook.md)。bot 運用の導線はそちらを参照。
+
 ## 対象コマンド
 
 `trade create-order`, `trade cancel-order`, `trade cancel-orders` は資金に影響する trade サブコマンド（`bitbank trade <cmd>` で呼び出す）。
