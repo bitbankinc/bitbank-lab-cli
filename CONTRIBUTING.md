@@ -53,6 +53,13 @@ npx vitest run         # テスト
 
 `main` から feature ブランチを切って PR を出してください。`main` への直 push はしません。
 
+## リポジトリ履歴
+
+`git log` / `git blame` は公開時の squash により root コミットまでしか遡れません
+（root は `git rev-list --max-parents=0 origin/main` で確認できます）。公開以前の
+設計判断は [`docs/adr/`](docs/adr/)、初期投入の経緯・リリース履歴は
+[CHANGELOG.md](CHANGELOG.md) を参照してください。
+
 ## 脆弱性の報告
 
 セキュリティ上の問題は **Issue で公開せず**、[SECURITY.md](SECURITY.md) のフロー

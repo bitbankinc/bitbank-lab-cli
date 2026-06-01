@@ -165,3 +165,10 @@
 プロトタイプ期。Public / Private / Trade / Paper / Profile コマンド一式、
 Agent Skills 12 本、CI / Release / Security workflow の初期投入。
 詳細は git log および GitHub Releases を参照。
+
+> **履歴 provenance:** リポジトリ公開にあたり、それ以前の private 開発履歴は
+> squash 済み。このため `git log` / `git blame` は root コミットより前を遡れない。
+> `git rev-list --max-parents=0 origin/main` で確認できる root は 2 つ
+> （`c77137f` / `6ff010c`, ともに 2026-05-25, それぞれ 323 ファイルの一括 import）で、
+> メッセージ（`docs(skills): …` / `Merge pull request #214 …`）に反して実体は初期投入。
+> 公開以前の設計意図・経緯は [`docs/adr/`](docs/adr/) を参照。
