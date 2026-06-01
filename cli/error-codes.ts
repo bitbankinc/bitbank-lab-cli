@@ -1,4 +1,4 @@
-import { EXIT } from "./exit-codes.js";
+import { EXIT, type ExitCode } from "./exit-codes.js";
 
 // 公式 errors.md と整合した和訳。完全網羅ではなく CLI が実際にハンドルする主要コードに絞る。
 // https://github.com/bitbankinc/bitbank-api-docs/blob/master/errors.md
@@ -26,6 +26,25 @@ export function apiErrorExitCode(code: number): (typeof EXIT)[keyof typeof EXIT]
   if (code === 10009) return EXIT.RATE_LIMIT;
   if (code >= 30001 && code <= 40001) return EXIT.PARAM;
   return EXIT.GENERAL;
+}
+
+// public（無認証）経路で 403 を受けたときに付すヒント。public は API キー不要なので
+// 403 は鍵の失敗ではなく IP/地域/WAF などネットワーク制限が原因の可能性が高い。
+const PUBLIC_FORBIDDEN_HINT = "（public は API キー不要。403 は IP/地域/ネットワーク制限の可能性）";
+
+// HTTP transport ステータス（API body code ではない）→ error 文字列と exit code。
+// 401 は常に AUTH。403 は public 経路なら GENERAL（鍵の問題ではない）、private/trade は AUTH。
+export function classifyHttpError(
+  status: number,
+  statusText: string,
+  isPublic: boolean,
+): { error: string; exitCode: ExitCode } {
+  const base = `HTTP ${status}: ${statusText}`;
+  if (status === 403 && isPublic) {
+    return { error: `${base} ${PUBLIC_FORBIDDEN_HINT}`, exitCode: EXIT.GENERAL };
+  }
+  const exitCode = status === 401 || status === 403 ? EXIT.AUTH : EXIT.GENERAL;
+  return { error: base, exitCode };
 }
 
 export function formatApiError(code: number): string {
