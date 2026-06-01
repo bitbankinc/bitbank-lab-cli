@@ -168,7 +168,8 @@ Agent Skills 12 本、CI / Release / Security workflow の初期投入。
 
 > **履歴 provenance:** リポジトリ公開にあたり、それ以前の private 開発履歴は
 > squash 済み。このため `git log` / `git blame` は root コミットより前を遡れない。
-> `git rev-list --max-parents=0 origin/main` で確認できる root は 2 つ
-> （`c77137f` / `6ff010c`, ともに 2026-05-25, それぞれ 323 ファイルの一括 import）で、
-> メッセージ（`docs(skills): …` / `Merge pull request #214 …`）に反して実体は初期投入。
+> `git rev-list --max-parents=0 origin/main` で確認できる root は 3 つ
+> （`5ade51a` "fix(date): …" = 324 ファイル / `16b3691` "fix(candles): …" = 323 ファイル /
+> `c2fc466` "Merge pull request #215 …" = 323 ファイル、いずれも 2026-05-25）で、
+> メッセージに反して実体は初期一括 import。
 > 公開以前の設計意図・経緯は [`docs/adr/`](docs/adr/) を参照。
