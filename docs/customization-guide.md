@@ -131,13 +131,36 @@ description: |
 
 新しい API エンドポイントに対応するコマンドを追加できます。
 
+### カテゴリ
+
+コマンドはカテゴリごとに「ディレクトリ・ハンドラ・registry」が分かれています。
+
+| カテゴリ | ディレクトリ | CLI 呼び出し | 認証 |
+|---------|------------|-------------|------|
+| `public` | `cli/commands/public/` | `bitbank <cmd>` | 不要 |
+| `private` | `cli/commands/private/` | `bitbank <cmd>` | 必要 |
+| `trade` | `cli/commands/trade/` | `bitbank trade <cmd>` | 必要 |
+| `paper` | `cli/commands/paper/` | `bitbank paper <cmd>` | 不要 |
+| `profile` | `cli/commands/profile/` | `bitbank profile <cmd>` | 不要 |
+
+`schema` / `profiles` / `completion` などの meta コマンドは registry に登録せず、
+`cli/router.ts` の `handleSpecialCommand` で個別にディスパッチします（API は叩かない）。
+
 ### 手順
 
-1. カテゴリを決める（`public` / `private` / `trade`）
-2. `cli/commands/<category>/<command>.ts` を作成
-3. Zod でスキーマ定義、Result パターンで返す
-4. `cli/index.ts` にルーティングを追加
-5. `cli/__tests__/<command>.test.ts` にテストを追加
+1. **コマンド本体を作成** — `cli/commands/<category>/<command>.ts` に、Zod スキーマ
+   （`z.infer` が型の単一ソース）と Result パターンの関数を書く。`throw` 禁止。
+2. **ハンドラに登録** — `cli/commands/<category>-handlers.ts`（例: `public-handlers.ts`）の
+   map に `handler("./<category>/<command>.js", "<fnName>", extract)` でエントリを追加する。
+   trade は `tradeHandler(...)`、profile はインライン handler を使う（同じファイルの既存エントリに倣う）。
+3. **registry は自動集約** — `cli/commands/registry.ts` が各 `*-handlers.ts` を
+   `COMMANDS` / `TRADE_COMMANDS` / `PAPER_COMMANDS` / `PROFILE_COMMANDS` にまとめます。
+   **`cli/index.ts` は変更不要**（ルーティングは `router.ts` が registry を参照して行う）。
+4. **テストを追加** — `cli/__tests__/` に追加し、実 API はモックする。
+
+> 詳細な規約（HTTP ヘルパーの選択、trade の安全ガード、日付キーの TZ など）は
+> 正典の [`.claude/rules/commands.md`](../.claude/rules/commands.md) を参照してください。
+> 本ガイドと食い違う場合は `commands.md` が優先されます。
 
 ### コマンド実装テンプレート
 
