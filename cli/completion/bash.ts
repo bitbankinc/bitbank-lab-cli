@@ -1,4 +1,5 @@
-// 100行超: bash 補完スクリプトをテンプレートとして出力するため、文字列が長い
+// 100行超: bash 補完スクリプトのテンプレに加えコマンド/ペア/フラグ一覧を
+//          静的に埋め込んで一括出力するため
 import type { CompletionData } from "./data.js";
 
 const COMMON = ["profile", "format", "help", "machine", "raw", "log-file", "no-log"];

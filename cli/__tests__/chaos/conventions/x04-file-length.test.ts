@@ -43,23 +43,13 @@ function failIfOver(wcOutput: string): void {
 }
 
 describe("Chaos X-04: files ≤ 100 lines (or carry a reason comment)", () => {
-  it("cli/commands/ files are within limit", () => {
-    const output = execSync('find cli/commands/ -name "*.ts" | xargs wc -l | grep -v total', {
-      encoding: "utf-8",
-    });
-    failIfOver(output);
-  });
-
-  it("core modules (http, auth, output) are within limit", () => {
+  // cli/ 全体（__tests__ を除く）を一括走査する。commands/・コア・index を包含し、
+  // 将来追加されるディレクトリ（completion/ 等）も自動でカバーする。
+  it("all cli/ source files are within limit", () => {
     const output = execSync(
-      "wc -l cli/http.ts cli/http-core.ts cli/http-private.ts cli/http-private-post.ts cli/auth.ts cli/output.ts | grep -v total",
+      "find cli -name '*.ts' -not -path '*/__tests__/*' | xargs wc -l | grep -v total",
       { encoding: "utf-8" },
     );
-    failIfOver(output);
-  });
-
-  it("cli/index.ts is within limit", () => {
-    const output = execSync("wc -l cli/index.ts", { encoding: "utf-8" });
     failIfOver(output);
   });
 });
