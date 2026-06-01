@@ -392,6 +392,9 @@ bitbank watch ticker btc_jpy --duration=10 --format=json | jq -r '.last'
 
 Exit code は `cli/exit-codes.ts` の `EXIT` 定数で定義: `SUCCESS`(0) /
 `GENERAL`(1) / `AUTH`(2) / `RATE_LIMIT`(3) / `PARAM`(4) / `NETWORK`(5)。
+public（無認証）コマンドが HTTP 403 を受けた場合は鍵の失敗ではないため
+`AUTH`(2) ではなく `GENERAL`(1) を返す（下記 Troubleshooting 参照）。
+private / trade の 403 は本物の権限失敗として `AUTH`(2) のまま。
 
 ## Troubleshooting
 
@@ -410,6 +413,16 @@ Private API / Trade コマンドは認証情報が必要です。`bitbank profil
 でプロファイルを登録するか、`BITBANK_API_KEY` / `BITBANK_API_SECRET` env
 を設定してください。詳細は [セットアップ](#セットアップ) の
 「API キーを設定する」節を参照。
+
+### public コマンドで HTTP 403 / Forbidden
+
+`ticker` や `candles` などの public（API キー不要）コマンドで HTTP 403 が
+返る場合、原因は API キーではなく **IP / 地域 / ネットワーク制限**
+（VPN・データセンター IP・地域ブロック・WAF 等）の可能性が高いです。この経路は
+鍵を使わないため、CLI も exit code を `AUTH`(2) ではなく `GENERAL`(1) で返し、
+エラーメッセージにその旨を付記します。制限のない回線（自宅 ISP 等）で再実行して
+ください。private / trade コマンドの 403 は従来どおり認証失敗（`AUTH`(2)）として
+扱われます。
 
 ### `npm test` が `sh: 1: vitest: not found` で落ちる
 

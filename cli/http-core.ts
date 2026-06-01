@@ -1,5 +1,5 @@
 // 100行超: リトライ判定・指数バックオフ＋ジッター・fetch 本体を一箇所に集約しているため。
-import { apiErrorExitCode, formatApiError } from "./error-codes.js";
+import { apiErrorExitCode, classifyHttpError, formatApiError } from "./error-codes.js";
 import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
 import { extractRateLimit } from "./rate-limit.js";
@@ -37,6 +37,8 @@ export type BaseFetchOptions = {
   throttleMs?: number;
   /** false にするとネットワーク例外で再試行しない（POST の冪等性確保用） */
   retryOnNetworkError?: boolean;
+  /** public（無認証）経路フラグ。403 を AUTH ではなく GENERAL に分類する */
+  isPublic?: boolean;
 };
 
 type Attempt<T> =
@@ -50,6 +52,7 @@ async function attemptOnce<T>(
   fetchFn: typeof globalThis.fetch,
   parseError: (body: { data?: { code?: number } }) => string,
   bucket: Bucket,
+  isPublic: boolean,
 ): Promise<Attempt<T>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -57,9 +60,14 @@ async function attemptOnce<T>(
     const res = await fetchFn(url, { ...init, signal: controller.signal });
 
     if (!res.ok) {
-      const error = `HTTP ${res.status}: ${res.statusText}`;
-      if (shouldRetry(res.status)) return { kind: "retry", res, error, exitCode: EXIT.GENERAL };
-      const exitCode = res.status === 401 || res.status === 403 ? EXIT.AUTH : EXIT.GENERAL;
+      if (shouldRetry(res.status)) {
+        const error = `HTTP ${res.status}: ${res.statusText}`;
+        // 429 は retry を尽くしても rate-limit として返す（5xx は GENERAL のまま）。
+        const exitCode = res.status === 429 ? EXIT.RATE_LIMIT : EXIT.GENERAL;
+        return { kind: "retry", res, error, exitCode };
+      }
+      // 401/403 の exit code と public 403 のヒント付与は classifyHttpError に集約。
+      const { error, exitCode } = classifyHttpError(res.status, res.statusText, isPublic);
       return { kind: "done", result: { success: false, error, exitCode } };
     }
     const body = await res.json();
@@ -90,12 +98,13 @@ export async function fetchWithRetry<T>(
   parseError: (body: { data?: { code?: number } }) => string,
 ): Promise<Result<T>> {
   const { timeoutMs = 5000, retries = 2, fetch: fetchFn = globalThis.fetch } = opts;
+  const isPublic = opts.isPublic ?? false;
   const bucket = detectBucket(url);
   let lastError = "";
   let lastExitCode: ExitCode = EXIT.GENERAL;
   for (let attempt = 0; attempt <= retries; attempt++) {
     if (attempt === 0) await waitForSlot(bucket, opts.throttleMs);
-    const r = await attemptOnce<T>(url, init, timeoutMs, fetchFn, parseError, bucket);
+    const r = await attemptOnce<T>(url, init, timeoutMs, fetchFn, parseError, bucket, isPublic);
     if (r.kind === "done") return r.result;
     lastError = r.error;
     lastExitCode = r.exitCode;

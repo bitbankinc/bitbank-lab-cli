@@ -253,6 +253,53 @@ describe("fetchWithRetry", () => {
     expect(result).toMatchObject({ success: false, error: "HTTP 400: Bad Request" });
   });
 
+  it("classifies public 403 as GENERAL (not AUTH) with a hint message", async () => {
+    const fetch = async () => new Response("", { status: 403, statusText: "Forbidden" });
+    const result = await fetchWithRetry(
+      "http://test",
+      {},
+      { fetch: fetch as typeof globalThis.fetch, retries: 0, isPublic: true },
+      parseError,
+    );
+    expect(result).toMatchObject({ success: false, exitCode: EXIT.GENERAL });
+    if (!result.success) {
+      expect(result.error).toContain("HTTP 403");
+      expect(result.error).toContain("制限");
+    }
+  });
+
+  it("classifies private 403 (no isPublic) as AUTH", async () => {
+    const fetch = async () => new Response("", { status: 403, statusText: "Forbidden" });
+    const result = await fetchWithRetry(
+      "http://test",
+      {},
+      { fetch: fetch as typeof globalThis.fetch, retries: 0 },
+      parseError,
+    );
+    expect(result).toMatchObject({ success: false, exitCode: EXIT.AUTH });
+    if (!result.success) expect(result.error).toBe("HTTP 403: Forbidden");
+  });
+
+  it("classifies 401 as AUTH for both public and private", async () => {
+    const fetch = async () => new Response("", { status: 401, statusText: "Unauthorized" });
+    const base = { fetch: fetch as typeof globalThis.fetch, retries: 0 };
+    const pub = await fetchWithRetry("http://test", {}, { ...base, isPublic: true }, parseError);
+    const priv = await fetchWithRetry("http://test", {}, base, parseError);
+    expect(pub).toMatchObject({ success: false, exitCode: EXIT.AUTH });
+    expect(priv).toMatchObject({ success: false, exitCode: EXIT.AUTH });
+  });
+
+  it("classifies a persistent HTTP 429 as RATE_LIMIT (not GENERAL)", async () => {
+    const fetch = async () => new Response("", { status: 429, statusText: "Too Many Requests" });
+    const result = await fetchWithRetry(
+      "http://test",
+      {},
+      { fetch: fetch as typeof globalThis.fetch, retries: 0 },
+      parseError,
+    );
+    expect(result).toMatchObject({ success: false, exitCode: EXIT.RATE_LIMIT });
+  });
+
   it("returns NETWORK exit code on exception", async () => {
     const fetch = async () => {
       throw new Error("connection refused");
