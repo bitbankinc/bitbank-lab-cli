@@ -69,13 +69,19 @@ function acquireLock(p: string, maxWaitMs: number): Result<Lock> {
           exitCode: EXIT.GENERAL,
         };
       }
+      // 既知の残留レース（TOCTOU / 許容）: 複数プロセスが同一ロックを同時に
+      // stale 判定すると、二重に unlink → 再取得して lost update が起き得る。
+      // トークン照合 + O_EXCL 再取得で窓を最小化でき、単一ホスト通常運用なら
+      // 実用上防げる（完全な分散ロックにはしない）が、対象は資金非関与の
+      // ローカル state のみで、前プロセスのクラッシュ後 30s 経過してから 2 本
+      // 以上がほぼ同時競合する単一ユーザ CLI では非現実的なので許容する。
       try {
         const age = Date.now() - statSync(p).mtimeMs;
         if (age > STALE_LOCK_MS) {
           try {
             unlinkSync(p);
           } catch {
-            // race ok
+            // 既に他プロセスが消していたら何もしない（上記残留レース）
           }
           continue;
         }
