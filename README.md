@@ -747,10 +747,10 @@ cli/
   commands/
     public/             # 認証不要コマンド（9）
     private/            # 認証必要・読み取り専用（13）
-    trade/              # 資金操作・ドライランデフォルト（6）
-    paper/              # ペーパートレード（ライブ価格 × ローカル state、5）
+    trade/              # 資金操作・ドライランデフォルト（5）
+    paper/              # ペーパートレード（ライブ価格 × ローカル state、9）
     stream.ts           # リアルタイムストリーム
-  __tests__/            # 全コマンドのテスト（37ファイル / 140テスト）
+  __tests__/            # 全コマンドのテスト（件数は npx vitest run 参照）
 skills/                 # Agent Skills（12本 + _shared/references/）
 docs/                   # ADR・フェーズ管理・カスタマイズガイド
 .contrib/               # コントリビューター向け hook tooling（clone 利用者は不要）
