@@ -55,7 +55,8 @@ export async function startPrivateStream(
     },
     status: (event) => {
       if (event.category === "PNConnectedCategory") {
-        process.stderr.write(`Private stream connected: ${sub.data.pubnub_channel}\n`);
+        // チャネルID（pubnub_channel）はユーザ別識別子のため接続ログには出さない（F-5）
+        process.stderr.write("Private stream connected.\n");
       }
     },
   });

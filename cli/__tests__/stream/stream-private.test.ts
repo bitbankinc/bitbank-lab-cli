@@ -103,9 +103,10 @@ describe("startPrivateStream", () => {
     });
     const listener = mockPubnub.addListener.mock.calls[0][0];
     listener.status({ category: "PNConnectedCategory" });
-    expect(stderr).toHaveBeenCalledWith(
-      expect.stringContaining("Private stream connected: ch_123"),
-    );
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("Private stream connected"));
+    // チャネルID/トークンは接続ログに出さない（F-5 の回帰防止）
+    expect(stderr).not.toHaveBeenCalledWith(expect.stringContaining("ch_123"));
+    expect(stderr).not.toHaveBeenCalledWith(expect.stringContaining("tok_abc"));
     // Non-connected categories should not emit
     stderr.mockClear();
     listener.status({ category: "PNNetworkDownCategory" });
