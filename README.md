@@ -13,6 +13,15 @@ bitbank 暗号資産取引所の CLI。
 - ご利用の前に必ず [⚠️ 免責事項](#免責事項) をお読みください。
 - 本リポジトリは **bitbank バグバウンティプログラムの対象範囲外** です。
 
+## あなたはどのタイプ？
+
+初見の方は、目的に近い導線から読み進めてください。
+
+- **使うだけ**（コマンドを叩いて市況を取りたい）→ [クイックスタート](#クイックスタート) / [コマンド一覧](#コマンド一覧)
+- **Skill を育てる**（自然言語で操作・カスタマイズしたい）→ [Agent Skills](#agent-skills) / [カスタマイズガイド](docs/customization-guide.md)
+- **CLI を開発する**（コマンド追加・コントリビュート）→ [開発](#開発) / [アーキテクチャ](#アーキテクチャ) / [`.claude/rules/commands.md`](.claude/rules/commands.md)
+- **paper で bot 検証**（仮想資金で戦略を試したい）→ [Paper](#paperペーパートレード--仮想資金) / `docs/botter-runbook.md`（準備中）
+
 ## 設計思想
 
 CLI は bitbank API への**薄いアクセス層**。分析ロジックは一切持たせていません。  
@@ -441,6 +450,16 @@ bitbank API のレートリミットに到達すると CLI は exit code 3
 再接続フローへ入ります。挙動とオプションの詳細は
 [ライブ価格 watch（WebSocket ticker）](#ライブ価格-watchwebsocket-ticker)
 を参照してください。
+
+### plugin の skills が出てこない
+
+`/plugin install` 後に skill がトリガーされない場合は、次の順で対処します。
+
+1. **Claude Code を最新へ更新** — plugin 機能（`/plugin install` / `/reload-plugins` など）は新しめの本体が前提です（plugin 機能が安定して使えるのは概ね **v2.1 系以降**。古い版では slash command 自体が無いことがあります）。
+2. **完全に再起動** — `/reload-plugins` で済ませず、一度 Claude Code を終了してから `claude` を起動し直す（起動時に skill が自動ロードされます）。
+3. **それでも出ない場合はキャッシュを消して再インストール** — `rm -rf ~/.claude/plugins/cache/<plugin>` してから [Claude Code](#claude-code) の plugin install 手順で入れ直す。
+
+> `/reload-plugins` の表示カウンタは実際のロード数と一致しないことがあります。数字を当てにせず、実際に skill を呼んで（例:「BTC の RSI を見て」）トリガーされるかで確認してください。
 
 ## 出力フォーマット
 
