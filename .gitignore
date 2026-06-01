@@ -34,4 +34,5 @@ coverage/
 
 # Misc
 *.log
+logs/
 npm-debug.log*
