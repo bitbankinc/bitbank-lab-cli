@@ -6,7 +6,8 @@ bitbank API への薄い CLI アクセス層。分析ロジックは一切持た
 
 ```bash
 npm ci                  # 初回のみ依存インストール
-npm test                # vitest 全テスト
+npm test                # vitest 全テスト（1回実行して終了）
+npm run test:watch      # vitest ウォッチモード
 npx tsx cli/index.ts    # CLI 実行
 ```
 
