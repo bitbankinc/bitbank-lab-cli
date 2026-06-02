@@ -3,6 +3,7 @@
 // tick で過去ギャップを解消 + pairs キャッシュからの unit_amount/最大量検証。
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
+import { resolveFeeRate } from "../../fees.js";
 import type { HttpOptions } from "../../http.js";
 import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, runTick } from "../../paper-fill.js";
@@ -102,7 +103,10 @@ export async function paperCreateOrder(
   if (parsed.data.type === "limit") {
     return placeLimit(parsed.data, args.feeRate, path);
   }
-  return fillMarket(parsed.data, args.feeRate, path, opts);
+  // 成行は必ず taker。サイズ検証で使った pairs から該当ペアを引き、
+  // ライブ taker_fee_rate_quote を fillMarket に渡す（campaign 追従）。
+  const pair = pairsR.data.find((p) => p.name === parsed.data.pair);
+  return fillMarket(parsed.data, pair, args.feeRate, path, opts);
 }
 
 async function placeLimit(
@@ -148,6 +152,7 @@ async function placeLimit(
 
 async function fillMarket(
   input: { pair: string; side: "buy" | "sell"; amount: string },
+  pair: CachedPair | undefined,
   feeRateArg: number | undefined,
   path: string,
   opts?: HttpOptions,
@@ -160,7 +165,7 @@ async function fillMarket(
     return { success: false, error: "ticker last price is not a positive finite number" };
   }
   const amount = Number(input.amount);
-  const feeRate = feeRateArg ?? DEFAULT_TAKER_FEE_RATE;
+  const feeRate = resolveFeeRate(pair, "taker", feeRateArg);
   const [base, quote] = input.pair.split("_");
   const isJpy = quote === "jpy";
   const notional = amount * last;

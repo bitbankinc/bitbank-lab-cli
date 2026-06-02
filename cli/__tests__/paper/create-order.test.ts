@@ -462,3 +462,103 @@ describe("paper create-order: JPY integer rounding", () => {
     expect(Number.isInteger(raw.history[0].feeQuote)).toBe(true);
   });
 });
+
+describe("paper create-order: live taker fee", () => {
+  it("market buy charges the pair's live taker_fee_rate_quote when no override", async () => {
+    await paperInit({ jpy: "1000000", statePath });
+    const r = await paperCreateOrder(
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "market",
+        amount: "0.001",
+        statePath,
+        getPairs: mockGetPairsWith([{ name: "btc_jpy", taker_fee_rate_quote: 0.002 }]),
+      },
+      { fetch: tickerOf("5000000"), retries: 0 },
+    );
+    expect(r.success).toBe(true);
+    if (!r.success || !("feeQuote" in r.data)) return;
+    // notional 0.001*5,000,000 = 5000; fee 5000*0.002 = 10 (not the 0.0012 default → 6)
+    expect(r.data.feeQuote).toBe(10);
+    expect(r.data.balances.jpy).toBe(1000000 - 5010);
+    expect(r.data.balances.btc).toBe(0.001);
+  });
+
+  it("market sell charges the pair's live taker_fee_rate_quote when no override", async () => {
+    await paperInit({ jpy: "1000000", statePath });
+    // Seed btc with a fee-free buy so the sell math is isolated.
+    const seed = await paperCreateOrder(
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "market",
+        amount: "0.01",
+        feeRate: 0,
+        statePath,
+        getPairs: mockGetPairs,
+      },
+      { fetch: tickerOf("5000000"), retries: 0 },
+    );
+    expect(seed.success).toBe(true);
+    const r = await paperCreateOrder(
+      {
+        pair: "btc_jpy",
+        side: "sell",
+        type: "market",
+        amount: "0.005",
+        statePath,
+        getPairs: mockGetPairsWith([{ name: "btc_jpy", taker_fee_rate_quote: 0.002 }]),
+      },
+      { fetch: tickerOf("6000000"), retries: 0 },
+    );
+    expect(r.success).toBe(true);
+    if (!r.success || !("feeQuote" in r.data)) return;
+    // notional 0.005*6,000,000 = 30,000; fee 30,000*0.002 = 60
+    expect(r.data.feeQuote).toBe(60);
+    expect(r.data.balances.btc).toBeCloseTo(0.005, 10);
+    // 950,000 (after seed) + round(30,000 - 60) = 979,940
+    expect(r.data.balances.jpy).toBe(979940);
+  });
+
+  it("charges zero fee when the pair has a campaign taker rate of 0", async () => {
+    await paperInit({ jpy: "1000000", statePath });
+    const r = await paperCreateOrder(
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "market",
+        amount: "0.001",
+        statePath,
+        getPairs: mockGetPairsWith([{ name: "btc_jpy", taker_fee_rate_quote: 0 }]),
+      },
+      { fetch: tickerOf("5000000"), retries: 0 },
+    );
+    expect(r.success).toBe(true);
+    if (!r.success || !("feeQuote" in r.data)) return;
+    // taker 0 must be kept (?? only falls back on null/undefined), not 0.0012 default
+    expect(r.data.feeQuote).toBe(0);
+    expect(r.data.balances.jpy).toBe(1000000 - 5000);
+  });
+
+  it("feeRate override beats the pair's taker_fee_rate_quote", async () => {
+    await paperInit({ jpy: "1000000", statePath });
+    const r = await paperCreateOrder(
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "market",
+        amount: "0.001",
+        feeRate: 0.005,
+        statePath,
+        getPairs: mockGetPairsWith([{ name: "btc_jpy", taker_fee_rate_quote: 0.002 }]),
+      },
+      { fetch: tickerOf("5000000"), retries: 0 },
+    );
+    expect(r.success).toBe(true);
+    if (!r.success || !("feeQuote" in r.data)) return;
+    // override 0.005 wins over pair 0.002: fee 5000*0.005 = 25
+    expect(r.data.feeQuote).toBe(25);
+    expect(r.data.balances.jpy).toBe(1000000 - 5025);
+  });
+});
