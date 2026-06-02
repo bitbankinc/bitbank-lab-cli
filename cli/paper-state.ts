@@ -8,6 +8,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import { sanitizeErrorMessage } from "./error-sanitize.js";
+import { DEFAULT_TAKER_FEE_RATE } from "./fees.js";
 import type { Result } from "./types.js";
 
 export const PaperHistoryEntrySchema = z.object({
@@ -84,9 +85,8 @@ export type PaperState = z.infer<typeof PaperStateSchema>;
 export type PaperHistoryEntry = z.infer<typeof PaperHistoryEntrySchema>;
 export type OpenOrder = z.infer<typeof OpenOrderSchema>;
 
-// bitbank 公称テイカー手数料 0.12%
-// 出典: https://bitbank.cc/docs/fees/
-export const DEFAULT_TAKER_FEE_RATE = 0.0012;
+// 手数料定数は CLI 共通の cli/fees.ts に集約。既存 import を壊さないよう re-export。
+export { DEFAULT_TAKER_FEE_RATE };
 
 export function defaultStatePath(): string {
   if (process.env.BITBANK_PAPER_STATE_PATH) return process.env.BITBANK_PAPER_STATE_PATH;
