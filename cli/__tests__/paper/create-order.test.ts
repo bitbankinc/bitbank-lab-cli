@@ -488,7 +488,7 @@ describe("paper create-order: live taker fee", () => {
   it("market sell charges the pair's live taker_fee_rate_quote when no override", async () => {
     await paperInit({ jpy: "1000000", statePath });
     // Seed btc with a fee-free buy so the sell math is isolated.
-    await paperCreateOrder(
+    const seed = await paperCreateOrder(
       {
         pair: "btc_jpy",
         side: "buy",
@@ -500,6 +500,7 @@ describe("paper create-order: live taker fee", () => {
       },
       { fetch: tickerOf("5000000"), retries: 0 },
     );
+    expect(seed.success).toBe(true);
     const r = await paperCreateOrder(
       {
         pair: "btc_jpy",
