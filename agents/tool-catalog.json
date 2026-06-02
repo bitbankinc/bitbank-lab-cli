@@ -1,0 +1,1460 @@
+{
+  "schema_version": "1.0",
+  "cli_version": "0.1.2",
+  "generator": "scripts/gen-agents-catalog.ts",
+  "description": "Machine-readable command catalog for the bitbank CLI. Generated from cli/commands/schema (ALL_SCHEMAS) + trade confirm-guard (CONFIRM_PHRASES). `dangerous: true` marks fund-affecting trade commands that require --execute together with --confirm=<confirm>. Do not edit by hand — run `npx tsx scripts/gen-agents-catalog.ts`.",
+  "command_count": 28,
+  "dangerous_count": 5,
+  "commands": [
+    {
+      "command": "ticker",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get ticker for a pair (e.g. btc_jpy)",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "sell": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "buy": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "high": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "low": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "open": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "last": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "vol": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "timestamp": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    {
+      "command": "tickers",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get tickers for all pairs",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "pair": {
+              "type": "string"
+            },
+            "sell": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "buy": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "high": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "low": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "last": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "vol": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "timestamp": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "tickers-jpy",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get tickers for all JPY pairs",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "pair": {
+              "type": "string"
+            },
+            "sell": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "buy": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "high": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "low": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "last": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "vol": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "timestamp": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "depth",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get order book depth for a pair",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "asks": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "bids": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    {
+      "command": "transactions",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get recent transactions for a pair",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "date": {
+            "type": "string",
+            "description": "Date filter (YYYYMMDD)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "transaction_id": {
+              "type": "number"
+            },
+            "side": {
+              "type": "string"
+            },
+            "price": {
+              "type": "number"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "executed_at": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "candles",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get candlestick OHLCV data",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "type": {
+            "type": "string",
+            "description": "Candle type",
+            "enum": [
+              "1min",
+              "5min",
+              "15min",
+              "30min",
+              "1hour",
+              "4hour",
+              "8hour",
+              "12hour",
+              "1day",
+              "1week",
+              "1month"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "description": "Date (YYYYMMDD or YYYY for >=4hour)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max rows (default 1000; with --date, returns all rows when omitted)",
+            "default": 1000
+          },
+          "from": {
+            "type": "string",
+            "description": "Range start (YYYYMMDD)"
+          },
+          "to": {
+            "type": "string",
+            "description": "Range end (YYYYMMDD)"
+          },
+          "no-cache": {
+            "type": "boolean",
+            "description": "Skip cache"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "open": {
+              "type": "number"
+            },
+            "high": {
+              "type": "number"
+            },
+            "low": {
+              "type": "number"
+            },
+            "close": {
+              "type": "number"
+            },
+            "vol": {
+              "type": "number"
+            },
+            "timestamp": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "circuit-break",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get circuit breaker info for a pair",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "estimated_itayose_price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "estimated_itayose_amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "upper_trigger_price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lower_trigger_price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "timestamp": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    {
+      "command": "status",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get exchange status for all pairs",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "pair": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "min_amount": {
+              "type": "number"
+            },
+            "timestamp": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "pairs",
+      "category": "public",
+      "auth_required": false,
+      "description": "Get all pair settings",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "base_asset": {
+              "type": "string"
+            },
+            "quote_asset": {
+              "type": "string"
+            },
+            "maker_fee_rate_base": {
+              "type": "number"
+            },
+            "taker_fee_rate_base": {
+              "type": "number"
+            },
+            "maker_fee_rate_quote": {
+              "type": "number"
+            },
+            "taker_fee_rate_quote": {
+              "type": "number"
+            },
+            "unit_amount": {
+              "type": "number"
+            },
+            "limit_max_amount": {
+              "type": "number"
+            },
+            "market_max_amount": {
+              "type": "number"
+            },
+            "price_digits": {
+              "type": "number"
+            },
+            "amount_digits": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "assets",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get your asset balances",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "all": {
+            "type": "boolean",
+            "description": "Include zero-balance assets"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "asset": {
+              "type": "string"
+            },
+            "free_amount": {
+              "type": "number"
+            },
+            "locked_amount": {
+              "type": "number"
+            },
+            "onhand_amount": {
+              "type": "number"
+            },
+            "withdrawing_amount": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "order",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get a specific order",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "order-id": {
+            "type": "string",
+            "description": "Order ID to look up"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "number"
+          },
+          "pair": {
+            "type": "string"
+          },
+          "side": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "start_amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "remaining_amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "executed_amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "ordered_at": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    {
+      "command": "orders-info",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get multiple orders by IDs",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "order-ids": {
+            "type": "string",
+            "description": "Comma-separated order IDs"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "order_id": {
+              "type": "number"
+            },
+            "pair": {
+              "type": "string"
+            },
+            "side": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "active-orders",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get active (open) orders",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "count": {
+            "type": "string",
+            "description": "Max number of results"
+          },
+          "since": {
+            "type": "string",
+            "description": "Start timestamp (Unix ms)"
+          },
+          "end": {
+            "type": "string",
+            "description": "End timestamp (Unix ms)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "order_id": {
+              "type": "number"
+            },
+            "pair": {
+              "type": "string"
+            },
+            "side": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "start_amount": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "remaining_amount": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "executed_amount": {
+              "type": "number"
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "trade-history",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get trade execution history",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "count": {
+            "type": "string",
+            "description": "Max number of results"
+          },
+          "since": {
+            "type": "string",
+            "description": "Start timestamp (Unix ms)"
+          },
+          "end": {
+            "type": "string",
+            "description": "End timestamp (Unix ms)"
+          },
+          "order": {
+            "type": "string",
+            "description": "Sort order (asc/desc)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "trade_id": {
+              "type": "number"
+            },
+            "pair": {
+              "type": "string"
+            },
+            "side": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "price": {
+              "type": "number"
+            },
+            "fee_amount_base": {
+              "type": "number"
+            },
+            "fee_amount_quote": {
+              "type": "number"
+            },
+            "executed_at": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "trade-history-all",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get all trade history (paginated; default cap 1000 pages)",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "since": {
+            "type": "string",
+            "description": "Start timestamp (Unix ms)"
+          },
+          "end": {
+            "type": "string",
+            "description": "End timestamp (Unix ms)"
+          },
+          "max-pages": {
+            "type": "string",
+            "description": "Max pages to fetch (default: 1000; positive integer)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "trade_id": {
+              "type": "number"
+            },
+            "pair": {
+              "type": "string"
+            },
+            "side": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "price": {
+              "type": "number"
+            },
+            "executed_at": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "deposit-history",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get deposit history",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "type": "string",
+            "description": "Asset symbol (e.g. btc)"
+          },
+          "count": {
+            "type": "string",
+            "description": "Max number of results"
+          },
+          "since": {
+            "type": "string",
+            "description": "Start timestamp (Unix ms)"
+          },
+          "end": {
+            "type": "string",
+            "description": "End timestamp (Unix ms)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "asset": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "txid": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "type": "string"
+            },
+            "found_at": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "unconfirmed-deposits",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get unconfirmed deposits",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "type": "string",
+            "description": "Asset symbol (e.g. btc)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "asset": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "txid": {
+              "type": "string"
+            },
+            "found_at": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "deposit-originators",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get deposit originator addresses",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "type": "string",
+            "description": "Asset symbol (e.g. btc)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "originator_label": {
+              "type": "string"
+            },
+            "originator_address": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "withdrawal-accounts",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get registered withdrawal accounts",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "type": "string",
+            "description": "Asset symbol (e.g. btc)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "uuid": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "address": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "withdrawal-history",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get withdrawal history",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "type": "string",
+            "description": "Asset symbol (e.g. btc)"
+          },
+          "count": {
+            "type": "string",
+            "description": "Max number of results"
+          },
+          "since": {
+            "type": "string",
+            "description": "Start timestamp (Unix ms)"
+          },
+          "end": {
+            "type": "string",
+            "description": "End timestamp (Unix ms)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "asset": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "fee": {
+              "type": "number"
+            },
+            "txid": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "type": "string"
+            },
+            "requested_at": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "margin-status",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get margin account status",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "equity": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "margin": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "free_margin": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "margin_level": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "pnl": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "command": "margin-positions",
+      "category": "private",
+      "auth_required": true,
+      "description": "Get open margin positions",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "pair": {
+              "type": "string"
+            },
+            "side": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "number"
+            },
+            "open_price": {
+              "type": "number"
+            },
+            "pnl": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "trade create-order",
+      "category": "trade",
+      "auth_required": true,
+      "description": "Create a spot order (dry-run default)",
+      "dangerous": true,
+      "confirm": "I-UNDERSTAND-CREATE-ORDER",
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "side": {
+            "type": "string",
+            "description": "Order side",
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Order type",
+            "enum": [
+              "limit",
+              "market",
+              "stop",
+              "stop_limit"
+            ]
+          },
+          "price": {
+            "type": "string",
+            "description": "Price (required for limit/stop_limit)"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Order amount"
+          },
+          "trigger-price": {
+            "type": "string",
+            "description": "Trigger price (required for stop/stop_limit)"
+          },
+          "post-only": {
+            "type": "boolean",
+            "description": "Post-only flag"
+          },
+          "execute": {
+            "type": "boolean",
+            "description": "Execute for real (default: dry-run)"
+          },
+          "confirm": {
+            "type": "string",
+            "description": "Confirmation phrase (required with --execute, see trading-safety.md)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "number"
+          },
+          "pair": {
+            "type": "string"
+          },
+          "side": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "start_amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "remaining_amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "executed_amount": {
+            "type": "number"
+          },
+          "price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "post_only": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "ordered_at": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    {
+      "command": "trade cancel-order",
+      "category": "trade",
+      "auth_required": true,
+      "description": "Cancel a spot order (dry-run default)",
+      "dangerous": true,
+      "confirm": "I-UNDERSTAND-CANCEL-ORDER",
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "order-id": {
+            "type": "string",
+            "description": "Order ID to cancel"
+          },
+          "execute": {
+            "type": "boolean",
+            "description": "Execute for real (default: dry-run)"
+          },
+          "confirm": {
+            "type": "string",
+            "description": "Confirmation phrase (required with --execute, see trading-safety.md)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "number"
+          },
+          "pair": {
+            "type": "string"
+          },
+          "side": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "command": "trade cancel-orders",
+      "category": "trade",
+      "auth_required": true,
+      "description": "Cancel multiple spot orders (dry-run default)",
+      "dangerous": true,
+      "confirm": "I-UNDERSTAND-CANCEL-ORDERS",
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "order-ids": {
+            "type": "string",
+            "description": "Comma-separated order IDs"
+          },
+          "execute": {
+            "type": "boolean",
+            "description": "Execute for real (default: dry-run)"
+          },
+          "confirm": {
+            "type": "string",
+            "description": "Confirmation phrase (required with --execute, see trading-safety.md)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "order_id": {
+              "type": "number"
+            },
+            "pair": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": "trade confirm-deposits",
+      "category": "trade",
+      "auth_required": true,
+      "description": "Confirm a deposit (dry-run default)",
+      "dangerous": true,
+      "confirm": "I-UNDERSTAND-CONFIRM-DEPOSITS",
+      "params": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Deposit ID to confirm"
+          },
+          "execute": {
+            "type": "boolean",
+            "description": "Execute for real (default: dry-run)"
+          },
+          "confirm": {
+            "type": "string",
+            "description": "Confirmation phrase (required with --execute, see trading-safety.md)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "command": "trade confirm-deposits-all",
+      "category": "trade",
+      "auth_required": true,
+      "description": "Confirm all deposits (dry-run default)",
+      "dangerous": true,
+      "confirm": "I-UNDERSTAND-CONFIRM-DEPOSITS-ALL",
+      "params": {
+        "type": "object",
+        "properties": {
+          "execute": {
+            "type": "boolean",
+            "description": "Execute for real (default: dry-run)"
+          },
+          "confirm": {
+            "type": "string",
+            "description": "Confirmation phrase (required with --execute, see trading-safety.md)"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "command": "stream",
+      "category": "stream",
+      "auth_required": false,
+      "description": "Subscribe to real-time stream (public or --private)",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string",
+            "description": "Trading pair (e.g. btc_jpy)"
+          },
+          "private": {
+            "type": "boolean",
+            "description": "Use private channel (requires auth)"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Channel name override"
+          },
+          "filter": {
+            "type": "string",
+            "description": "JSON path filter"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "description": "Real-time event data (varies by channel)"
+      }
+    }
+  ]
+}

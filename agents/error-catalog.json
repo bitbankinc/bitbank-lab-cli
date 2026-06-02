@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0",
+  "cli_version": "0.1.2",
+  "generator": "scripts/gen-agents-catalog.ts",
+  "description": "Machine-readable error catalog for the bitbank CLI. Generated from cli/error-codes.ts (ERROR_CODES / apiErrorExitCode / classifyHttpError) + cli/exit-codes.ts. Maps API error codes to categories and aggregates retry guidance per category. Companion human doc: skills/_shared/references/error-catalog.md. Do not edit by hand.",
+  "envelope": {
+    "on_failure": "Failed commands return { success: false, error, exitCode } — there is no error.code field.",
+    "error_string": "When an API body code is present, `error` is '<code>: <message>' (e.g. '60001: 残高不足'). Route on `exitCode` plus the leading numeric code; never parse the human-readable message text.",
+    "exit_code_field": "`exitCode` follows cli/exit-codes.ts (see exit_codes)."
+  },
+  "exit_codes": {
+    "SUCCESS": 0,
+    "GENERAL": 1,
+    "AUTH": 2,
+    "RATE_LIMIT": 3,
+    "PARAM": 4,
+    "NETWORK": 5
+  },
+  "post_retry_policy": {
+    "auto_retry": false,
+    "source": "cli/http-private-post.ts",
+    "rule": "trade (POST) commands force retries:0 and retryOnNetworkError:false to protect idempotency. On timeout / 5xx / network error the order or withdrawal may have succeeded silently; verify with `bitbank active-orders` / `bitbank trade-history` / `bitbank assets` before any manual retry."
+  },
+  "api_codes": [
+    {
+      "code": 10000,
+      "message": "URL不正",
+      "category": "GENERAL",
+      "exit_code": 1
+    },
+    {
+      "code": 10009,
+      "message": "リクエスト頻度過多",
+      "category": "RATE_LIMIT",
+      "exit_code": 3
+    },
+    {
+      "code": 20001,
+      "message": "API認証失敗",
+      "category": "AUTH",
+      "exit_code": 2
+    },
+    {
+      "code": 20002,
+      "message": "APIキー不正",
+      "category": "AUTH",
+      "exit_code": 2
+    },
+    {
+      "code": 20003,
+      "message": "ACCESS-KEY が見つかりません",
+      "category": "AUTH",
+      "exit_code": 2
+    },
+    {
+      "code": 30001,
+      "message": "order-quantity 未指定",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
+      "code": 30006,
+      "message": "order-id 未指定",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
+      "code": 30007,
+      "message": "order-id 配列未指定",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
+      "code": 30009,
+      "message": "asset 未指定",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
+      "code": 30012,
+      "message": "order-price 未指定",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
+      "code": 40001,
+      "message": "order-quantity が不正",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
+      "code": 50003,
+      "message": "現在取引不可",
+      "category": "GENERAL",
+      "exit_code": 1
+    },
+    {
+      "code": 50004,
+      "message": "注文不可（板寄せ中）",
+      "category": "GENERAL",
+      "exit_code": 1
+    },
+    {
+      "code": 50009,
+      "message": "注文が見つかりません",
+      "category": "GENERAL",
+      "exit_code": 1
+    },
+    {
+      "code": 60001,
+      "message": "残高不足",
+      "category": "GENERAL",
+      "exit_code": 1
+    },
+    {
+      "code": 70001,
+      "message": "システムエラー",
+      "category": "GENERAL",
+      "exit_code": 1
+    }
+  ],
+  "categories": [
+    {
+      "category": "AUTH",
+      "exit_code": 2,
+      "retryable": false,
+      "api_codes": [
+        20001,
+        20002,
+        20003
+      ],
+      "http_status": [
+        401,
+        403
+      ],
+      "get": "no_retry",
+      "post": "no_retry",
+      "agent_action": "Credentials/signature problem; retrying won't help. Check .env / API key & permissions, then stop. A public command hitting 403 is classified GENERAL (IP/region/network), not AUTH."
+    },
+    {
+      "category": "RATE_LIMIT",
+      "exit_code": 3,
+      "retryable": true,
+      "api_codes": [
+        10009
+      ],
+      "http_status": [
+        429
+      ],
+      "get": "retry_after_medium",
+      "post": "abort_and_verify",
+      "agent_action": "Back off and reduce concurrency. GET honors Retry-After in http-core; do not hammer. POST is never auto-retried — verify order state before any manual retry."
+    },
+    {
+      "category": "PARAM",
+      "exit_code": 4,
+      "retryable": false,
+      "api_codes": [
+        30001,
+        30006,
+        30007,
+        30009,
+        30012,
+        40001
+      ],
+      "http_status": [],
+      "get": "no_retry",
+      "post": "no_retry",
+      "agent_action": "Invalid input (missing/malformed pair, order-id, price, amount, asset). Fix the arguments; retrying unchanged fails forever."
+    },
+    {
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retryable": false,
+      "api_codes": [
+        10000,
+        50003,
+        50004,
+        50009,
+        60001,
+        70001
+      ],
+      "http_status": [
+        "5xx",
+        "403 (public)"
+      ],
+      "get": "retry_after_short",
+      "post": "abort_and_verify",
+      "agent_action": "Catch-all: balance 60001, trading halted 50003/50004, order-not-found 50009, system 70001, HTTP 5xx. apiErrorExitCode does not sub-classify these — branch on the leading code in the error string (see skills/_shared/references/error-catalog.md). 5xx GET auto-retries up to 2x in http-core; POST never does."
+    },
+    {
+      "category": "NETWORK",
+      "exit_code": 5,
+      "retryable": true,
+      "api_codes": [],
+      "http_status": [],
+      "transport": "fetch exception (timeout / ECONNRESET / DNS)",
+      "get": "retry_after_short",
+      "post": "abort_and_verify",
+      "agent_action": "Transport failure. GET auto-retries up to 2x (http-core). POST forces retryOnNetworkError:false — the request may have succeeded silently; verify with active-orders / trade-history / assets before any manual retry."
+    }
+  ]
+}

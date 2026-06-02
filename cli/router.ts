@@ -1,5 +1,11 @@
 import type { CommandEntry } from "./commands/handler-types.js";
-import { COMMANDS, PAPER_COMMANDS, PROFILE_COMMANDS, TRADE_COMMANDS } from "./commands/registry.js";
+import {
+  COMMANDS,
+  PAPER_COMMANDS,
+  PROFILE_COMMANDS,
+  TRADE_COMMANDS,
+  commandDescriptions,
+} from "./commands/registry.js";
 import type { Format } from "./types.js";
 
 export type ResolvedCommand = {
@@ -42,13 +48,7 @@ export async function handleSpecialCommand(
   }
   if (command === "schema") {
     const { buildSchemaHandler } = await import("./commands/schema/handler.js");
-    const desc = Object.fromEntries([
-      ...Object.entries(COMMANDS).map(([k, v]) => [k, v.description] as const),
-      ...Object.entries(TRADE_COMMANDS).map(([k, v]) => [`trade ${k}`, v.description] as const),
-      ...Object.entries(PAPER_COMMANDS).map(([k, v]) => [`paper ${k}`, v.description] as const),
-      ...Object.entries(PROFILE_COMMANDS).map(([k, v]) => [`profile ${k}`, v.description] as const),
-    ]);
-    await buildSchemaHandler(desc)(args, opts, format);
+    await buildSchemaHandler(commandDescriptions())(args, opts, format);
     return true;
   }
   return false;

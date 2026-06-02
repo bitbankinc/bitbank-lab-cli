@@ -12,6 +12,23 @@
 
 ## [Unreleased]
 
+### Added
+
+- 機械可読カタログ `agents/tool-catalog.json` / `agents/error-catalog.json` を追加。
+  `scripts/gen-agents-catalog.ts` が単一ソース（`cli/commands/schema` の `ALL_SCHEMAS`、
+  `cli/commands/trade/confirm-guard.ts` の `CONFIRM_PHRASES`、`cli/error-codes.ts`、
+  `cli/exit-codes.ts`）から生成する。LLM が CLI を実行せず repo を読むだけで、全コマンド・
+  パラメータ（JSON Schema）・出力形・`dangerous`/`confirm` 安全フラグ・エラーコード分類と
+  retry 指針を把握できる（kraken-cli の `agents/*.json` 流のカタログ）。
+  - 手書き禁止: `cli/__tests__/chaos/conventions/x17-agents-catalog-drift.test.ts` が
+    regenerate して committed との差分ゼロを検査し、コマンド追加・エラーコード変更時の
+    取り込み漏れを CI で止める。
+  - `package.json` の `files` に `agents/` を追加し npm 配布物へ同梱。
+  - `npm version <bump>` の `scripts.version` フックが両カタログを再生成・ステージし、
+    `cli_version`（`package.json` の version 由来）の同期漏れ＝version bump 時の
+    ドリフトを防ぐ。
+  - `agents/*.json` は plugin の subagent 検出（`agents/*.md`）と拡張子が異なり衝突しない。
+
 ### Breaking Changes
 
 - 全コマンドの数値フィールドを CLI 出力時に `string` → `number` に正規化。

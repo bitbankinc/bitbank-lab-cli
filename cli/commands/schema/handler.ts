@@ -47,6 +47,14 @@ function detail(name: string, descriptions: Record<string, string>) {
   };
 }
 
+/** Per-command catalog accessor: the same payload `schema <cmd>` emits, unwrapped (data only).
+ *  scripts/gen-agents-catalog.ts builds agents/tool-catalog.json through this so the catalog
+ *  can't drift from the live schema command. Returns null for unknown commands. */
+export function commandDetail(name: string, descriptions: Record<string, string>) {
+  const r = detail(name, descriptions);
+  return r.success ? r.data : null;
+}
+
 export function buildSchemaHandler(descriptions: Record<string, string>): CommandHandler {
   return async (args, _values, fmt) => {
     if (args.length === 0) {

@@ -7,6 +7,7 @@
     "bitbank": "bin/bitbank"
   },
   "files": [
+    "agents/",
     "bin/",
     "cli/*.ts",
     "cli/commands/",
@@ -29,7 +30,7 @@
     "lint:fix": "biome check --fix cli/",
     "format": "biome format --write cli/",
     "typecheck": "tsc --noEmit",
-    "version": "node scripts/sync-version.mjs && git add .claude-plugin/plugin.json .cursor-plugin/plugin.json .codex-plugin/plugin.json gemini-extension.json"
+    "version": "node scripts/sync-version.mjs && tsx scripts/gen-agents-catalog.ts && git add .claude-plugin/plugin.json .cursor-plugin/plugin.json .codex-plugin/plugin.json gemini-extension.json agents/tool-catalog.json agents/error-catalog.json"
   },
   "dependencies": {
     "pubnub": "^11.0.0",
