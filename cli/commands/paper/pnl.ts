@@ -1,7 +1,7 @@
 // 100行超: paper の損益集計コマンド本体。ticker 並列 fetch、JPY 以外の
 // ペア除外、computePnl 呼び出し、format 別出力を 1 ファイルに集約。
 import { machineOutput } from "../../output.js";
-import { type FetchCandles, runTick } from "../../paper-fill.js";
+import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import { type PaperPnlReport, computePnl } from "../../paper-pnl.js";
 import { defaultStatePath, loadState } from "../../paper-state.js";
 import type { Format, Result } from "../../types.js";
@@ -13,6 +13,7 @@ export type PaperPnlArgs = {
   pair?: string;
   statePath?: string;
   fetchCandles?: FetchCandles;
+  getPairs?: GetPairs;
   fetchTicker?: FetchTicker;
   nowMs?: number;
   feeRate?: number;
@@ -23,6 +24,7 @@ export async function paperPnl(args: PaperPnlArgs = {}): Promise<Result<PaperPnl
   const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
+    getPairs: args.getPairs,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });

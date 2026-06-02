@@ -12,7 +12,7 @@ import { paperTick } from "../../commands/paper/tick.js";
 import { paperTradeHistory } from "../../commands/paper/trade-history.js";
 import type { FetchCandles } from "../../paper-fill.js";
 import { loadState } from "../../paper-state.js";
-import { mockGetPairs } from "../test-helpers.js";
+import { mockFetchData, mockGetPairs, mockGetPairsWith } from "../test-helpers.js";
 
 let dir: string;
 let statePath: string;
@@ -31,6 +31,19 @@ const noCandles: FetchCandles = async () => ({ success: true, data: [] });
 function candle(ts: number, open: number, high: number, low: number, close: number) {
   return { open, high, low, close, vol: 0, timestamp: ts };
 }
+
+// 成行シード（売りリベート検証で btc を仕込む）用の ticker mock。
+const tickerFetch = (last: string) =>
+  mockFetchData({
+    sell: last,
+    buy: last,
+    high: last,
+    low: last,
+    open: last,
+    last,
+    vol: "1",
+    timestamp: 0,
+  });
 
 describe("paper state v1 → v3 migration", () => {
   it("loads a v1 state file and returns v3 in memory", async () => {
@@ -173,6 +186,7 @@ describe("paper tick fill resolution", () => {
     const t = await paperTick({
       statePath,
       fetchCandles: fc,
+      getPairs: mockGetPairs,
       nowMs: orderTs + 120_000,
       feeRate: 0,
     });
@@ -240,6 +254,7 @@ describe("paper tick fill resolution", () => {
     const t = await paperTick({
       statePath,
       fetchCandles: fc,
+      getPairs: mockGetPairs,
       nowMs: orderTs + 120_000,
       feeRate: 0,
     });
@@ -271,6 +286,7 @@ describe("paper tick fill resolution", () => {
     const t = await paperTick({
       statePath,
       fetchCandles: fc,
+      getPairs: mockGetPairs,
       nowMs: orderTs + 120_000,
     });
     if (!t.success) return;
@@ -307,6 +323,7 @@ describe("paper tick fill resolution", () => {
     const t = await paperTick({
       statePath,
       fetchCandles: fc,
+      getPairs: mockGetPairs,
       nowMs: orderTs + 120_000,
     });
     if (!t.success) return;
@@ -360,6 +377,7 @@ describe("paper tick fill resolution", () => {
     const t = await paperTick({
       statePath,
       fetchCandles: fc,
+      getPairs: mockGetPairs,
       nowMs: Math.max(tsBtc, tsEth) + 120_000,
       feeRate: 0,
     });
@@ -392,6 +410,7 @@ describe("paper lazy tick", () => {
     const a = await paperAssets({
       statePath,
       fetchCandles: fc,
+      getPairs: mockGetPairs,
       nowMs: orderTs + 120_000,
       feeRate: 0,
     });
@@ -426,6 +445,7 @@ describe("paper lazy tick", () => {
     const h = await paperTradeHistory({
       statePath,
       fetchCandles: fc,
+      getPairs: mockGetPairs,
       nowMs: orderTs + 120_000,
       feeRate: 0,
     });
@@ -573,6 +593,7 @@ describe("paper cancel-order resolves fills first", () => {
       id,
       statePath,
       fetchCandles: fillingFc,
+      getPairs: mockGetPairs,
       nowMs: orderTs + 120_000,
       feeRate: 0,
     });
@@ -585,5 +606,253 @@ describe("paper cancel-order resolves fills first", () => {
     expect(after.data.openOrders).toHaveLength(0);
     expect(after.data.history).toHaveLength(1);
     expect(after.data.balances.btc).toBeCloseTo(0.001, 10);
+  });
+});
+
+describe("paper tick: live maker fee", () => {
+  // 指値約定は必ず maker。約定手数料はペアのライブ maker_fee_rate_quote 由来
+  // （負ならリベート）。getPairs / fetchCandles / nowMs を注入し実 API は叩かない。
+  async function placeLimitBuy(price: string, amount: string): Promise<number> {
+    await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price,
+      amount,
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    const s = await loadState(statePath);
+    if (!s.success || !s.data) throw new Error("state missing");
+    return Date.parse(s.data.openOrders[0].createdAt);
+  }
+
+  function fillingCandleAt(orderTs: number): FetchCandles {
+    // low <= 5,000,000 <= high なので buy/sell どちらの指値も約定する。
+    return async () => ({
+      success: true,
+      data: [candle(orderTs + 60_000, 5_000_000, 5_001_000, 4_999_000, 5_000_000)],
+    });
+  }
+
+  it("limit buy fills at the pair's live maker_fee_rate_quote (no override)", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    const orderTs = await placeLimitBuy("5000000", "0.001");
+    const t = await paperTick({
+      statePath,
+      fetchCandles: fillingCandleAt(orderTs),
+      getPairs: mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: 0.0004 }]),
+      nowMs: orderTs + 120_000,
+    });
+    expect(t.success).toBe(true);
+    if (!t.success) return;
+    expect(t.data.filled).toHaveLength(1);
+    // notional 0.001*5,000,000 = 5000; maker fee 5000*0.0004 = 2 (JPY rounded)
+    expect(t.data.filled[0].feeQuote).toBe(2);
+    const after = await loadState(statePath);
+    if (!after.success || !after.data) return;
+    expect(after.data.balances.jpy).toBe(10000000 - 5002);
+    expect(after.data.balances.btc).toBeCloseTo(0.001, 10);
+  });
+
+  it("negative maker rebate lowers buy cost (pays less than notional)", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    const orderTs = await placeLimitBuy("5000000", "0.001");
+    const t = await paperTick({
+      statePath,
+      fetchCandles: fillingCandleAt(orderTs),
+      getPairs: mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: -0.0002 }]),
+      nowMs: orderTs + 120_000,
+    });
+    expect(t.success).toBe(true);
+    if (!t.success) return;
+    // notional 5000; rebate -0.0002 → rawFee -1 → feeQuote -1, cost 4999 (< 5000)
+    expect(t.data.filled[0].feeQuote).toBe(-1);
+    const after = await loadState(statePath);
+    if (!after.success || !after.data) return;
+    expect(after.data.balances.jpy).toBe(10000000 - 4999);
+    expect(10000000 - after.data.balances.jpy).toBeLessThan(5000);
+  });
+
+  it("negative maker rebate raises sell proceeds (receives more than notional)", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    // fee-free 成行で btc を仕込んでから指値売りを置く。
+    await paperCreateOrder(
+      {
+        pair: "btc_jpy",
+        side: "buy",
+        type: "market",
+        amount: "0.01",
+        feeRate: 0,
+        statePath,
+        getPairs: mockGetPairs,
+      },
+      { fetch: tickerFetch("5000000"), retries: 0 },
+    );
+    await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "sell",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    const s = await loadState(statePath);
+    if (!s.success || !s.data) throw new Error("state missing");
+    const orderTs = Date.parse(s.data.openOrders[0].createdAt);
+    const jpyBefore = s.data.balances.jpy;
+    const t = await paperTick({
+      statePath,
+      fetchCandles: fillingCandleAt(orderTs),
+      getPairs: mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: -0.0002 }]),
+      nowMs: orderTs + 120_000,
+    });
+    expect(t.success).toBe(true);
+    if (!t.success) return;
+    // notional 5000; rebate rawFee -1 → feeQuote -1, proceeds 5001 (> 5000)
+    expect(t.data.filled[0].feeQuote).toBe(-1);
+    const after = await loadState(statePath);
+    if (!after.success || !after.data) return;
+    expect(after.data.balances.jpy - jpyBefore).toBe(5001);
+  });
+
+  it("charges zero fee on a campaign maker rate of 0 (kept, not defaulted to 0.0012)", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    const orderTs = await placeLimitBuy("5000000", "0.001");
+    const t = await paperTick({
+      statePath,
+      fetchCandles: fillingCandleAt(orderTs),
+      getPairs: mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: 0 }]),
+      nowMs: orderTs + 120_000,
+    });
+    expect(t.success).toBe(true);
+    if (!t.success) return;
+    // 0 は ?? でフォールバックされず維持される（default 0.0012 なら fee 6 になる）
+    expect(t.data.filled[0].feeQuote).toBe(0);
+    const after = await loadState(statePath);
+    if (!after.success || !after.data) return;
+    expect(after.data.balances.jpy).toBe(10000000 - 5000);
+  });
+
+  it("resolves each pair's maker rate independently across pairs", async () => {
+    await paperInit({ jpy: "100000000", statePath });
+    await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    await paperCreateOrder({
+      pair: "eth_jpy",
+      side: "buy",
+      type: "limit",
+      price: "300000",
+      amount: "0.05",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    const s = await loadState(statePath);
+    if (!s.success || !s.data) throw new Error("state missing");
+    const tsBtc = Date.parse(
+      (s.data.openOrders.find((o) => o.pair === "btc_jpy") ?? s.data.openOrders[0]).createdAt,
+    );
+    const tsEth = Date.parse(
+      (s.data.openOrders.find((o) => o.pair === "eth_jpy") ?? s.data.openOrders[0]).createdAt,
+    );
+    const fc: FetchCandles = async (pair) =>
+      pair === "btc_jpy"
+        ? {
+            success: true,
+            data: [candle(tsBtc + 60_000, 5_000_000, 5_001_000, 4_999_000, 5_000_000)],
+          }
+        : { success: true, data: [candle(tsEth + 60_000, 300_000, 301_000, 299_000, 300_000)] };
+    const t = await paperTick({
+      statePath,
+      fetchCandles: fc,
+      getPairs: mockGetPairsWith([
+        { name: "btc_jpy", maker_fee_rate_quote: 0.0004 },
+        { name: "eth_jpy", maker_fee_rate_quote: -0.0002 },
+      ]),
+      nowMs: Math.max(tsBtc, tsEth) + 120_000,
+    });
+    expect(t.success).toBe(true);
+    if (!t.success) return;
+    expect(t.data.filled).toHaveLength(2);
+    const btc = t.data.filled.find((f) => f.pair === "btc_jpy");
+    const eth = t.data.filled.find((f) => f.pair === "eth_jpy");
+    // btc: notional 5000 * 0.0004 = 2; eth: notional 15000 * -0.0002 = -3 (rebate)
+    expect(btc?.feeQuote).toBe(2);
+    expect(eth?.feeQuote).toBe(-3);
+  });
+
+  it("feeRate override beats the pair's maker rate for every fill", async () => {
+    await paperInit({ jpy: "100000000", statePath });
+    await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    await paperCreateOrder({
+      pair: "eth_jpy",
+      side: "buy",
+      type: "limit",
+      price: "300000",
+      amount: "0.05",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    const s = await loadState(statePath);
+    if (!s.success || !s.data) throw new Error("state missing");
+    const tsBtc = Date.parse(
+      (s.data.openOrders.find((o) => o.pair === "btc_jpy") ?? s.data.openOrders[0]).createdAt,
+    );
+    const tsEth = Date.parse(
+      (s.data.openOrders.find((o) => o.pair === "eth_jpy") ?? s.data.openOrders[0]).createdAt,
+    );
+    const fc: FetchCandles = async (pair) =>
+      pair === "btc_jpy"
+        ? {
+            success: true,
+            data: [candle(tsBtc + 60_000, 5_000_000, 5_001_000, 4_999_000, 5_000_000)],
+          }
+        : { success: true, data: [candle(tsEth + 60_000, 300_000, 301_000, 299_000, 300_000)] };
+    const t = await paperTick({
+      statePath,
+      fetchCandles: fc,
+      // override 0.001 は per-pair maker（btc 0.0004 / eth -0.0002）より優先
+      feeRate: 0.001,
+      getPairs: mockGetPairsWith([
+        { name: "btc_jpy", maker_fee_rate_quote: 0.0004 },
+        { name: "eth_jpy", maker_fee_rate_quote: -0.0002 },
+      ]),
+      nowMs: Math.max(tsBtc, tsEth) + 120_000,
+    });
+    expect(t.success).toBe(true);
+    if (!t.success) return;
+    const btc = t.data.filled.find((f) => f.pair === "btc_jpy");
+    const eth = t.data.filled.find((f) => f.pair === "eth_jpy");
+    // 全約定に override 0.001: btc 5000*0.001 = 5, eth 15000*0.001 = 15
+    expect(btc?.feeQuote).toBe(5);
+    expect(eth?.feeQuote).toBe(15);
   });
 });

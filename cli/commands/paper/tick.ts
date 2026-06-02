@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
-import { type FetchCandles, type TickResult, runTick } from "../../paper-fill.js";
+import { type FetchCandles, type GetPairs, type TickResult, runTick } from "../../paper-fill.js";
 import type { Result } from "../../types.js";
 import { PairSchema } from "../../validators.js";
 
@@ -10,6 +10,7 @@ export type PaperTickArgs = {
   pair?: string;
   statePath?: string;
   fetchCandles?: FetchCandles;
+  getPairs?: GetPairs;
   nowMs?: number;
   feeRate?: number;
 };
@@ -27,6 +28,7 @@ export async function paperTick(args: PaperTickArgs = {}): Promise<Result<TickRe
     statePath: args.statePath,
     pair: parsed.data.pair,
     fetchCandles: args.fetchCandles,
+    getPairs: args.getPairs,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });

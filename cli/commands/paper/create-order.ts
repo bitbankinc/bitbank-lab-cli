@@ -96,6 +96,7 @@ export async function paperCreateOrder(
   const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
+    getPairs: args.getPairs,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });

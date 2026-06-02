@@ -93,6 +93,7 @@ describe("paper updateState in-process concurrency", () => {
       paperTick({
         statePath,
         fetchCandles: fillingFc,
+        getPairs: mockGetPairs,
         nowMs: orderTs + 120_000,
         feeRate: 0,
       }),

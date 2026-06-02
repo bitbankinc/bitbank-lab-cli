@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
-import { type FetchCandles, runTick } from "../../paper-fill.js";
+import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import { updateState } from "../../paper-state-mutate.js";
 import { type OpenOrder, type PaperState, defaultStatePath, nowIso } from "../../paper-state.js";
 import type { Result } from "../../types.js";
@@ -11,6 +11,7 @@ export type PaperCancelOrderArgs = {
   id?: string;
   statePath?: string;
   fetchCandles?: FetchCandles;
+  getPairs?: GetPairs;
   nowMs?: number;
   feeRate?: number;
 };
@@ -31,6 +32,7 @@ export async function paperCancelOrder(
   const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
+    getPairs: args.getPairs,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });

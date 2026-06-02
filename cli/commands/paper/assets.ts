@@ -1,4 +1,4 @@
-import { type FetchCandles, runTick } from "../../paper-fill.js";
+import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import { computeLocked, defaultStatePath, loadState } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 
@@ -12,6 +12,7 @@ export type PaperAssetRow = {
 export type PaperAssetsArgs = {
   statePath?: string;
   fetchCandles?: FetchCandles;
+  getPairs?: GetPairs;
   nowMs?: number;
   feeRate?: number;
 };
@@ -21,6 +22,7 @@ export async function paperAssets(args: PaperAssetsArgs = {}): Promise<Result<Pa
   const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
+    getPairs: args.getPairs,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });

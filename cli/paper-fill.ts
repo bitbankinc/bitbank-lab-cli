@@ -1,14 +1,17 @@
 // 100行超: paper の指値 fill 解決を 1 ファイルで完結。
-// async な candles fetch は updateState の lock 外で済ませ、fresh state に
-// 対する fill の reconcile（sync）だけを lock 内で実行する。
-// テスト時は fetchCandles / nowMs を注入し、本番用デフォルトは public
-// candles API を叩く。
+// async な candles fetch と /spot/pairs（手数料）fetch は updateState の lock
+// 外で済ませ、fresh state に対する fill の reconcile（sync）だけを lock 内で
+// 実行する。指値は必ず maker なので約定手数料はペアのライブ maker_fee_rate_quote
+// （負ならリベート）を resolveFeeRate で引く。
+// テスト時は fetchCandles / getPairs / nowMs を注入し、本番用デフォルトは
+// public candles / pairs API を叩く。
 import { type Candle, fetchOne } from "./commands/public/candles-fetch.js";
 import { ymdUtc } from "./date-utils.js";
+import { resolveFeeRate } from "./fees.js";
 import type { HttpOptions } from "./http.js";
+import { type CachedPair, getPairsWithCache } from "./pairs-cache.js";
 import { updateState } from "./paper-state-mutate.js";
 import {
-  DEFAULT_TAKER_FEE_RATE,
   type OpenOrder,
   type PaperHistoryEntry,
   type PaperState,
@@ -26,10 +29,13 @@ export type FetchCandles = (
   toMs: number,
 ) => Promise<Result<Candle[]>>;
 
+export type GetPairs = () => Promise<Result<CachedPair[]>>;
+
 export type TickOptions = {
   statePath?: string;
   pair?: string;
   fetchCandles?: FetchCandles;
+  getPairs?: GetPairs;
   nowMs?: number;
   feeRate?: number;
   httpOptions?: HttpOptions;
@@ -55,6 +61,7 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
   }
   const warnings: string[] = [];
   const candlesByPair = new Map<string, Candle[]>();
+  const pairsByName = new Map<string, CachedPair>();
   let anyFetchFailed = false;
   if (peek.data.openOrders.length > 0) {
     let fromMs = Math.min(Date.parse(peek.data.lastTickAt), nowMs);
@@ -76,8 +83,22 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
         [...cr.data].sort((a, b) => a.timestamp - b.timestamp),
       );
     }
+    // 約定時のみペア手数料が要る。候補ローソクが 1 本も無ければ /spot/pairs を
+    // 引かない（無駄 fetch 回避）。引けなければ誤レート確定を避けるため約定を
+    // 見送り、lastTickAt を進めず次 tick で再試行する（candle fetch 失敗と同じ扱い）。
+    if ([...candlesByPair.values()].some((c) => c.length > 0)) {
+      const getPairsFn =
+        opts.getPairs ?? (() => getPairsWithCache({ httpOptions: opts.httpOptions }));
+      const pr = await getPairsFn();
+      if (!pr.success) {
+        anyFetchFailed = true;
+        warnings.push(`fetch pairs failed: ${pr.error}`);
+        candlesByPair.clear();
+      } else {
+        for (const cp of pr.data) pairsByName.set(cp.name, cp);
+      }
+    }
   }
-  const feeRate = opts.feeRate ?? DEFAULT_TAKER_FEE_RATE;
   const res = await updateState<TickResult>(
     (state) => {
       if (!state) {
@@ -92,6 +113,10 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
       let fromMs = Math.min(Date.parse(state.lastTickAt), nowMs);
       if (nowMs - fromMs > MAX_LOOKBACK_MS) fromMs = nowMs - MAX_LOOKBACK_MS;
       for (const [p, candles] of candlesByPair) {
+        // openOrders は全て limit ＝ 板に置く側なので約定は必ず maker。ペアの
+        // ライブ maker_fee_rate_quote（負ならリベート）を引く。opts.feeRate
+        // override は resolveFeeRate 内で最優先される（全約定に効く）。
+        const makerRate = resolveFeeRate(pairsByName.get(p), "maker", opts.feeRate);
         for (const candle of candles) {
           if (candle.timestamp < fromMs || candle.timestamp > nowMs) continue;
           const orders = working.openOrders.filter(
@@ -100,7 +125,7 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
           for (const o of orders) {
             const hits = o.side === "buy" ? candle.low <= o.price : candle.high >= o.price;
             if (!hits) continue;
-            const r = applyFill(working, o, candle, feeRate);
+            const r = applyFill(working, o, candle, makerRate);
             working = r.state;
             filled.push(r.entry);
           }

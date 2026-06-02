@@ -1,10 +1,11 @@
-import { type FetchCandles, runTick } from "../../paper-fill.js";
+import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import { type OpenOrder, defaultStatePath, loadState } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 
 export type PaperActiveOrdersArgs = {
   statePath?: string;
   fetchCandles?: FetchCandles;
+  getPairs?: GetPairs;
   nowMs?: number;
   feeRate?: number;
 };
@@ -16,6 +17,7 @@ export async function paperActiveOrders(
   const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
+    getPairs: args.getPairs,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });
