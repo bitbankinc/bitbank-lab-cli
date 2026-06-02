@@ -90,7 +90,8 @@ bitbank paper create-order \
   `paper assets` / `paper trade-history` / `paper active-orders` /
   `paper create-order` を呼ぶと **裏で lazy tick** が走るので、
   通常は明示的な `paper tick` を打たなくても約定が反映される
-- bitbank 公称テイカー手数料（0.12%）が JPY 建てで差し引かれる
+- 成行（taker）の手数料は対象ペアのライブ taker レート（/spot/pairs 由来・
+  campaign 追従）が quote 建てで差し引かれる
 - 残高不足（`available` ベース）は `success: false` で
   `error.message` に "insufficient ..." が入る
 
