@@ -3,19 +3,20 @@ import { marginPositions } from "../../commands/private/margin-positions.js";
 import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
+  notice: { what: "", occurred_at: 0, amount: "0", due_date_at: 0 },
+  payables: { amount: "0" },
   positions: [
     {
-      position_id: 1,
       pair: "btc_jpy",
-      side: "long",
-      amount: "0.01",
-      price: "15000000",
-      open_pnl: "1000",
-      close_pnl: "0",
-      margin_used: "50000",
-      opened_at: 1234567890123,
+      position_side: "long",
+      open_amount: "0.01",
+      product: "150000",
+      average_price: "15000000",
+      unrealized_fee_amount: "0.5",
+      unrealized_interest_amount: "1.2",
     },
   ],
+  losscut_threshold: { btc_jpy: "0" },
 };
 
 describe("marginPositions", () => {
@@ -30,7 +31,18 @@ describe("marginPositions", () => {
       },
     );
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data).toHaveLength(1);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      const pos = result.data[0];
+      expect(pos.pair).toBe("btc_jpy");
+      expect(pos.position_side).toBe("long");
+      // numStr で文字列 → number に変換されていること
+      expect(pos.open_amount).toBe(0.01);
+      expect(pos.product).toBe(150000);
+      expect(pos.average_price).toBe(15000000);
+      expect(pos.unrealized_fee_amount).toBe(0.5);
+      expect(pos.unrealized_interest_amount).toBe(1.2);
+    }
   });
 
   it("works without pair filter", async () => {

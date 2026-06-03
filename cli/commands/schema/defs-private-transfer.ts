@@ -81,7 +81,15 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
       type: "array",
       items: {
         type: "object",
-        properties: { pair: s, side: s, amount: n, open_price: n, pnl: n },
+        properties: {
+          pair: s,
+          position_side: s,
+          open_amount: n,
+          product: n,
+          average_price: n,
+          unrealized_fee_amount: n,
+          unrealized_interest_amount: n,
+        },
       },
     },
   },

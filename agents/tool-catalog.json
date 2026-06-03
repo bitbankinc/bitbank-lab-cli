@@ -1139,16 +1139,22 @@
             "pair": {
               "type": "string"
             },
-            "side": {
+            "position_side": {
               "type": "string"
             },
-            "amount": {
+            "open_amount": {
               "type": "number"
             },
-            "open_price": {
+            "product": {
               "type": "number"
             },
-            "pnl": {
+            "average_price": {
+              "type": "number"
+            },
+            "unrealized_fee_amount": {
+              "type": "number"
+            },
+            "unrealized_interest_amount": {
               "type": "number"
             }
           }

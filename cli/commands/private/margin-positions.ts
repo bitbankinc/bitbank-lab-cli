@@ -2,20 +2,18 @@ import { z } from "zod";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
-import { numStr, safeId } from "../../schema-helpers.js";
+import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
 
 const PositionSchema = z.object({
-  position_id: safeId,
   pair: z.string(),
-  side: z.string(),
-  amount: numStr,
-  price: numStr,
-  open_pnl: numStr,
-  close_pnl: numStr,
-  margin_used: numStr,
-  opened_at: z.number(),
+  position_side: z.string(),
+  open_amount: numStr,
+  product: numStr,
+  average_price: numStr,
+  unrealized_fee_amount: numStr,
+  unrealized_interest_amount: numStr,
 });
 
 const ResponseSchema = z.object({
