@@ -926,16 +926,25 @@
         "items": {
           "type": "object",
           "properties": {
+            "uuid": {
+              "type": "string"
+            },
             "asset": {
               "type": "string"
             },
             "amount": {
               "type": "number"
             },
-            "txid": {
+            "network": {
               "type": "string"
             },
-            "found_at": {
+            "txid": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "created_at": {
               "type": "number"
             }
           }

@@ -12,8 +12,9 @@ const UnconfirmedDepositSchema = z.object({
   uuid: z.string(),
   asset: z.string(),
   amount: numStr,
+  network: z.string(),
   txid: z.string().nullable(),
-  found_at: z.number(),
+  created_at: z.number(),
 });
 
 const ResponseSchema = z.object({

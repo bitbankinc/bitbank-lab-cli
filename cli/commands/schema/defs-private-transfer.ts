@@ -25,7 +25,10 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
     params: { asset },
     output: {
       type: "array",
-      items: { type: "object", properties: { asset: s, amount: n, txid: s, found_at: n } },
+      items: {
+        type: "object",
+        properties: { uuid: s, asset: s, amount: n, network: s, txid: sn, created_at: n },
+      },
     },
   },
   "deposit-originators": {
