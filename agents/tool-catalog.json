@@ -926,6 +926,9 @@
         "items": {
           "type": "object",
           "properties": {
+            "uuid": {
+              "type": "string"
+            },
             "asset": {
               "type": "string"
             },
@@ -936,7 +939,10 @@
               "type": "string"
             },
             "txid": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "created_at": {
               "type": "number"

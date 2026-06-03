@@ -27,7 +27,7 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
       type: "array",
       items: {
         type: "object",
-        properties: { asset: s, amount: n, network: s, txid: s, created_at: n },
+        properties: { uuid: s, asset: s, amount: n, network: s, txid: sn, created_at: n },
       },
     },
   },
