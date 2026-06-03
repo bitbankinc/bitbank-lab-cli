@@ -21,15 +21,14 @@
 //   ① CONFIRMED/DONE（暗号資産）: confirmed_at / address / network あり
 //   ② FOUND（暗号資産）: confirmed_at 欠落（docs の "exists only for confirmed
 //      one" に対応する欠落シェイプを再現）
-//   ③ DONE（jpy 法定通貨）: address / network 欠落・txid null。銀行振込のため
-//      deposit address が存在せず、暗号資産専用フィールドが落ちる形状を再現
+//   ③ DONE（jpy 法定通貨）: txid / address / network ともキーごと欠落。銀行振込
+//      のため deposit address が存在せず、暗号資産専用フィールドが落ちる形状を再現
+//      （実機の jpy 入金レスポンスで欠落を確認済み）
 //
 // 注意（要実機確認）: docs の JSON 例は confirmed_at を `0` としか示しておらず、
-//   FOUND 時に「キー欠落」か「null」かは未確定。さらに docs は JSON 例で address を
-//   落としており（フィールド説明欄には address・network とも存在する）、jpy 入金で
-//   address/network が実際に欠落するかは docs に明示がない。実装は双方を optional に
-//   した安全側で、本フィクスチャは「キー欠落」側を代表ケースとして再現する。
-//   実機の jpy 入金レスポンスで最終確定すること。
+//   FOUND 時に「キー欠落」か「null」かは未確定。実装は nullable + optional の安全側。
+//   jpy 入金の txid / address / network はいずれも実機でキーごと欠落することを確認済みで、
+//   本フィクスチャはその「キー欠落」シェイプを再現する。
 
 export const depositHistoryFixture = {
   deposits: [
@@ -57,11 +56,11 @@ export const depositHistoryFixture = {
       found_at: 1234567891000,
     },
     {
-      // ③ DONE（jpy 法定通貨）: address / network 欠落・txid null
+      // ③ DONE（jpy 法定通貨）: txid / address / network ともキーごと欠落
+      // （実機の jpy 入金レスポンスで確認済み。crypto 専用フィールドが落ちる形状）
       uuid: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
       asset: "jpy",
       amount: "10000",
-      txid: null,
       status: "DONE",
       found_at: 1234567892000,
       confirmed_at: 1234567892100,

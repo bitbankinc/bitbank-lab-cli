@@ -7,7 +7,7 @@ import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from ".
 // モックは実 API 準拠: 形状は __fixtures__/private/deposit-history.ts に集約する
 // （インライン即席モック禁止 / docs/dev/conventions.md「private モックの実 API 準拠」参照）。
 // フィクスチャは ①CONFIRMED/DONE（confirmed_at あり）②FOUND（confirmed_at 欠落）
-// ③DONE/jpy（address・network 欠落・txid null）の 3 ケースを持つ。
+// ③DONE/jpy（txid・address・network ともキーごと欠落）の 3 ケースを持つ。
 const MOCK = depositHistoryFixture;
 
 describe("depositHistory", () => {
@@ -56,7 +56,7 @@ describe("depositHistory", () => {
     }
   });
 
-  it("parses JPY deposit with address/network missing (no parse failure)", async () => {
+  it("parses JPY deposit with txid/address/network missing (no parse failure)", async () => {
     const result = await depositHistory(
       { asset: "jpy" },
       { fetch: mockFetchData(MOCK), retries: 0, credentials: TEST_CREDS, nonce: "1" },
@@ -65,10 +65,11 @@ describe("depositHistory", () => {
     if (result.success) {
       const jpy = result.data[2];
       expect(jpy.asset).toBe("jpy");
-      // 法定通貨入金は暗号資産専用フィールドを持たない。optional によりパース成功
+      // 法定通貨入金は暗号資産専用フィールド（txid/address/network）を持たない。
+      // 3 つとも optional によりキー欠落でパース成功し undefined になる
+      expect(jpy.txid).toBeUndefined();
       expect(jpy.address).toBeUndefined();
       expect(jpy.network).toBeUndefined();
-      expect(jpy.txid).toBeNull();
     }
   });
 
