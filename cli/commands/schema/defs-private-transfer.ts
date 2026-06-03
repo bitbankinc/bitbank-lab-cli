@@ -33,10 +33,38 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
   },
   "deposit-originators": {
     category: "private",
-    params: { asset },
+    // docs の Parameters は None。params なし。
+    params: {},
     output: {
       type: "array",
-      items: { type: "object", properties: { originator_label: s, originator_address: s } },
+      items: {
+        type: "object",
+        properties: {
+          uuid: s,
+          label: s,
+          deposit_type: s,
+          deposit_purpose: sn,
+          originator_status: s,
+          originator_type: s,
+          originator_last_name: sn,
+          originator_first_name: sn,
+          originator_country: sn,
+          originator_prefecture: sn,
+          originator_city: sn,
+          originator_address: sn,
+          originator_building: sn,
+          originator_company_name: sn,
+          originator_company_type: sn,
+          originator_company_type_position: sn,
+          originator_substantial_controllers: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: { uuid: s, name: s, country: s, prefecture: sn },
+            },
+          },
+        },
+      },
     },
   },
   "withdrawal-accounts": {

@@ -955,16 +955,11 @@
       "command": "deposit-originators",
       "category": "private",
       "auth_required": true,
-      "description": "Get deposit originator addresses",
+      "description": "Get deposit originators",
       "dangerous": false,
       "params": {
         "type": "object",
-        "properties": {
-          "asset": {
-            "type": "string",
-            "description": "Asset symbol (e.g. btc)"
-          }
-        },
+        "properties": {},
         "required": []
       },
       "output": {
@@ -972,11 +967,109 @@
         "items": {
           "type": "object",
           "properties": {
-            "originator_label": {
+            "uuid": {
               "type": "string"
             },
-            "originator_address": {
+            "label": {
               "type": "string"
+            },
+            "deposit_type": {
+              "type": "string"
+            },
+            "deposit_purpose": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_status": {
+              "type": "string"
+            },
+            "originator_type": {
+              "type": "string"
+            },
+            "originator_last_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_first_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_country": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_prefecture": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_city": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_building": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_company_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_company_type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_company_type_position": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "originator_substantial_controllers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "uuid": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "country": {
+                    "type": "string"
+                  },
+                  "prefecture": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
             }
           }
         }

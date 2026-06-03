@@ -21,11 +21,10 @@ export const privateTransferCommands: Record<string, CommandEntry> = {
     })),
   },
   "deposit-originators": {
-    description: "Get deposit originator addresses",
-    options: { asset: str },
-    handler: handler("./private/deposit-originators.js", "depositOriginators", (_a, v) => ({
-      asset: valStr(v, "asset"),
-    })),
+    // docs の Parameters は None。オプションを取らず params も送らない。
+    description: "Get deposit originators",
+    options: {},
+    handler: handler("./private/deposit-originators.js", "depositOriginators", () => ({})),
   },
   "withdrawal-accounts": {
     description: "Get registered withdrawal accounts",
