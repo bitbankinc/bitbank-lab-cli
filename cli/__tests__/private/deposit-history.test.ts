@@ -1,24 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { depositHistory } from "../../commands/private/deposit-history.js";
 import { EXIT } from "../../exit-codes.js";
+import { depositHistoryFixture } from "../__fixtures__/private/deposit-history.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
-const MOCK = {
-  deposits: [
-    {
-      uuid: "abc",
-      asset: "btc",
-      amount: "0.1",
-      txid: "tx123",
-      status: "DONE",
-      found_at: 1234567890123,
-      confirmed_at: 1234567890200,
-    },
-  ],
-};
+// モックは実 API 準拠: 形状は __fixtures__/private/deposit-history.ts に集約する
+// （インライン即席モック禁止 / docs/dev/conventions.md「private モックの実 API 準拠」参照）。
+// フィクスチャは ①CONFIRMED/DONE（confirmed_at あり）②FOUND（confirmed_at 欠落）の
+// 2 ケースを持つ。
+const MOCK = depositHistoryFixture;
 
 describe("depositHistory", () => {
-  it("returns deposit history", async () => {
+  it("returns deposit history (CONFIRMED + FOUND both parse)", async () => {
     const result = await depositHistory(
       { asset: "btc" },
       {
@@ -29,7 +22,38 @@ describe("depositHistory", () => {
       },
     );
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data).toHaveLength(1);
+    if (result.success) expect(result.data).toHaveLength(2);
+  });
+
+  it("parses CONFIRMED deposit with confirmed_at present", async () => {
+    const result = await depositHistory(
+      { asset: "btc" },
+      { fetch: mockFetchData(MOCK), retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const done = result.data[0];
+      expect(done.status).toBe("DONE");
+      expect(done.confirmed_at).toBe(1234567890200);
+      // address / network を露出している
+      expect(done.address).toBe("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+      expect(done.network).toBe("btc");
+    }
+  });
+
+  it("parses FOUND deposit with confirmed_at missing (no parse failure)", async () => {
+    const result = await depositHistory(
+      { asset: "btc" },
+      { fetch: mockFetchData(MOCK), retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const found = result.data[1];
+      expect(found.status).toBe("FOUND");
+      // キー欠落でも optional によりパース成功し、undefined になる
+      expect(found.confirmed_at).toBeUndefined();
+      expect(found.address).toBe("1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2");
+    }
   });
 
   it("passes optional params (count, since, end)", async () => {

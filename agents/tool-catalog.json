@@ -931,11 +931,20 @@
         "items": {
           "type": "object",
           "properties": {
+            "uuid": {
+              "type": "string"
+            },
             "asset": {
               "type": "string"
             },
             "amount": {
               "type": "number"
+            },
+            "network": {
+              "type": "string"
+            },
+            "address": {
+              "type": "string"
             },
             "txid": {
               "type": [
@@ -948,6 +957,12 @@
             },
             "found_at": {
               "type": "number"
+            },
+            "confirmed_at": {
+              "type": [
+                "number",
+                "null"
+              ]
             }
           }
         }

@@ -12,10 +12,15 @@ const DepositSchema = z.object({
   uuid: z.string(),
   asset: z.string(),
   amount: numStr,
+  // network は jpy 入金で省略され得るため安全側で optional（実機確認で確定）。
+  network: z.string().optional(),
+  address: z.string(),
   txid: z.string().nullable(),
   status: z.string(),
   found_at: z.number(),
-  confirmed_at: z.number().nullable(),
+  // docs: "exists only for confirmed one"。FOUND では欠落 or null の双方を
+  // 許容する安全側（nullable + optional）でパース失敗を防ぐ。
+  confirmed_at: z.number().nullable().optional(),
 });
 
 const DepositHistoryResponseSchema = z.object({
