@@ -60,14 +60,22 @@ describe("confirm-deposits-all", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("requires originator-uuid", async () => {
-    const result = await confirmDepositsAll({});
+  it("requires originator-uuid (no API call)", async () => {
+    const { fetch, calls } = captureFetch();
+    const result = await confirmDepositsAll({}, { fetch, retries: 0 });
     expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("originator-uuid is required");
+    expect(calls).toHaveLength(0);
   });
 
-  it("rejects a non-UUID originator-uuid", async () => {
-    const result = await confirmDepositsAll({ originatorUuid: "not-a-uuid" });
+  it("rejects a non-UUID originator-uuid (no API call)", async () => {
+    const { fetch, calls } = captureFetch();
+    const result = await confirmDepositsAll(
+      { originatorUuid: "not-a-uuid" },
+      { fetch, retries: 0 },
+    );
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("uuid");
+    expect(calls).toHaveLength(0);
   });
 });

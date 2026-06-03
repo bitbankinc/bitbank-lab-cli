@@ -3,7 +3,7 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { DryRunData, Result } from "../../types.js";
-import { UuidSchema } from "../../validators.js";
+import { UUID_RE } from "../../validators.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
 
@@ -13,10 +13,19 @@ const ConfirmDepositsAllResponseSchema = z.object({}).passthrough();
 
 export type ConfirmDepositsAllResponse = z.infer<typeof ConfirmDepositsAllResponseSchema>;
 
+// 汎用 UuidSchema は `--uuid` を案内するメッセージなので、本コマンド専用の
+// `--originator-uuid` 向けメッセージで検証する（形式は共通の UUID_RE を再利用）。
+const MSG_ORIGINATOR_UUID = "originator-uuid is required. Example: --originator-uuid=xxx-yyy";
+const OriginatorUuidSchema = z
+  .string({ required_error: MSG_ORIGINATOR_UUID })
+  .trim()
+  .min(1, MSG_ORIGINATOR_UUID)
+  .regex(UUID_RE, "originator-uuid must be a valid UUID");
+
 const ConfirmDepositsAllInputSchema = z
   .object({
-    // originator_uuid は実 API で必須。UuidSchema で形式も検証する。
-    originatorUuid: UuidSchema,
+    // originator_uuid は実 API で必須。
+    originatorUuid: OriginatorUuidSchema,
     execute: z.boolean().optional(),
     confirm: z.string().optional(),
   })

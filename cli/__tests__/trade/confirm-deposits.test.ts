@@ -83,27 +83,35 @@ describe("confirm-deposits", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("requires deposits", async () => {
-    const result = await confirmDeposits({});
+  it("requires deposits (no API call)", async () => {
+    const { fetch, calls } = captureFetch();
+    const result = await confirmDeposits({}, { fetch, retries: 0 });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("deposits is required");
+    expect(calls).toHaveLength(0);
   });
 
-  it("rejects empty deposits string", async () => {
-    const result = await confirmDeposits({ deposits: "" });
+  it("rejects empty deposits string (no API call)", async () => {
+    const { fetch, calls } = captureFetch();
+    const result = await confirmDeposits({ deposits: "" }, { fetch, retries: 0 });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("deposits is required");
+    expect(calls).toHaveLength(0);
   });
 
-  it("rejects a pair missing the originator-uuid", async () => {
-    const result = await confirmDeposits({ deposits: DEP });
+  it("rejects a pair missing the originator-uuid (no API call)", async () => {
+    const { fetch, calls } = captureFetch();
+    const result = await confirmDeposits({ deposits: DEP }, { fetch, retries: 0 });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("valid UUIDs");
+    expect(calls).toHaveLength(0);
   });
 
-  it("rejects non-UUID values", async () => {
-    const result = await confirmDeposits({ deposits: "123:456" });
+  it("rejects non-UUID values (no API call)", async () => {
+    const { fetch, calls } = captureFetch();
+    const result = await confirmDeposits({ deposits: "123:456" }, { fetch, retries: 0 });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toContain("valid UUIDs");
+    expect(calls).toHaveLength(0);
   });
 });
