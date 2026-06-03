@@ -7,6 +7,7 @@ const end = p("string", "End timestamp (Unix ms)");
 const n = { type: "number" };
 const s = { type: "string" };
 const sn = { type: ["string", "null"] };
+const nn = { type: ["number", "null"] };
 
 export const privateTransferSchemas: Record<string, SchemaDef> = {
   "deposit-history": {
@@ -16,7 +17,17 @@ export const privateTransferSchemas: Record<string, SchemaDef> = {
       type: "array",
       items: {
         type: "object",
-        properties: { asset: s, amount: n, txid: sn, status: s, found_at: n },
+        properties: {
+          uuid: s,
+          asset: s,
+          amount: n,
+          network: s,
+          address: s,
+          txid: sn,
+          status: s,
+          found_at: n,
+          confirmed_at: nn,
+        },
       },
     },
   },
