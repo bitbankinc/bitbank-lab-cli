@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { unconfirmedDeposits } from "../../commands/private/unconfirmed-deposits.js";
 import { EXIT } from "../../exit-codes.js";
+import { unconfirmedDepositsFixture } from "../__fixtures__/private/unconfirmed-deposits.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
-const MOCK = {
-  deposits: [{ uuid: "abc", asset: "btc", amount: "0.1", txid: "tx123", found_at: 1234567890123 }],
-};
+const MOCK = unconfirmedDepositsFixture;
 
 describe("unconfirmedDeposits", () => {
   it("returns unconfirmed deposits", async () => {
@@ -19,7 +18,14 @@ describe("unconfirmedDeposits", () => {
       },
     );
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data).toHaveLength(1);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      // 実 API 形状（created_at は number、network あり、found_at なし）が通ること。
+      expect(result.data[0].created_at).toBe(1234567890123);
+      expect(typeof result.data[0].created_at).toBe("number");
+      expect(result.data[0].network).toBe("btc");
+      expect(result.data[0]).not.toHaveProperty("found_at");
+    }
   });
 
   it("works without asset filter", async () => {

@@ -932,10 +932,13 @@
             "amount": {
               "type": "number"
             },
+            "network": {
+              "type": "string"
+            },
             "txid": {
               "type": "string"
             },
-            "found_at": {
+            "created_at": {
               "type": "number"
             }
           }
