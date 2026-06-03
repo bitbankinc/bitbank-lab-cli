@@ -12,9 +12,10 @@ const DepositSchema = z.object({
   uuid: z.string(),
   asset: z.string(),
   amount: numStr,
-  // network は jpy 入金で省略され得るため安全側で optional（実機確認で確定）。
+  // network/address は暗号資産入金のみ。jpy 法定通貨入金では欠落するため
+  // 双方 optional（公式 docs: deposit_history は bank account 情報を含まない）。
   network: z.string().optional(),
-  address: z.string(),
+  address: z.string().optional(),
   txid: z.string().nullable(),
   status: z.string(),
   found_at: z.number(),
