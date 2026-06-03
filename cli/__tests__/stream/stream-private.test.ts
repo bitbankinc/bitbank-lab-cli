@@ -8,8 +8,15 @@ const mockPubnub = {
   subscribe: vi.fn(),
   unsubscribeAll: vi.fn(),
 };
+// vitest 4 では `new PubNub()` のモックに arrow function を使うと
+// "is not a constructor" になる。new 可能な class で mockPubnub の
+// メソッドをインスタンスに移し、`new` 経由でも同じ vi.fn を参照させる。
 vi.mock("pubnub", () => ({
-  default: vi.fn(() => mockPubnub),
+  default: class {
+    constructor() {
+      Object.assign(this, mockPubnub);
+    }
+  },
 }));
 
 vi.mock("../../commands/stream/format.js", () => ({
