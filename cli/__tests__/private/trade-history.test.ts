@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
 import { tradeHistory, tradeHistoryDispatch } from "../../commands/private/trade-history.js";
 import { EXIT } from "../../exit-codes.js";
+import { tradeHistoryFixture } from "../__fixtures__/private/trade-history.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture } from "../test-helpers.js";
 
 vi.mock("../../commands/private/trade-history-all.js", () => ({
@@ -11,23 +12,8 @@ vi.mock("../../commands/private/trade-history-all.js", () => ({
   }),
 }));
 
-const MOCK = {
-  trades: [
-    {
-      trade_id: 1,
-      pair: "btc_jpy",
-      order_id: 100,
-      side: "buy",
-      type: "limit",
-      amount: "0.001",
-      price: "15000000",
-      maker_taker: "maker",
-      fee_amount_base: "0",
-      fee_amount_quote: "0",
-      executed_at: 1234567890123,
-    },
-  ],
-};
+// モックは実 API 準拠: 形状は __fixtures__/private/trade-history.ts に集約する。
+const MOCK = tradeHistoryFixture;
 
 describe("tradeHistory", () => {
   it("returns error when pair is missing", async () => {
@@ -47,7 +33,14 @@ describe("tradeHistory", () => {
       },
     );
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data).toHaveLength(1);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      // 新規露出フィールドが文字列 → number へ変換されて出る
+      expect(result.data[0].fee_occurred_amount_quote).toBe(0);
+      expect(result.data[0].profit_loss).toBe(1000);
+      expect(result.data[0].interest).toBe(-5);
+      expect(result.data[0].position_side).toBe("long");
+    }
   });
 
   const failFetch = (() => {

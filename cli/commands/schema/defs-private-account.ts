@@ -1,3 +1,6 @@
+// 100行超: private account 系コマンドの output（agents カタログの単一ソース）を
+// 宣言的に集約。各エンドポイントが返す API フィールドを 1 つずつ列挙するため、
+// API 露出フィールドの増加に比例して伸びる（責務の混在ではない）。
 import { type SchemaDef, p } from "./types.js";
 
 const pair = p("string", "Trading pair (e.g. btc_jpy)");
@@ -7,6 +10,7 @@ const end = p("string", "End timestamp (Unix ms)");
 const n = { type: "number" };
 const s = { type: "string" };
 const nn = { type: ["number", "null"] };
+const b = { type: "boolean" };
 
 const orderProps = {
   order_id: n,
@@ -18,6 +22,10 @@ const orderProps = {
   remaining_amount: nn,
   executed_amount: n,
   status: s,
+  position_side: s,
+  user_cancelable: b,
+  triggered_at: n,
+  trigger_price: nn,
 };
 
 export const privateAccountSchemas: Record<string, SchemaDef> = {
@@ -72,7 +80,11 @@ export const privateAccountSchemas: Record<string, SchemaDef> = {
           price: n,
           fee_amount_base: n,
           fee_amount_quote: n,
+          fee_occurred_amount_quote: n,
           executed_at: n,
+          position_side: s,
+          profit_loss: nn,
+          interest: nn,
         },
       },
     },

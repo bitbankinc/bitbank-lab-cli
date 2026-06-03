@@ -604,6 +604,21 @@
           "status": {
             "type": "string"
           },
+          "position_side": {
+            "type": "string"
+          },
+          "user_cancelable": {
+            "type": "boolean"
+          },
+          "triggered_at": {
+            "type": "number"
+          },
+          "trigger_price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
           "ordered_at": {
             "type": "number"
           }
@@ -722,6 +737,21 @@
             },
             "status": {
               "type": "string"
+            },
+            "position_side": {
+              "type": "string"
+            },
+            "user_cancelable": {
+              "type": "boolean"
+            },
+            "triggered_at": {
+              "type": "number"
+            },
+            "trigger_price": {
+              "type": [
+                "number",
+                "null"
+              ]
             }
           }
         }
@@ -788,8 +818,26 @@
             "fee_amount_quote": {
               "type": "number"
             },
+            "fee_occurred_amount_quote": {
+              "type": "number"
+            },
             "executed_at": {
               "type": "number"
+            },
+            "position_side": {
+              "type": "string"
+            },
+            "profit_loss": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "interest": {
+              "type": [
+                "number",
+                "null"
+              ]
             }
           }
         }
@@ -1469,6 +1517,21 @@
           },
           "ordered_at": {
             "type": "number"
+          },
+          "position_side": {
+            "type": "string"
+          },
+          "user_cancelable": {
+            "type": "boolean"
+          },
+          "triggered_at": {
+            "type": "number"
+          },
+          "trigger_price": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         }
       }

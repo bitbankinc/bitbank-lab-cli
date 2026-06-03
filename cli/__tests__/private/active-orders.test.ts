@@ -1,26 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { activeOrders } from "../../commands/private/active-orders.js";
 import { EXIT } from "../../exit-codes.js";
+import { orderFixture } from "../__fixtures__/private/order.js";
 import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
 
-const MOCK = {
-  orders: [
-    {
-      order_id: 1,
-      pair: "btc_jpy",
-      side: "buy",
-      type: "limit",
-      start_amount: "0.001",
-      remaining_amount: "0.001",
-      executed_amount: "0",
-      price: "15000000",
-      average_price: "0",
-      ordered_at: 1234567890123,
-      expire_at: null,
-      status: "UNFILLED",
-    },
-  ],
-};
+// モックは実 API 準拠: 形状は __fixtures__/private/order.ts に集約する
+// （OrderSchema を共有するため order テストと同じフィクスチャを使う）。
+const MOCK = { orders: [orderFixture] };
 
 describe("activeOrders", () => {
   it("returns active orders", async () => {

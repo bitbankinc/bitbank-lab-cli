@@ -5,7 +5,7 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { compactParams } from "../../params.js";
 import { parseResponse } from "../../parse-response.js";
-import { numStr, safeId } from "../../schema-helpers.js";
+import { nullableNumStr, numStr, safeId } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
 import { IntegerStringSchema, MSG_PAIR, PairSchema } from "../../validators.js";
 import {
@@ -27,7 +27,12 @@ const TradeSchema = z.object({
   maker_taker: z.string(),
   fee_amount_base: numStr,
   fee_amount_quote: numStr,
+  // spot でも常時返る（docs: spot では fee_amount_quote と同値）。監査 ISSUE-F
+  fee_occurred_amount_quote: numStr,
   executed_at: z.number(),
+  position_side: z.string().optional(), // margin のみ
+  profit_loss: nullableNumStr.optional(), // 実現損益。省略あり
+  interest: nullableNumStr.optional(), // 金利。省略あり
 });
 
 const TradeHistoryResponseSchema = z.object({

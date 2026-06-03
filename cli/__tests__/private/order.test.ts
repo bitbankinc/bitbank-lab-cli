@@ -1,22 +1,12 @@
 // 100行超: order 取得の各分岐を網羅
 import { describe, expect, it } from "vitest";
 import { order } from "../../commands/private/order.js";
+import { orderFixture, stopOrderFixture } from "../__fixtures__/private/order.js";
 import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
 
-const MOCK_ORDER = {
-  order_id: 12345,
-  pair: "btc_jpy",
-  side: "buy",
-  type: "limit",
-  start_amount: "0.001",
-  remaining_amount: "0.001",
-  executed_amount: "0",
-  price: "15000000",
-  average_price: "0",
-  ordered_at: 1234567890123,
-  expire_at: null,
-  status: "UNFILLED",
-};
+// モックは実 API 準拠: 形状は __fixtures__/private/order.ts に集約する
+// （インライン即席モック禁止 / docs/dev/conventions.md「private モックの実 API 準拠」参照）。
+const MOCK_ORDER = orderFixture;
 
 describe("order", () => {
   it("returns error when pair is missing", async () => {
@@ -79,6 +69,28 @@ describe("order", () => {
     if (result.success) {
       expect(result.data.order_id).toBe(12345);
       expect(result.data.pair).toBe("btc_jpy");
+      // 常時返る user_cancelable が露出する
+      expect(result.data.user_cancelable).toBe(true);
+    }
+  });
+
+  it("exposes stop/margin fields (trigger_price, position_side, triggered_at)", async () => {
+    const result = await order(
+      { pair: "btc_jpy", orderId: "12346" },
+      {
+        fetch: mockFetchData(stopOrderFixture),
+        retries: 0,
+        credentials: TEST_CREDS,
+        nonce: "1",
+      },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // trigger_price は nullableNumStr で文字列 → number へ変換
+      expect(result.data.trigger_price).toBe(14000000);
+      expect(result.data.position_side).toBe("long");
+      expect(result.data.triggered_at).toBe(1234567899999);
+      expect(result.data.user_cancelable).toBe(false);
     }
   });
 

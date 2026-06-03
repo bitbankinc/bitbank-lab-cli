@@ -1,26 +1,12 @@
 // 100行超: orders-info の各分岐を網羅
 import { describe, expect, it } from "vitest";
 import { ordersInfo } from "../../commands/private/orders-info.js";
+import { orderFixture } from "../__fixtures__/private/order.js";
 import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
 
-const MOCK_ORDERS = {
-  orders: [
-    {
-      order_id: 1,
-      pair: "btc_jpy",
-      side: "buy",
-      type: "limit",
-      start_amount: "0.001",
-      remaining_amount: "0",
-      executed_amount: "0.001",
-      price: "15000000",
-      average_price: "15000000",
-      ordered_at: 1234567890123,
-      expire_at: null,
-      status: "FULLY_FILLED",
-    },
-  ],
-};
+// モックは実 API 準拠: 形状は __fixtures__/private/order.ts に集約する
+// （OrderSchema を共有するため order テストと同じフィクスチャを使う）。
+const MOCK_ORDERS = { orders: [orderFixture] };
 
 describe("ordersInfo", () => {
   it("returns error when pair is missing", async () => {

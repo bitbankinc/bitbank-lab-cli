@@ -16,6 +16,11 @@ export const OrderSchema = z.object({
   ordered_at: z.number(),
   expire_at: z.number().nullable().optional(),
   status: z.string(),
+  // 以下、実 API が返すが従来未露出だったフィールド（追加のみ・監査 ISSUE-F）
+  position_side: z.string().optional(), // margin のみ（long/short）。spot では省略
+  user_cancelable: z.boolean().optional(), // キャンセル可否。安全側で optional
+  triggered_at: z.number().optional(), // stop 系の発火時刻（Unix ms）
+  trigger_price: nullableNumStr.optional(), // stop 系のトリガー価格
 });
 
 /** キャンセルレスポンスのスキーマ（OrderSchema のサブセット） */

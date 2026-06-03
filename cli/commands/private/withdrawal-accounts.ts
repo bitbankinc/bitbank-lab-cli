@@ -9,6 +9,7 @@ const AccountSchema = z.object({
   uuid: z.string(),
   label: z.string(),
   address: z.string(),
+  network: z.string().optional(), // jpy アカウントでは省略され得るため安全側で optional
 });
 
 const ResponseSchema = z.object({

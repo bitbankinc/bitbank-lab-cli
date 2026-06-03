@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { withdrawalAccounts } from "../../commands/private/withdrawal-accounts.js";
+import { withdrawalAccountsFixture } from "../__fixtures__/private/withdrawal-accounts.js";
 import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
 
-const MOCK = {
-  accounts: [{ uuid: "abc", label: "main wallet", address: "1A1zP1..." }],
-};
+// モックは実 API 準拠: 形状は __fixtures__/private/withdrawal-accounts.ts に集約する。
+const MOCK = withdrawalAccountsFixture;
 
 describe("withdrawalAccounts", () => {
   it("returns error when asset is missing", async () => {
@@ -23,7 +23,10 @@ describe("withdrawalAccounts", () => {
       },
     );
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data).toHaveLength(1);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].network).toBe("btc");
+    }
   });
 
   it("propagates API error", async () => {

@@ -1,21 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
+import { tradeHistoryFixture } from "../__fixtures__/private/trade-history.js";
 import { TEST_CREDS, mockFetchData } from "../test-helpers.js";
 
+// モックは実 API 準拠: 1 約定の形状は __fixtures__/private/trade-history.ts に集約し、
+// ページング検証用に id / executed_at だけ差し替える。
+const BASE_TRADE = tradeHistoryFixture.trades[0];
+
 function makeTrade(id: number, executedAt: number) {
-  return {
-    trade_id: id,
-    pair: "btc_jpy",
-    order_id: id,
-    side: "buy",
-    type: "limit",
-    amount: "0.001",
-    price: "15000000",
-    maker_taker: "maker",
-    fee_amount_base: "0",
-    fee_amount_quote: "0",
-    executed_at: executedAt,
-  };
+  return { ...BASE_TRADE, trade_id: id, order_id: id, executed_at: executedAt };
 }
 
 describe("tradeHistoryAll", () => {
