@@ -126,15 +126,21 @@ function migrateToV3(parsed: z.infer<typeof PaperStateAnySchema>): PaperState {
   };
 }
 
+// 買い指値ロックの手数料率。後方互換のため固定値（number）も受けるが、
+// pair ごとに maker レートを引くリゾルバ関数を渡すと過大ロックを避けられる
+// （買い指値は約定すれば必ず maker なので maker 基準が実態に近い）。
+type LockFeeRate = number | ((pair: string) => number);
+
 export function computeLocked(
   state: PaperState,
-  feeRate: number = DEFAULT_TAKER_FEE_RATE,
+  fee: LockFeeRate = DEFAULT_TAKER_FEE_RATE,
 ): Record<string, number> {
+  const rateFor = typeof fee === "function" ? fee : () => fee;
   const locked: Record<string, number> = {};
   for (const o of state.openOrders) {
     const [base, quote] = o.pair.split("_");
     if (o.side === "buy") {
-      const cost = o.price * o.amount * (1 + feeRate);
+      const cost = o.price * o.amount * (1 + rateFor(o.pair));
       locked[quote] = (locked[quote] ?? 0) + cost;
     } else {
       locked[base] = (locked[base] ?? 0) + o.amount;
@@ -146,10 +152,10 @@ export function computeLocked(
 export function availableOf(
   state: PaperState,
   asset: string,
-  feeRate: number = DEFAULT_TAKER_FEE_RATE,
+  fee: LockFeeRate = DEFAULT_TAKER_FEE_RATE,
 ): number {
   const total = state.balances[asset] ?? 0;
-  const locked = computeLocked(state, feeRate)[asset] ?? 0;
+  const locked = computeLocked(state, fee)[asset] ?? 0;
   return total - locked;
 }
 

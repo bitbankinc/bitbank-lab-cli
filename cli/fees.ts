@@ -35,3 +35,18 @@ export function feeRole(type: string, postOnly?: boolean): "maker" | "taker" {
   if (type === "limit" || type === "stop_limit") return "maker";
   return "taker";
 }
+
+/**
+ * pair 名 → maker レートのリゾルバを作る（買い指値ロックの見積り用）。
+ * 買い指値は約定すれば必ず maker なので、ロックも maker 基準が実態に近い。
+ * - override があれば全ペアでそれを返す（テスト注入・明示指定が最優先）
+ * - pairs に無いペア / pairs 自体が undefined は resolveFeeRate の
+ *   フォールバック（DEFAULT_TAKER_FEE_RATE, 安全側）になる
+ */
+export function makerRateResolver(
+  pairs: CachedPair[] | undefined,
+  override?: number,
+): (pair: string) => number {
+  const byName = new Map((pairs ?? []).map((p) => [p.name, p] as const));
+  return (pair) => resolveFeeRate(byName.get(pair), "maker", override);
+}

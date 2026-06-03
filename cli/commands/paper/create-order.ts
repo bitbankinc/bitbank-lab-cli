@@ -3,13 +3,12 @@
 // tick で過去ギャップを解消 + pairs キャッシュからの unit_amount/最大量検証。
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
-import { resolveFeeRate } from "../../fees.js";
+import { makerRateResolver, resolveFeeRate } from "../../fees.js";
 import type { HttpOptions } from "../../http.js";
 import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import { updateState } from "../../paper-state-mutate.js";
 import {
-  DEFAULT_TAKER_FEE_RATE,
   type OpenOrder,
   type PaperState,
   availableOf,
@@ -102,7 +101,7 @@ export async function paperCreateOrder(
   });
   if (!tick.success) return tick;
   if (parsed.data.type === "limit") {
-    return placeLimit(parsed.data, args.feeRate, path);
+    return placeLimit(parsed.data, args.feeRate, pairsR.data, path);
   }
   // 成行は必ず taker。サイズ検証で使った pairs から該当ペアを引き、
   // ライブ taker_fee_rate_quote を fillMarket に渡す（campaign 追従）。
@@ -113,11 +112,13 @@ export async function paperCreateOrder(
 async function placeLimit(
   input: { pair: string; side: "buy" | "sell"; amount: string; price?: string },
   feeRateArg: number | undefined,
+  pairs: CachedPair[],
   path: string,
 ): Promise<Result<PaperLimitPlaced>> {
   const amount = Number(input.amount);
   const price = Number(input.price);
-  const feeRate = feeRateArg ?? DEFAULT_TAKER_FEE_RATE;
+  // 買い指値ロックは per-pair maker 基準で見積もる（override があれば最優先）。
+  const fee = makerRateResolver(pairs, feeRateArg);
   const [base, quote] = input.pair.split("_");
   return updateState<PaperLimitPlaced>(
     (state) => {
@@ -138,10 +139,10 @@ async function placeLimit(
       };
       const projected: PaperState = { ...state, openOrders: [...state.openOrders, order] };
       if (input.side === "buy") {
-        if (availableOf(projected, quote, feeRate) < 0) {
+        if (availableOf(projected, quote, fee) < 0) {
           return { success: false, error: `insufficient ${quote} for limit buy lock` };
         }
-      } else if (availableOf(projected, base, feeRate) < 0) {
+      } else if (availableOf(projected, base, fee) < 0) {
         return { success: false, error: `insufficient ${base} for limit sell lock` };
       }
       const newState: PaperState = { ...projected, updatedAt: order.createdAt };

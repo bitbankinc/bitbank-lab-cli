@@ -878,3 +878,126 @@ describe("paper tick: live maker fee", () => {
     expect(after.data.balances.jpy).toBe(10000000 - 5000);
   });
 });
+
+describe("paper buy-limit lock: per-pair maker basis", () => {
+  // 買い指値のロック見積りは約定実態（必ず maker）に合わせ per-pair maker で出す。
+  // getPairs / fetchCandles を注入し実 API は叩かない（注文は全て limit ＝ ticker 不要）。
+  it("estimates the lock with the pair's maker rate (not the taker default)", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    const pairs = mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: 0.0004 }]);
+    const placed = await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: pairs,
+    });
+    expect(placed.success).toBe(true);
+    const a = await paperAssets({ statePath, fetchCandles: noCandles, getPairs: pairs });
+    expect(a.success).toBe(true);
+    if (!a.success) return;
+    const jpy = a.data.find((r) => r.asset === "jpy");
+    // notional 5000; maker 0.0004 → lock 5002（taker 既定 0.0012 なら 5006）
+    expect(jpy?.locked).toBeCloseTo(5002, 6);
+    expect(jpy?.available).toBeCloseTo(10000000 - 5002, 6);
+    // 行の整合: total = locked + available
+    expect((jpy?.locked ?? 0) + (jpy?.available ?? 0)).toBeCloseTo(jpy?.total ?? 0, 6);
+  });
+
+  it("a negative maker rebate lowers the lock below notional and raises available", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    const pairs = mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: -0.0002 }]);
+    const placed = await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: pairs,
+    });
+    expect(placed.success).toBe(true);
+    const a = await paperAssets({ statePath, fetchCandles: noCandles, getPairs: pairs });
+    if (!a.success) return;
+    const jpy = a.data.find((r) => r.asset === "jpy");
+    // notional 5000; rebate -0.0002 → lock 4999（< notional）
+    expect(jpy?.locked).toBeCloseTo(4999, 6);
+    expect(jpy?.locked ?? 0).toBeLessThan(5000);
+    expect(jpy?.available).toBeCloseTo(10000000 - 4999, 6);
+    expect(jpy?.available ?? 0).toBeGreaterThan(10000000 - 5000);
+  });
+
+  it("feeRate override on assets beats the pair maker and skips pairs fetch", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: 0.0004 }]),
+    });
+    // override 0.001 は per-pair maker(0.0004) より優先。getPairs 未注入でも
+    // override があるので pairs 取得をスキップして問題なく算出できる。
+    const a = await paperAssets({ statePath, fetchCandles: noCandles, feeRate: 0.001 });
+    if (!a.success) return;
+    const jpy = a.data.find((r) => r.asset === "jpy");
+    // lock 5000*1.001 = 5005（maker なら 5002）
+    expect(jpy?.locked).toBeCloseTo(5005, 6);
+  });
+
+  it("warns and falls back to the taker default when the pairs fetch fails", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const a = await paperAssets({
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: async () => ({ success: false, error: "pairs endpoint down" }),
+    });
+    const warned = stderrSpy.mock.calls.map((c) => String(c[0])).join("");
+    stderrSpy.mockRestore();
+    // 読み取り専用コマンドは失敗させず、安全側の taker 既定で算出して継続する。
+    expect(a.success).toBe(true);
+    if (!a.success) return;
+    const jpy = a.data.find((r) => r.asset === "jpy");
+    // pairs 取れず maker に下げられない → taker 既定 0.0012: lock 5000*1.0012 = 5006
+    expect(jpy?.locked).toBeCloseTo(5006, 6);
+    // 黙ってフォールバックせず stderr に警告を出す。
+    expect(warned).toContain("fetch pairs");
+  });
+
+  it("a maker rebate lets a buy place even when notional exceeds the balance", async () => {
+    // balance 4999 < notional 5000 だが、rebate でロックが 4999 まで下がり置ける。
+    // taker 既定や 0 手数料なら lock ≥ 5000 で弾かれる ＝ maker 基準が効いている証左。
+    await paperInit({ jpy: "4999", statePath });
+    const r = await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairsWith([{ name: "btc_jpy", maker_fee_rate_quote: -0.0002 }]),
+    });
+    expect(r.success).toBe(true);
+  });
+});
