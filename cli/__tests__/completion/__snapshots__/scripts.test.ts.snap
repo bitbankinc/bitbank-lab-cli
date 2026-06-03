@@ -94,7 +94,6 @@ _bitbank() {
         margin-positions) opts="$opts --pair" ;;
         deposit-history) opts="$opts --asset --count --since --end" ;;
         unconfirmed-deposits) opts="$opts --asset" ;;
-        deposit-originators) opts="$opts --asset" ;;
         withdrawal-accounts) opts="$opts --asset" ;;
         withdrawal-history) opts="$opts --asset --count --since --end" ;;
         stream) opts="$opts --private --channel --filter" ;;
@@ -216,7 +215,6 @@ _bitbank() {
       margin-positions) opts="$opts --pair" ;;
       deposit-history) opts="$opts --asset --count --since --end" ;;
       unconfirmed-deposits) opts="$opts --asset" ;;
-      deposit-originators) opts="$opts --asset" ;;
       withdrawal-accounts) opts="$opts --asset" ;;
       withdrawal-history) opts="$opts --asset --count --since --end" ;;
       stream) opts="$opts --private --channel --filter" ;;
