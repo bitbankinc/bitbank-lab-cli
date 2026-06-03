@@ -1,4 +1,5 @@
 import { privateAccountSchemas } from "./defs-private-account.js";
+import { privateMarginSchemas } from "./defs-private-margin.js";
 import { privateTransferSchemas } from "./defs-private-transfer.js";
 import { publicDataSchemas } from "./defs-public-data.js";
 import { publicMarketSchemas } from "./defs-public-market.js";
@@ -10,6 +11,7 @@ export const ALL_SCHEMAS: Record<string, SchemaDef> = {
   ...publicDataSchemas,
   ...privateAccountSchemas,
   ...privateTransferSchemas,
+  ...privateMarginSchemas,
   ...tradeSchemas,
   ...streamSchemas,
 };

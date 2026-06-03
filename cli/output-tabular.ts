@@ -8,6 +8,15 @@ function toRows(data: unknown): Record<string, unknown>[] {
   return [{ value: data }];
 }
 
+// ネストした値（配列・オブジェクト）はセルでは [object Object] になり情報が落ちる。
+// margin-status の available_balances や margin-positions の notice/losscut_threshold
+// 等を欠損なく見せるため、非スカラーは compact JSON でセル化する。
+function cell(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 export function printTable(data: unknown): void {
   const rows = toRows(data);
   if (rows.length === 0) return;
@@ -19,7 +28,7 @@ export function printTable(data: unknown): void {
   for (const row of rows) {
     const rowCells: string[] = [];
     for (let i = 0; i < keys.length; i++) {
-      const s = escapeControlChars(String(row[keys[i]] ?? ""));
+      const s = escapeControlChars(cell(row[keys[i]]));
       if (s.length > widths[i]) widths[i] = s.length;
       rowCells.push(s);
     }
@@ -52,9 +61,7 @@ export function printCsv(data: unknown): void {
   const parts: string[] = [keys.map(escapeCsvField).join(",")];
   for (const row of rows) {
     // 制御文字エスケープ → CSV クォート判定の順（TAB/CR/LF は CSV 防御に温存）
-    parts.push(
-      keys.map((k) => escapeCsvField(escapeControlCharsForCsv(String(row[k] ?? "")))).join(","),
-    );
+    parts.push(keys.map((k) => escapeCsvField(escapeControlCharsForCsv(cell(row[k])))).join(","));
   }
   process.stdout.write(`${parts.join("\n")}\n`);
 }

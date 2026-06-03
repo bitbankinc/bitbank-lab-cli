@@ -11,6 +11,17 @@ const MOCK = {
   losscut_percentage: "50",
   buy_credit: "900000",
   sell_credit: "900000",
+  unrealized_cost: "12345.0000",
+  total_margin_position_product: "150000",
+  open_margin_position_product: "100000",
+  open_margin_order_product: "50000",
+  total_position_maintenance_margin: "15000",
+  total_long_position_maintenance_margin: "10000",
+  total_short_position_maintenance_margin: "5000",
+  total_open_order_maintenance_margin: "8000",
+  total_long_open_order_maintenance_margin: "6000",
+  total_short_open_order_maintenance_margin: "2000",
+  available_balances: [{ pair: "btc_jpy", long: "900000", short: "800000" }],
 };
 
 describe("marginStatus", () => {
@@ -30,6 +41,15 @@ describe("marginStatus", () => {
       expect(typeof result.data.total_margin_balance).toBe("number");
       expect(result.data.margin_position_profit_loss).toBe(500);
       expect(result.data.buy_credit).toBe(900000);
+      // 追加された建玉サイズ・維持証拠金フィールド（文字列 → number）
+      expect(result.data.unrealized_cost).toBe(12345);
+      expect(result.data.total_margin_position_product).toBe(150000);
+      expect(result.data.total_position_maintenance_margin).toBe(15000);
+      expect(result.data.total_long_open_order_maintenance_margin).toBe(6000);
+      // ペア別利用可能残高もネスト内で number 変換される
+      expect(result.data.available_balances).toEqual([
+        { pair: "btc_jpy", long: 900000, short: 800000 },
+      ]);
     }
   });
 

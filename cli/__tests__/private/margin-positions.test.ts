@@ -3,7 +3,12 @@ import { marginPositions } from "../../commands/private/margin-positions.js";
 import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
 
 const MOCK = {
-  notice: { what: "", occurred_at: 0, amount: "0", due_date_at: 0 },
+  notice: {
+    what: "additional_margin",
+    occurred_at: 1700000000000,
+    amount: "5000",
+    due_date_at: 1700600000000,
+  },
   payables: { amount: "0" },
   positions: [
     {
@@ -16,7 +21,7 @@ const MOCK = {
       unrealized_interest_amount: "1.2",
     },
   ],
-  losscut_threshold: { btc_jpy: "0" },
+  losscut_threshold: { individual: "80", company: "60" },
 };
 
 describe("marginPositions", () => {
@@ -32,8 +37,8 @@ describe("marginPositions", () => {
     );
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data).toHaveLength(1);
-      const pos = result.data[0];
+      expect(result.data.positions).toHaveLength(1);
+      const pos = result.data.positions[0];
       expect(pos.pair).toBe("btc_jpy");
       expect(pos.position_side).toBe("long");
       // numStr で文字列 → number に変換されていること
@@ -42,6 +47,27 @@ describe("marginPositions", () => {
       expect(pos.average_price).toBe(15000000);
       expect(pos.unrealized_fee_amount).toBe(0.5);
       expect(pos.unrealized_interest_amount).toBe(1.2);
+      // トップレベルの追加フィールド
+      expect(result.data.notice).toEqual({
+        what: "additional_margin",
+        occurred_at: 1700000000000,
+        amount: 5000,
+        due_date_at: 1700600000000,
+      });
+      expect(result.data.payables.amount).toBe(0);
+      expect(result.data.losscut_threshold).toEqual({ individual: 80, company: 60 });
+    }
+  });
+
+  it("accepts a null/omitted notice (no margin event)", async () => {
+    const { notice, ...withoutNotice } = MOCK;
+    for (const variant of [{ ...withoutNotice }, { ...withoutNotice, notice: null }]) {
+      const result = await marginPositions(
+        {},
+        { fetch: mockFetchData(variant), retries: 0, credentials: TEST_CREDS, nonce: "1" },
+      );
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.notice ?? null).toBe(null);
     }
   });
 
