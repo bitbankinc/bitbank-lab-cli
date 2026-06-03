@@ -953,6 +953,37 @@ describe("paper buy-limit lock: per-pair maker basis", () => {
     expect(jpy?.locked).toBeCloseTo(5005, 6);
   });
 
+  it("warns and falls back to the taker default when the pairs fetch fails", async () => {
+    await paperInit({ jpy: "10000000", statePath });
+    await paperCreateOrder({
+      pair: "btc_jpy",
+      side: "buy",
+      type: "limit",
+      price: "5000000",
+      amount: "0.001",
+      feeRate: 0,
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: mockGetPairs,
+    });
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const a = await paperAssets({
+      statePath,
+      fetchCandles: noCandles,
+      getPairs: async () => ({ success: false, error: "pairs endpoint down" }),
+    });
+    const warned = stderrSpy.mock.calls.map((c) => String(c[0])).join("");
+    stderrSpy.mockRestore();
+    // 読み取り専用コマンドは失敗させず、安全側の taker 既定で算出して継続する。
+    expect(a.success).toBe(true);
+    if (!a.success) return;
+    const jpy = a.data.find((r) => r.asset === "jpy");
+    // pairs 取れず maker に下げられない → taker 既定 0.0012: lock 5000*1.0012 = 5006
+    expect(jpy?.locked).toBeCloseTo(5006, 6);
+    // 黙ってフォールバックせず stderr に警告を出す。
+    expect(warned).toContain("fetch pairs");
+  });
+
   it("a maker rebate lets a buy place even when notional exceeds the balance", async () => {
     // balance 4999 < notional 5000 だが、rebate でロックが 4999 まで下がり置ける。
     // taker 既定や 0 手数料なら lock ≥ 5000 で弾かれる ＝ maker 基準が効いている証左。

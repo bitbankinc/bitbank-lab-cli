@@ -41,8 +41,16 @@ export async function paperAssets(args: PaperAssetsArgs = {}): Promise<Result<Pa
   // pairs 取得をスキップ。未指定かつ買い指値があるときだけ per-pair maker を引く。
   let fee: number | ((pair: string) => number) | undefined = args.feeRate;
   if (args.feeRate === undefined && r.data.openOrders.some((o) => o.side === "buy")) {
-    const pairsR = args.getPairs ? await args.getPairs() : await getPairsWithCache({});
-    if (pairsR.success) fee = makerRateResolver(pairsR.data);
+    const pairsR = args.getPairs
+      ? await args.getPairs()
+      : await getPairsWithCache({ nowMs: args.nowMs });
+    if (pairsR.success) {
+      fee = makerRateResolver(pairsR.data);
+    } else {
+      // pairs 取得失敗時は runTick と同様に警告し、安全側の taker 既定へフォールバック
+      // する（買い指値ロックは過大見積りになるが available を過大表示しない）。
+      process.stderr.write(`Warning: fetch pairs for lock estimate failed: ${pairsR.error}\n`);
+    }
   }
   const locked = computeLocked(r.data, fee);
   const assets = new Set([...Object.keys(r.data.balances), ...Object.keys(locked)]);
