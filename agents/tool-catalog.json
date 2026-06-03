@@ -1111,6 +1111,53 @@
           },
           "sell_credit": {
             "type": "number"
+          },
+          "unrealized_cost": {
+            "type": "number"
+          },
+          "total_margin_position_product": {
+            "type": "number"
+          },
+          "open_margin_position_product": {
+            "type": "number"
+          },
+          "open_margin_order_product": {
+            "type": "number"
+          },
+          "total_position_maintenance_margin": {
+            "type": "number"
+          },
+          "total_long_position_maintenance_margin": {
+            "type": "number"
+          },
+          "total_short_position_maintenance_margin": {
+            "type": "number"
+          },
+          "total_open_order_maintenance_margin": {
+            "type": "number"
+          },
+          "total_long_open_order_maintenance_margin": {
+            "type": "number"
+          },
+          "total_short_open_order_maintenance_margin": {
+            "type": "number"
+          },
+          "available_balances": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pair": {
+                  "type": "string"
+                },
+                "long": {
+                  "type": "number"
+                },
+                "short": {
+                  "type": "number"
+                }
+              }
+            }
           }
         }
       }
@@ -1132,30 +1179,86 @@
         "required": []
       },
       "output": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "pair": {
-              "type": "string"
-            },
-            "position_side": {
-              "type": "string"
-            },
-            "open_amount": {
-              "type": "number"
-            },
-            "product": {
-              "type": "number"
-            },
-            "average_price": {
-              "type": "number"
-            },
-            "unrealized_fee_amount": {
-              "type": "number"
-            },
-            "unrealized_interest_amount": {
-              "type": "number"
+        "type": "object",
+        "properties": {
+          "notice": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "what": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "occurred_at": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "amount": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "due_date_at": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "payables": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              }
+            }
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pair": {
+                  "type": "string"
+                },
+                "position_side": {
+                  "type": "string"
+                },
+                "open_amount": {
+                  "type": "number"
+                },
+                "product": {
+                  "type": "number"
+                },
+                "average_price": {
+                  "type": "number"
+                },
+                "unrealized_fee_amount": {
+                  "type": "number"
+                },
+                "unrealized_interest_amount": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "losscut_threshold": {
+            "type": "object",
+            "properties": {
+              "individual": {
+                "type": "number"
+              },
+              "company": {
+                "type": "number"
+              }
             }
           }
         }
