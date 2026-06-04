@@ -3,7 +3,7 @@
 // tick で過去ギャップを解消 + pairs キャッシュからの unit_amount/最大量検証。
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
-import { makerRateResolver, resolveFeeRate } from "../../fees.js";
+import { computeFill, makerRateResolver, resolveFeeRate } from "../../fees.js";
 import type { HttpOptions } from "../../http.js";
 import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
@@ -169,10 +169,8 @@ async function fillMarket(
   const amount = Number(input.amount);
   const feeRate = resolveFeeRate(pair, "taker", feeRateArg);
   const [base, quote] = input.pair.split("_");
-  const isJpy = quote === "jpy";
   const notional = amount * last;
-  const rawFee = notional * feeRate;
-  const feeQuote = isJpy ? Math.round(rawFee) : rawFee;
+  const { feeQuote, cost, proceeds } = computeFill(notional, feeRate, quote);
   return updateState<PaperFill>(
     (state) => {
       if (!state) {
@@ -183,7 +181,6 @@ async function fillMarket(
       }
       const balances = { ...state.balances };
       if (input.side === "buy") {
-        const cost = isJpy ? Math.round(notional + rawFee) : notional + rawFee;
         const avail = availableOf(state, quote, feeRate);
         if (avail < cost) {
           return { success: false, error: `insufficient ${quote}: need ${cost}, have ${avail}` };
@@ -195,7 +192,6 @@ async function fillMarket(
         if (avail < amount) {
           return { success: false, error: `insufficient ${base}: need ${amount}, have ${avail}` };
         }
-        const proceeds = isJpy ? Math.round(notional - rawFee) : notional - rawFee;
         balances[base] = (balances[base] ?? 0) - amount;
         balances[quote] = (balances[quote] ?? 0) + proceeds;
       }

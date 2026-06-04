@@ -7,7 +7,7 @@
 // public candles / pairs API を叩く。
 import { type Candle, fetchOne } from "./commands/public/candles-fetch.js";
 import { ymdUtc } from "./date-utils.js";
-import { resolveFeeRate } from "./fees.js";
+import { computeFill, resolveFeeRate } from "./fees.js";
 import type { HttpOptions } from "./http.js";
 import { type CachedPair, getPairsWithCache } from "./pairs-cache.js";
 import {
@@ -176,15 +176,11 @@ function applyFill(
   const [base, quote] = o.pair.split("_");
   const balances = { ...state.balances };
   const notional = o.price * o.amount;
-  const rawFee = notional * feeRate;
-  const isJpy = quote === "jpy";
-  const feeQuote = isJpy ? Math.round(rawFee) : rawFee;
+  const { feeQuote, cost, proceeds } = computeFill(notional, feeRate, quote);
   if (o.side === "buy") {
-    const cost = isJpy ? Math.round(notional + rawFee) : notional + rawFee;
     balances[quote] = (balances[quote] ?? 0) - cost;
     balances[base] = (balances[base] ?? 0) + o.amount;
   } else {
-    const proceeds = isJpy ? Math.round(notional - rawFee) : notional - rawFee;
     balances[base] = (balances[base] ?? 0) - o.amount;
     balances[quote] = (balances[quote] ?? 0) + proceeds;
   }

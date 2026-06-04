@@ -1,5 +1,6 @@
 // 100行超: 手数料の解決(resolveFeeRate/feeRole/makerRateResolver)と
-// dry-run 見積り(estimateOrderFee/resolveDryRunFee)を1モジュールに集約するため。
+// dry-run 見積り(estimateOrderFee/resolveDryRunFee)、約定の手数料・残高計算
+// (computeFill)を1モジュールに集約するため。
 // CLI 共通の手数料リゾルバ。手数料データは public の /spot/pairs 由来
 // （CachedPair の maker/taker fee_rate_quote）。paper と実 trade dry-run の
 // 両方で同じ解決ロジックを共有するため、paper 専用ではなく CLI 共通モジュールに置く。
@@ -52,6 +53,20 @@ export function makerRateResolver(
 ): (pair: string) => number {
   const byName = new Map((pairs ?? []).map((p) => [p.name, p] as const));
   return (pair) => resolveFeeRate(byName.get(pair), "maker", override);
+}
+
+export type FillMath = { feeQuote: number; cost: number; proceeds: number };
+
+/** notional から手数料・支払・受取を quote 建てで算出。JPY のみ丸め。 */
+export function computeFill(notional: number, feeRate: number, quote: string): FillMath {
+  const isJpy = quote === "jpy";
+  const round = (n: number) => (isJpy ? Math.round(n) : n);
+  const rawFee = notional * feeRate;
+  return {
+    feeQuote: round(rawFee),
+    cost: round(notional + rawFee),
+    proceeds: round(notional - rawFee),
+  };
 }
 
 /** dry-run 見積りに必要な注文情報（create-order の parsed.data 部分集合）。 */
