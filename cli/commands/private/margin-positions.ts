@@ -43,7 +43,6 @@ const ResponseSchema = z.object({
   losscut_threshold: LosscutThresholdSchema,
 });
 
-export type MarginPosition = z.infer<typeof PositionSchema>;
 export type MarginPositions = z.infer<typeof ResponseSchema>;
 
 export async function marginPositions(
