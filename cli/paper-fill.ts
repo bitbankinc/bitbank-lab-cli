@@ -109,30 +109,17 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
           error: "paper state was removed during tick",
         };
       }
-      let working: PaperState = state;
-      const filled: PaperHistoryEntry[] = [];
       // fresh state から fromMs を再導出（他の tick が進めている可能性がある）。
       let fromMs = Math.min(Date.parse(state.lastTickAt), nowMs);
       if (nowMs - fromMs > MAX_LOOKBACK_MS) fromMs = nowMs - MAX_LOOKBACK_MS;
-      for (const [p, candles] of candlesByPair) {
-        // openOrders は全て limit ＝ 板に置く側なので約定は必ず maker。ペアの
-        // ライブ maker_fee_rate_quote（負ならリベート）を引く。opts.feeRate
-        // override は resolveFeeRate 内で最優先される（全約定に効く）。
-        const makerRate = resolveFeeRate(pairsByName.get(p), "maker", opts.feeRate);
-        for (const candle of candles) {
-          if (candle.timestamp < fromMs || candle.timestamp > nowMs) continue;
-          const orders = working.openOrders.filter(
-            (o) => o.pair === p && Date.parse(o.createdAt) <= candle.timestamp,
-          );
-          for (const o of orders) {
-            const hits = o.side === "buy" ? candle.low <= o.price : candle.high >= o.price;
-            if (!hits) continue;
-            const r = applyFill(working, o, candle, makerRate);
-            working = r.state;
-            filled.push(r.entry);
-          }
-        }
-      }
+      const { state: working, filled } = fillAgainstCandles(
+        state,
+        candlesByPair,
+        pairsByName,
+        fromMs,
+        nowMs,
+        opts.feeRate,
+      );
       // 部分 tick（pair 限定 or fetch 失敗）では lastTickAt を進めない。
       // 進めると未処理 pair / 未処理区間が永久に評価されなくなる。
       const advanceTick = !anyFetchFailed && opts.pair === undefined;
@@ -165,6 +152,37 @@ function uniquePairs(orders: OpenOrder[], filter?: string): string[] {
     set.add(o.pair);
   }
   return [...set];
+}
+
+/** candle 群に対し working state の指値を約定させ、filled を積む。
+ * openOrders は全て limit ＝ 板に置く側なので約定は必ず maker。ペアの
+ * ライブ maker_fee_rate_quote（負ならリベート）を引く。feeOverride は
+ * resolveFeeRate 内で最優先される（全約定に効く）。 */
+function fillAgainstCandles(
+  working: PaperState,
+  candlesByPair: Map<string, Candle[]>,
+  pairsByName: Map<string, CachedPair>,
+  fromMs: number,
+  nowMs: number,
+  feeOverride?: number,
+): { state: PaperState; filled: PaperHistoryEntry[] } {
+  const filled: PaperHistoryEntry[] = [];
+  for (const [p, candles] of candlesByPair) {
+    const rate = resolveFeeRate(pairsByName.get(p), "maker", feeOverride);
+    for (const candle of candles) {
+      if (candle.timestamp < fromMs || candle.timestamp > nowMs) continue;
+      for (const o of working.openOrders.filter(
+        (o) => o.pair === p && Date.parse(o.createdAt) <= candle.timestamp,
+      )) {
+        const hits = o.side === "buy" ? candle.low <= o.price : candle.high >= o.price;
+        if (!hits) continue;
+        const r = applyFill(working, o, candle, rate);
+        working = r.state;
+        filled.push(r.entry);
+      }
+    }
+  }
+  return { state: working, filled };
 }
 
 function applyFill(
