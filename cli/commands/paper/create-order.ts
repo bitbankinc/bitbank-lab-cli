@@ -7,15 +7,15 @@ import { makerRateResolver, resolveFeeRate } from "../../fees.js";
 import type { HttpOptions } from "../../http.js";
 import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
-import { updateState } from "../../paper-state-mutate.js";
 import {
-  type OpenOrder,
-  type PaperState,
   availableOf,
   defaultStatePath,
   genId,
   nowIso,
+  type OpenOrder,
+  type PaperState,
 } from "../../paper-state.js";
+import { updateState } from "../../paper-state-mutate.js";
 import type { Result } from "../../types.js";
 import { PairSchema, PositiveDecimalSchema } from "../../validators.js";
 import { ticker } from "../public/ticker.js";

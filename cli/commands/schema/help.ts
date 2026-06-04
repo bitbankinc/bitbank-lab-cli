@@ -47,7 +47,7 @@ export function buildHelp(command: string, description: string): string | null {
   return lines.join("\n");
 }
 
-function exampleArgs(command: string, schema: SchemaDef): string {
+function exampleArgs(_command: string, schema: SchemaDef): string {
   const parts: string[] = [];
   for (const [name, def] of Object.entries(schema.params)) {
     if (def.default !== undefined) continue;

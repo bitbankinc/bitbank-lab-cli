@@ -1,5 +1,5 @@
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
-import { type PaperHistoryEntry, defaultStatePath, loadState } from "../../paper-state.js";
+import { defaultStatePath, loadState, type PaperHistoryEntry } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 
 export type PaperTradeHistoryArgs = {

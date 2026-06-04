@@ -4,7 +4,7 @@ import {
   marginStatusFixture,
   marginStatusNoPositionFixture,
 } from "../__fixtures__/private/margin-status.js";
-import { TEST_CREDS, mockFetchData, mockFetchRaw } from "../test-helpers.js";
+import { mockFetchData, mockFetchRaw, TEST_CREDS } from "../test-helpers.js";
 
 // モックは実 API 準拠: 形状は __fixtures__/private/margin-status.ts に集約する
 // （インライン即席モック禁止 / docs/dev/conventions.md「private モックの実 API 準拠」参照）。

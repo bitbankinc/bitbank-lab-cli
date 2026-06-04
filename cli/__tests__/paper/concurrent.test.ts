@@ -3,7 +3,7 @@
 // - in-process: Promise.all で N 個の paperCreateOrder を並行
 // - cross-process: spawn で paper create-order と paper tick を並行
 import { spawn } from "node:child_process";
-import { type WriteFileOptions, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, type WriteFileOptions, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";

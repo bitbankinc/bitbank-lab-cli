@@ -237,14 +237,11 @@ describe("output contract", () => {
       ["@cmd", '"@cmd"'],
       ["\ttab", '"\ttab"'],
       ["\rcr", '"\rcr"'],
-    ])(
-      "CSV インジェクション接頭辞 %j を強制クォートする (output-tabular.ts:38)",
-      (input, quoted) => {
-        output({ success: true, data: { name: input, value: 1 } }, "csv");
-        const firstField = streams.stdout.replace(/\n$/, "").split("\n")[1].split(",")[0];
-        expect(firstField).toBe(quoted);
-      },
-    );
+    ])("CSV インジェクション接頭辞 %j を強制クォートする (output-tabular.ts:38)", (input, quoted) => {
+      output({ success: true, data: { name: input, value: 1 } }, "csv");
+      const firstField = streams.stdout.replace(/\n$/, "").split("\n")[1].split(",")[0];
+      expect(firstField).toBe(quoted);
+    });
 
     it("安全な接頭辞の値はクォートしない", () => {
       output({ success: true, data: { name: "hello", value: 1 } }, "csv");

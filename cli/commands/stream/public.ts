@@ -1,4 +1,4 @@
-import { type Socket, io } from "socket.io-client";
+import { io, type Socket } from "socket.io-client";
 import type { Result } from "../../types.js";
 import { parseChannelData } from "./channel-parsers/index.js";
 import { type StreamFormat, writeStreamMessage } from "./format.js";

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
+import { defaultStatePath, nowIso, type OpenOrder, type PaperState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
-import { type OpenOrder, type PaperState, defaultStatePath, nowIso } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 
 const InputSchema = z.object({ id: z.string().trim().min(1, "--id is required") });

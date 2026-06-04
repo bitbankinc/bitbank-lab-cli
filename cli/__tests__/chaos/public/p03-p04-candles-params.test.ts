@@ -1,9 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-import { VALID_TYPES, candles } from "../../../commands/public/candles.js";
+import { describe, expect, it } from "vitest";
+import { candles } from "../../../commands/public/candles.js";
 import { EXIT } from "../../../exit-codes.js";
-import { mockFetchData } from "../../test-helpers.js";
 
-const MOCK_CANDLE = [
+const _MOCK_CANDLE = [
   { 0: "5000000", 1: "5100000", 2: "4900000", 3: "5050000", 4: "100", 5: 1700000000000 },
 ];
 

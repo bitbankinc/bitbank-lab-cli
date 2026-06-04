@@ -3,8 +3,8 @@ import { existsSync, readFileSync, statSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { TradeLogRecordSchema } from "../trade-log-schema.js";
 import { buildLogRecord, writeTradeLog } from "../trade-log.js";
+import { TradeLogRecordSchema } from "../trade-log-schema.js";
 
 function tmpFile(): string {
   return join(

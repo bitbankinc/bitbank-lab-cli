@@ -1,4 +1,4 @@
-import { type SchemaDef, p } from "./types.js";
+import { p, type SchemaDef } from "./types.js";
 
 const pair = p("string", "Trading pair (e.g. btc_jpy)");
 const execute = p("boolean", "Execute for real (default: dry-run)");

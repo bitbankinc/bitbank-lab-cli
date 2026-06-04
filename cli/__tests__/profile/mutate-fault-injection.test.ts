@@ -1,12 +1,12 @@
 // 100行超: updateProfiles の retry-loop と atomic write 失敗の合わせ技を検証する。
 // PR 1 の fault-injection 基盤を流用し、saveProfiles が落ちても本体が壊れないこと、
 // および error が Result で返ること（throw 禁止）を確認する。
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { updateProfiles } from "../../profiles-mutate.js";
-import { type ProfilesFile, loadProfiles, saveProfiles } from "../../profiles-store.js";
+import { loadProfiles, type ProfilesFile, saveProfiles } from "../../profiles-store.js";
 
 const mockFlags = {
   renameThrows: false,

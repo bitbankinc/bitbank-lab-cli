@@ -1,7 +1,7 @@
 // 100行超: cancel-orders の分岐を網羅
 import { describe, expect, it, vi } from "vitest";
 import { cancelOrders } from "../../commands/trade/cancel-orders.js";
-import { TEST_CREDS, mockFetchRaw } from "../test-helpers.js";
+import { mockFetchRaw, TEST_CREDS } from "../test-helpers.js";
 
 describe("cancel-orders", () => {
   it("returns dryRun without --execute", async () => {

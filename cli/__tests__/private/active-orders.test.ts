@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { activeOrders } from "../../commands/private/active-orders.js";
 import { EXIT } from "../../exit-codes.js";
 import { orderFixture } from "../__fixtures__/private/order.js";
-import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
+import { mockFetchData, mockFetchDataCapture, mockFetchRaw, TEST_CREDS } from "../test-helpers.js";
 
 // モックは実 API 準拠: 形状は __fixtures__/private/order.ts に集約する
 // （OrderSchema を共有するため order テストと同じフィクスチャを使う）。

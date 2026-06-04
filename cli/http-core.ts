@@ -1,12 +1,12 @@
 // 100行超: リトライ判定・指数バックオフ＋ジッター・fetch 本体を一箇所に集約しているため。
-import { apiErrorExitCode, classifyHttpError, formatApiError } from "./error-codes.js";
+import { apiErrorExitCode, classifyHttpError } from "./error-codes.js";
 import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { EXIT, type ExitCode } from "./exit-codes.js";
 import { extractRateLimit } from "./rate-limit.js";
 import { type Bucket, detectBucket, updateRateLimit, waitForSlot } from "./throttle.js";
 import type { Result } from "./types.js";
 
-export { ERROR_CODES, apiErrorExitCode, formatApiError } from "./error-codes.js";
+export { apiErrorExitCode, ERROR_CODES, formatApiError } from "./error-codes.js";
 
 export function shouldRetry(status: number): boolean {
   return status === 429 || status >= 500;

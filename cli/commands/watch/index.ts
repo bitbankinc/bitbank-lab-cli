@@ -1,7 +1,7 @@
 // 100行超: lifecycle / reconnect / socket / writer + table mode の pair decimals 解決を 1 場所で束ねる
 import { EXIT } from "../../exit-codes.js";
 import type { Result } from "../../types.js";
-import { type PairInfo, type WatchFormat, createWriter } from "../../watch/format.js";
+import { createWriter, type PairInfo, type WatchFormat } from "../../watch/format.js";
 import { type LifecycleReason, setupLifecycle } from "../../watch/lifecycle.js";
 import { type GetPairs, resolvePairInfo } from "../../watch/pair-info.js";
 import { createReconnect } from "../../watch/reconnect.js";

@@ -2,7 +2,7 @@
 // ペア除外、computePnl 呼び出し、format 別出力を 1 ファイルに集約。
 import { machineOutput } from "../../output.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
-import { type PaperPnlReport, computePnl } from "../../paper-pnl.js";
+import { computePnl, type PaperPnlReport } from "../../paper-pnl.js";
 import { defaultStatePath, loadState } from "../../paper-state.js";
 import type { Format, Result } from "../../types.js";
 import { ticker } from "../public/ticker.js";

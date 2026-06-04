@@ -100,7 +100,7 @@ describe("output", () => {
 
   it("escapes CSV fields containing newlines", () => {
     output({ success: true, data: { name: "line1\nline2", value: 3 } }, "csv");
-    const lines = stdout.split("\n");
+    const _lines = stdout.split("\n");
     // header + quoted field spans line, so raw split produces more lines
     expect(stdout).toContain('"line1\nline2"');
   });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
-import { type FetchCandles, type GetPairs, type TickResult, runTick } from "../../paper-fill.js";
+import { type FetchCandles, type GetPairs, runTick, type TickResult } from "../../paper-fill.js";
 import type { Result } from "../../types.js";
 import { PairSchema } from "../../validators.js";
 

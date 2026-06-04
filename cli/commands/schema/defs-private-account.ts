@@ -1,7 +1,7 @@
 // 100行超: private account 系コマンドの output（agents カタログの単一ソース）を
 // 宣言的に集約。各エンドポイントが返す API フィールドを 1 つずつ列挙するため、
 // API 露出フィールドの増加に比例して伸びる（責務の混在ではない）。
-import { type SchemaDef, p } from "./types.js";
+import { p, type SchemaDef } from "./types.js";
 
 const pair = p("string", "Trading pair (e.g. btc_jpy)");
 const count = p("string", "Max number of results");

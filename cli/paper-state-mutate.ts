@@ -6,7 +6,7 @@
 import { closeSync, mkdirSync, openSync, statSync, unlinkSync } from "node:fs";
 import { dirname } from "node:path";
 import { EXIT } from "./exit-codes.js";
-import { type PaperState, defaultStatePath, loadState, saveState } from "./paper-state.js";
+import { defaultStatePath, loadState, type PaperState, saveState } from "./paper-state.js";
 import type { Result } from "./types.js";
 
 const DEFAULT_MAX_WAIT_MS = 5_000;

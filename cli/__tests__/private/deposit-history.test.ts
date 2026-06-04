@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { depositHistory } from "../../commands/private/deposit-history.js";
 import { EXIT } from "../../exit-codes.js";
 import { depositHistoryFixture } from "../__fixtures__/private/deposit-history.js";
-import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
+import { mockFetchData, mockFetchDataCapture, mockFetchRaw, TEST_CREDS } from "../test-helpers.js";
 
 // モックは実 API 準拠: 形状は __fixtures__/private/deposit-history.ts に集約する
 // （インライン即席モック禁止 / docs/dev/conventions.md「private モックの実 API 準拠」参照）。
