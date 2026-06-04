@@ -33,7 +33,6 @@ export const ProfilesFileSchema = z.object({
   profiles: z.record(z.string(), ProfileEntrySchema),
 });
 
-export type ProfileEntry = z.infer<typeof ProfileEntrySchema>;
 export type ProfilesFile = z.infer<typeof ProfilesFileSchema>;
 
 export function defaultProfilesPath(): string {
