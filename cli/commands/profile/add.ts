@@ -1,9 +1,9 @@
 import { EXIT } from "../../exit-codes.js";
 import { nowIso } from "../../paper-state.js";
 import { updateProfiles } from "../../profiles-mutate.js";
-import { type ProfilesFile, loadProfiles } from "../../profiles-store.js";
+import { loadProfiles, type ProfilesFile } from "../../profiles-store.js";
 import type { Result } from "../../types.js";
-import { type Prompts, defaultPrompts } from "./prompt.js";
+import { defaultPrompts, type Prompts } from "./prompt.js";
 
 const NAME_RE = /^[A-Za-z0-9._-]+$/;
 

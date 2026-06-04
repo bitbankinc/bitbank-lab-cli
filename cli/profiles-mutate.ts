@@ -11,9 +11,9 @@ import { closeSync, mkdirSync, openSync, statSync, unlinkSync } from "node:fs";
 import { dirname } from "node:path";
 import { EXIT } from "./exit-codes.js";
 import {
-  type ProfilesFile,
   defaultProfilesPath,
   loadProfiles,
+  type ProfilesFile,
   saveProfiles,
 } from "./profiles-store.js";
 import type { Result } from "./types.js";

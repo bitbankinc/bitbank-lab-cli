@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EXIT } from "../exit-codes.js";
 import {
-  ERROR_CODES,
   apiErrorExitCode,
+  ERROR_CODES,
   fetchWithRetry,
   formatApiError,
   retryDelay,

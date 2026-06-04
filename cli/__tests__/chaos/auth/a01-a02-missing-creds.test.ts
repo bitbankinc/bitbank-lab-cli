@@ -14,22 +14,17 @@ const origProfile = process.env.BITBANK_PROFILE;
 
 afterEach(() => {
   if (hadOrigKey) process.env.BITBANK_API_KEY = origKey ?? "";
-  // biome-ignore lint/performance/noDelete: process.env requires delete
   else delete process.env.BITBANK_API_KEY;
   if (hadOrigSecret) process.env.BITBANK_API_SECRET = origSecret ?? "";
-  // biome-ignore lint/performance/noDelete: process.env requires delete
   else delete process.env.BITBANK_API_SECRET;
   if (hadOrigProfile) process.env.BITBANK_PROFILE = origProfile ?? "";
-  // biome-ignore lint/performance/noDelete: process.env requires delete
   else delete process.env.BITBANK_PROFILE;
 });
 
 describe("Chaos A-01: API_KEY only (no SECRET)", () => {
   it("returns error result", () => {
     process.env.BITBANK_API_KEY = "some-key";
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_SECRET;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_PROFILE;
     const r = resolveCredentials();
     expect(r.success).toBe(false);
@@ -39,10 +34,8 @@ describe("Chaos A-01: API_KEY only (no SECRET)", () => {
   });
 
   it("SECRET only (no KEY) also returns error", () => {
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_KEY;
     process.env.BITBANK_API_SECRET = "some-secret";
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_PROFILE;
     const r = resolveCredentials();
     expect(r.success).toBe(false);
@@ -53,7 +46,6 @@ describe("Chaos A-02: both env vars are empty strings", () => {
   it("returns error when both are empty", () => {
     process.env.BITBANK_API_KEY = "";
     process.env.BITBANK_API_SECRET = "";
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_PROFILE;
     const r = resolveCredentials();
     expect(r.success).toBe(false);
@@ -62,7 +54,6 @@ describe("Chaos A-02: both env vars are empty strings", () => {
   it("returns error when KEY is empty, SECRET is set", () => {
     process.env.BITBANK_API_KEY = "";
     process.env.BITBANK_API_SECRET = "valid-secret";
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_PROFILE;
     const r = resolveCredentials();
     expect(r.success).toBe(false);

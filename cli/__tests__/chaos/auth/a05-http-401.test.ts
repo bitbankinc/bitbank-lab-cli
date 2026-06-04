@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { privatePost } from "../../../http-private-post.js";
 import { privateGet } from "../../../http-private.js";
-import { TEST_CREDS, mockFetchRaw } from "../../test-helpers.js";
+import { privatePost } from "../../../http-private-post.js";
+import { mockFetchRaw, TEST_CREDS } from "../../test-helpers.js";
 
 const AUTH_ERROR = { success: 0, data: { code: 20001 } };
 
@@ -45,9 +45,7 @@ describe("Chaos A-05: HTTP 401 returns { success: false }", () => {
   it("missing credentials returns auth error without calling fetch", async () => {
     const origKey = process.env.BITBANK_API_KEY;
     const origSecret = process.env.BITBANK_API_SECRET;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_KEY;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_SECRET;
     try {
       const fetchSpy = vi.fn();

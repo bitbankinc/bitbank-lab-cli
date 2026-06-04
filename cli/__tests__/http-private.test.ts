@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { signGet } from "../auth.js";
 import { privateGet } from "../http-private.js";
-import { TEST_CREDS, mockFetchRaw } from "./test-helpers.js";
+import { mockFetchRaw, TEST_CREDS } from "./test-helpers.js";
 
 describe("privateGet", () => {
   it("returns data on success", async () => {
@@ -76,9 +76,7 @@ describe("privateGet", () => {
   it("returns error when credentials are missing", async () => {
     const origKey = process.env.BITBANK_API_KEY;
     const origSecret = process.env.BITBANK_API_SECRET;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_KEY;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_SECRET;
     const fetch = mockFetchRaw({ success: 1, data: {} });
     const result = await privateGet("/user/assets", undefined, { fetch, retries: 0 });

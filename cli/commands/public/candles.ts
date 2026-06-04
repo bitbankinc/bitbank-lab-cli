@@ -1,11 +1,11 @@
 // 100行超: pair/type/date/range の入力検証 + 単発取得・自動マージ・範囲取得のディスパッチを 1 ファイルに集約
-import { YEARLY_TYPES, rowsPerSegment, shiftDate, todayDate } from "../../date-utils.js";
+import { rowsPerSegment, shiftDate, todayDate, YEARLY_TYPES } from "../../date-utils.js";
 import { validateDateFormat } from "../../date-validators.js";
 import { EXIT } from "../../exit-codes.js";
 import type { HttpOptions } from "../../http.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
-import { type Candle, VALID_TYPES, fetchOne } from "./candles-fetch.js";
+import { type Candle, fetchOne, VALID_TYPES } from "./candles-fetch.js";
 import {
   augmentMeta,
   detectGaps,
@@ -14,9 +14,9 @@ import {
 } from "./candles-merge.js";
 import { candlesRange } from "./candles-range.js";
 
-export type { Candle };
-export { VALID_TYPES } from "./candles-fetch.js";
 export { shiftDate } from "../../date-utils.js";
+export { VALID_TYPES } from "./candles-fetch.js";
+export type { Candle };
 
 const BATCH_SIZE = 10; // candles-range と同じ並列数（throttle.ts の lowWaterMark 配慮）
 const HARD_MAX_SEGMENTS = 100; // --limit が極端に大きい場合の暴走防止

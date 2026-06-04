@@ -7,8 +7,8 @@ import { closeSync, mkdtempSync, openSync, rmSync, statSync, utimesSync } from "
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { loadState, type PaperState, saveState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
-import { type PaperState, loadState, saveState } from "../../paper-state.js";
 
 let dir: string;
 let statePath: string;

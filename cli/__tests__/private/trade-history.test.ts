@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
 import { tradeHistory, tradeHistoryDispatch } from "../../commands/private/trade-history.js";
+import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
 import { EXIT } from "../../exit-codes.js";
 import { tradeHistoryFixture } from "../__fixtures__/private/trade-history.js";
-import { TEST_CREDS, mockFetchData, mockFetchDataCapture } from "../test-helpers.js";
+import { mockFetchData, mockFetchDataCapture, TEST_CREDS } from "../test-helpers.js";
 
 vi.mock("../../commands/private/trade-history-all.js", () => ({
   tradeHistoryAll: vi.fn(async (args: { pair?: string }) => {

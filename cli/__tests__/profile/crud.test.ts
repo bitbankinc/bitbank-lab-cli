@@ -8,7 +8,7 @@ import { profileList } from "../../commands/profile/list.js";
 import { profileRemove } from "../../commands/profile/remove.js";
 import { profileSetDefault } from "../../commands/profile/set-default.js";
 import { profileShow } from "../../commands/profile/show.js";
-import { type ProfilesFile, loadProfiles } from "../../profiles-store.js";
+import { loadProfiles, type ProfilesFile } from "../../profiles-store.js";
 import type { Result } from "../../types.js";
 
 const fakePrompts = (key = "promptedKey", secret = "promptedSecret") => ({
@@ -34,9 +34,7 @@ describe("profile CRUD", () => {
     saved.BITBANK_API_KEY = process.env.BITBANK_API_KEY;
     saved.BITBANK_API_SECRET = process.env.BITBANK_API_SECRET;
     process.env.BITBANK_PROFILES_PATH = path;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_KEY;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_SECRET;
   });
 

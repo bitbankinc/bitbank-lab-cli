@@ -4,7 +4,7 @@ import { createOrder } from "../../commands/trade/create-order.js";
 import { EXIT } from "../../exit-codes.js";
 import { machineOutput } from "../../output.js";
 import type { DryRunData } from "../../types.js";
-import { TEST_CREDS, captureStdout, mockFetchRaw, mockGetPairsWith } from "../test-helpers.js";
+import { captureStdout, mockFetchRaw, mockGetPairsWith, TEST_CREDS } from "../test-helpers.js";
 
 const VALID_RESPONSE = {
   success: 1,

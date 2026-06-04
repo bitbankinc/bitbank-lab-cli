@@ -2,7 +2,7 @@
 // output スキーマ定義を 1 ファイルに集約しているため。withdrawal-history の
 // crypto/fiat 両対応フィールド拡張（ISSUE-E）で増加した。各 def は宣言的な
 // レジストリで分割は不自然なため、行数より凝集を優先する。
-import { type SchemaDef, p } from "./types.js";
+import { p, type SchemaDef } from "./types.js";
 
 const asset = p("string", "Asset symbol (e.g. btc)");
 const count = p("string", "Max number of results");

@@ -1,10 +1,10 @@
 import type { CommandEntry } from "./commands/handler-types.js";
 import {
   COMMANDS,
+  commandDescriptions,
   PAPER_COMMANDS,
   PROFILE_COMMANDS,
   TRADE_COMMANDS,
-  commandDescriptions,
 } from "./commands/registry.js";
 import type { Format } from "./types.js";
 

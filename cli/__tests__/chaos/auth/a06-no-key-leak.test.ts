@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { privatePost } from "../../../http-private-post.js";
 import { privateGet } from "../../../http-private.js";
+import { privatePost } from "../../../http-private-post.js";
 import { mockFetchRaw } from "../../test-helpers.js";
 
 const SECRET_KEY = "super_secret_api_key_12345";
@@ -63,11 +63,8 @@ describe("Chaos A-06: API keys never leak in error messages", () => {
     const origKey = process.env.BITBANK_API_KEY;
     const origSecret = process.env.BITBANK_API_SECRET;
     const origProfile = process.env.BITBANK_PROFILE;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_KEY;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_SECRET;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_PROFILE;
     try {
       const r = resolveCredentials();

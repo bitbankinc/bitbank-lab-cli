@@ -10,14 +10,14 @@ import { ymdUtc } from "./date-utils.js";
 import { resolveFeeRate } from "./fees.js";
 import type { HttpOptions } from "./http.js";
 import { type CachedPair, getPairsWithCache } from "./pairs-cache.js";
-import { updateState } from "./paper-state-mutate.js";
 import {
+  defaultStatePath,
+  loadState,
   type OpenOrder,
   type PaperHistoryEntry,
   type PaperState,
-  defaultStatePath,
-  loadState,
 } from "./paper-state.js";
+import { updateState } from "./paper-state-mutate.js";
 import type { Result } from "./types.js";
 
 const ONE_MIN_MS = 60_000;

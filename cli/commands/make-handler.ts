@@ -1,7 +1,7 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { isDryRunData } from "../output-dry-run.js";
 import { output } from "../output.js";
+import { isDryRunData } from "../output-dry-run.js";
 import { buildLogRecord, writeTradeLog } from "../trade-log.js";
 import type { CommandHandler, ParsedValues, RuntimeContext } from "./handler-types.js";
 import { valStr } from "./handler-types.js";

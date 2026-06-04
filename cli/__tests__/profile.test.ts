@@ -61,9 +61,7 @@ describe("loadEnvProfile", () => {
 
   it("does not mutate process.env", () => {
     writeFileSync(join(tmpDir, ".env.bot1"), "BITBANK_API_KEY=k1\nBITBANK_API_SECRET=s1");
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_KEY;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_SECRET;
     const before = { ...process.env };
     loadEnvProfile("bot1");

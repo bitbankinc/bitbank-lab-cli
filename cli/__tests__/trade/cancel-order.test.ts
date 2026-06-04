@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { cancelOrder } from "../../commands/trade/cancel-order.js";
 import { EXIT } from "../../exit-codes.js";
-import { TEST_CREDS, mockFetchRaw } from "../test-helpers.js";
+import { mockFetchRaw, TEST_CREDS } from "../test-helpers.js";
 
 describe("cancel-order", () => {
   it("returns dryRun without --execute (output layer renders the box, not the command)", async () => {

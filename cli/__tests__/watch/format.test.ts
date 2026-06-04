@@ -1,12 +1,12 @@
 // 100行超: nullableNumStr 移行後の writer 全体（JSONL / table / decimals / null 表示）を網羅
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  type PairInfo,
-  type TickerData,
   createJsonlWriter,
   createTableWriter,
   createWriter,
   formatJsonl,
+  type PairInfo,
+  type TickerData,
 } from "../../watch/format.js";
 
 const sample: TickerData = {

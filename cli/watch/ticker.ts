@@ -1,4 +1,4 @@
-import { type Socket, io } from "socket.io-client";
+import { io, type Socket } from "socket.io-client";
 import { type TickerData, TickerDataSchema } from "./format.js";
 
 const WS_ENDPOINT = "wss://stream.bitbank.cc";

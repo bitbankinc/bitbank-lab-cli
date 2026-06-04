@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createOrder } from "../commands/trade/create-order.js";
-import { TradeLogRecordSchema } from "../trade-log-schema.js";
 import { buildLogRecord, writeTradeLog } from "../trade-log.js";
-import { TEST_CREDS, mockFetchRaw } from "./test-helpers.js";
+import { TradeLogRecordSchema } from "../trade-log-schema.js";
+import { mockFetchRaw, TEST_CREDS } from "./test-helpers.js";
 
 function tmpFile(): string {
   return join(tmpdir(), `trade-log-int-${Date.now()}-${Math.random().toString(36).slice(2)}.jsonl`);

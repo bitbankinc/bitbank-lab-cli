@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VALID_TYPES, fetchOne } from "../../commands/public/candles-fetch.js";
+import { fetchOne, VALID_TYPES } from "../../commands/public/candles-fetch.js";
 import { YEARLY_TYPES } from "../../date-utils.js";
 import { mockFetchRaw } from "../test-helpers.js";
 

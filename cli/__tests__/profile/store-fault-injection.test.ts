@@ -5,8 +5,8 @@
 import {
   chmodSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -15,9 +15,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  type ProfilesFile,
   emptyProfilesFile,
   loadProfiles,
+  type ProfilesFile,
   saveProfiles,
 } from "../../profiles-store.js";
 

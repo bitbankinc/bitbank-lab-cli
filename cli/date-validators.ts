@@ -1,4 +1,4 @@
-import { YEARLY_TYPES, daysInMonth, yearUtc } from "./date-utils.js";
+import { daysInMonth, YEARLY_TYPES, yearUtc } from "./date-utils.js";
 import { EXIT } from "./exit-codes.js";
 import type { Result } from "./types.js";
 

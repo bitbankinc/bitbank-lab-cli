@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
 import { tradeHistoryFixture } from "../__fixtures__/private/trade-history.js";
-import { TEST_CREDS, mockFetchData } from "../test-helpers.js";
+import { mockFetchData, TEST_CREDS } from "../test-helpers.js";
 
 // モックは実 API 準拠: 1 約定の形状は __fixtures__/private/trade-history.ts に集約し、
 // ページング検証用に id / executed_at だけ差し替える。

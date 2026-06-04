@@ -1,9 +1,9 @@
 // 100行超: paper state 永続化の互換/移行を網羅（v1/v2/v3）
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type PaperState, loadState, saveState } from "../../paper-state.js";
+import { loadState, type PaperState, saveState } from "../../paper-state.js";
 
 const mockFlags = { renameThrows: false, writeThrows: false };
 

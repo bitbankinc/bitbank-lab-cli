@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { unconfirmedDeposits } from "../../commands/private/unconfirmed-deposits.js";
 import { EXIT } from "../../exit-codes.js";
 import { unconfirmedDepositsFixture } from "../__fixtures__/private/unconfirmed-deposits.js";
-import { TEST_CREDS, mockFetchData, mockFetchDataCapture, mockFetchRaw } from "../test-helpers.js";
+import { mockFetchData, mockFetchDataCapture, mockFetchRaw, TEST_CREDS } from "../test-helpers.js";
 
 const MOCK = unconfirmedDepositsFixture;
 

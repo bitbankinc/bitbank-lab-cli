@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
+import { defaultStatePath, nowIso, type PaperState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
-import { type PaperState, defaultStatePath, nowIso } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 import { PositiveDecimalSchema } from "../../validators.js";
 

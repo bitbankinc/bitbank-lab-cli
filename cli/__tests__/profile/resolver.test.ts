@@ -19,11 +19,8 @@ describe("resolveCredentials: priority order", () => {
     saved.BITBANK_API_KEY = process.env.BITBANK_API_KEY;
     saved.BITBANK_API_SECRET = process.env.BITBANK_API_SECRET;
     process.env.BITBANK_PROFILES_PATH = path;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_PROFILE;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_KEY;
-    // biome-ignore lint/performance/noDelete: process.env requires delete
     delete process.env.BITBANK_API_SECRET;
   });
 

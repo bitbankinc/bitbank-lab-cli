@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assets } from "../../commands/private/assets.js";
-import { TEST_CREDS, mockFetchData } from "../test-helpers.js";
+import { mockFetchData, TEST_CREDS } from "../test-helpers.js";
 
 const MOCK_ASSETS = {
   assets: [

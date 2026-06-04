@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { cancelOrder } from "../../../commands/trade/cancel-order.js";
 import { cancelOrders } from "../../../commands/trade/cancel-orders.js";
-import { confirmDepositsAll } from "../../../commands/trade/confirm-deposits-all.js";
 import { confirmDeposits } from "../../../commands/trade/confirm-deposits.js";
+import { confirmDepositsAll } from "../../../commands/trade/confirm-deposits-all.js";
 import { createOrder } from "../../../commands/trade/create-order.js";
 
 // dry-run の描画は出力層 (output.ts / output-dry-run.ts) の責務に移った。
