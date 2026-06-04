@@ -1,3 +1,5 @@
+// 100行超: trade-history-all（全件取得）と --all ディスパッチャを同居させ、
+// trade-history(leaf) → all の循環依存を断つため
 // trade-history.ts を自動ページングで全件取得するラッパー
 // CLI では `trade-history --all` で呼び出される
 import { z } from "zod";
@@ -6,7 +8,7 @@ import type { PrivateHttpOptions } from "../../http-private.js";
 import type { Result } from "../../types.js";
 import { validatePair } from "../../validators.js";
 import { formatZodError } from "./input-schemas.js";
-import { type Trade, tradeHistory } from "./trade-history.js";
+import { type Trade, type TradeHistoryArgs, tradeHistory } from "./trade-history.js";
 
 // bitbank API の1リクエストあたり最大取得件数
 const PAGE_SIZE = 1000;
@@ -91,4 +93,18 @@ export async function tradeHistoryAll(
     partial: true,
     meta: { truncated: true, reason: "MAX_PAGES", returnedRows: allTrades.length },
   };
+}
+
+/** --all 分岐を吸収するディスパッチ関数 */
+export async function tradeHistoryDispatch(
+  args: TradeHistoryArgs & { all: boolean; maxPages?: string },
+  opts?: PrivateHttpOptions,
+): Promise<Result<Trade[]>> {
+  if (args.all) {
+    return tradeHistoryAll(
+      { pair: args.pair, since: args.since, end: args.end, maxPages: args.maxPages },
+      opts,
+    );
+  }
+  return tradeHistory(args, opts);
 }
