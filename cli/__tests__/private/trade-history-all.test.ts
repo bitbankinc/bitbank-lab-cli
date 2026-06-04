@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tradeHistoryAll } from "../../commands/private/trade-history-all.js";
+import { tradeHistoryAll, tradeHistoryDispatch } from "../../commands/private/trade-history-all.js";
 import { tradeHistoryFixture } from "../__fixtures__/private/trade-history.js";
 import { mockFetchData, TEST_CREDS } from "../test-helpers.js";
 
@@ -164,5 +164,47 @@ describe("tradeHistoryAll", () => {
       expect(result.error).toContain("safe integer");
       expect(result.exitCode).toBe(4);
     }
+  });
+});
+
+describe("tradeHistoryDispatch", () => {
+  it("delegates to tradeHistoryAll (paginates) when --all is set", async () => {
+    const page1 = Array.from({ length: 1000 }, (_, i) => makeTrade(i + 1, 1000 + i));
+    const page2 = Array.from({ length: 500 }, (_, i) => makeTrade(1001 + i, 2000 + i));
+    let call = 0;
+    const fetch: typeof globalThis.fetch = async () => {
+      const trades = call++ === 0 ? page1 : page2;
+      return new Response(JSON.stringify({ success: 1, data: { trades } }));
+    };
+
+    const result = await tradeHistoryDispatch(
+      { pair: "btc_jpy", all: true },
+      { fetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toHaveLength(1500);
+    expect(call).toBe(2);
+  });
+
+  it("propagates errors from tradeHistoryAll", async () => {
+    const result = await tradeHistoryDispatch({ pair: undefined, all: true });
+    expect(result.success).toBe(false);
+  });
+
+  it("delegates to single-page tradeHistory (no pagination) when --all is not set", async () => {
+    const page = Array.from({ length: 1000 }, (_, i) => makeTrade(i + 1, 1000 + i));
+    let call = 0;
+    const fetch: typeof globalThis.fetch = async () => {
+      call++;
+      return new Response(JSON.stringify({ success: 1, data: { trades: page } }));
+    };
+
+    const result = await tradeHistoryDispatch(
+      { pair: "btc_jpy", all: false },
+      { fetch, retries: 0, credentials: TEST_CREDS, nonce: "1" },
+    );
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toHaveLength(1000);
+    expect(call).toBe(1);
   });
 });

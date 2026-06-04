@@ -77,18 +77,3 @@ export async function tradeHistory(
   const result = await privateGet<unknown>("/user/spot/trade_history", params, opts);
   return parseResponse(result, TradeHistoryResponseSchema, "trades");
 }
-
-/** --all 分岐を吸収するディスパッチ関数 */
-export async function tradeHistoryDispatch(
-  args: TradeHistoryArgs & { all: boolean; maxPages?: string },
-  opts?: PrivateHttpOptions,
-): Promise<Result<Trade[]>> {
-  if (args.all) {
-    const { tradeHistoryAll } = await import("./trade-history-all.js");
-    return tradeHistoryAll(
-      { pair: args.pair, since: args.since, end: args.end, maxPages: args.maxPages },
-      opts,
-    );
-  }
-  return tradeHistory(args, opts);
-}

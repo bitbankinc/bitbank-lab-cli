@@ -46,7 +46,7 @@ export const privateCommands: Record<string, CommandEntry> = {
       all: bool(),
       "max-pages": str,
     },
-    handler: handler("./private/trade-history.js", "tradeHistoryDispatch", (_a, v) => ({
+    handler: handler("./private/trade-history-all.js", "tradeHistoryDispatch", (_a, v) => ({
       pair: valStr(v, "pair"),
       count: valStr(v, "count"),
       orderId: valStr(v, "order-id"),
