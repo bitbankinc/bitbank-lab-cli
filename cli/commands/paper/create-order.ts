@@ -8,6 +8,7 @@ import type { HttpOptions } from "../../http.js";
 import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import {
+  applyFillToBalances,
   availableOf,
   defaultStatePath,
   genId,
@@ -179,22 +180,23 @@ async function fillMarket(
           error: "paper state not initialized. Run 'bitbank paper init --jpy=<amount>' first.",
         };
       }
-      const balances = { ...state.balances };
+      // 残高不足チェックは適用前に side ごとに行う（成行のみの責務。指値は
+      // ロック時に検証済み）。チェック通過後に共通の applyFillToBalances で適用。
       if (input.side === "buy") {
         const avail = availableOf(state, quote, feeRate);
         if (avail < cost) {
           return { success: false, error: `insufficient ${quote}: need ${cost}, have ${avail}` };
         }
-        balances[quote] = (balances[quote] ?? 0) - cost;
-        balances[base] = (balances[base] ?? 0) + amount;
       } else {
         const avail = availableOf(state, base, feeRate);
         if (avail < amount) {
           return { success: false, error: `insufficient ${base}: need ${amount}, have ${avail}` };
         }
-        balances[base] = (balances[base] ?? 0) - amount;
-        balances[quote] = (balances[quote] ?? 0) + proceeds;
       }
+      const balances = applyFillToBalances(state.balances, input.side, base, quote, amount, {
+        cost,
+        proceeds,
+      });
       const filledAt = nowIso();
       const id = genId();
       const fill: PaperFill = {
