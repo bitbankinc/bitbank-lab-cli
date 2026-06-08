@@ -2,7 +2,7 @@ import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { type FetchCandles, type GetPairs, runTick, type TickResult } from "../../paper-fill.js";
 import type { Result } from "../../types.js";
-import { PairSchema } from "../../validators.js";
+import { formatZodError, PairSchema } from "../../validators.js";
 
 const InputSchema = z.object({ pair: PairSchema.optional() });
 
@@ -20,7 +20,7 @@ export async function paperTick(args: PaperTickArgs = {}): Promise<Result<TickRe
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues.map((i) => i.message).join("; "),
+      error: formatZodError(parsed.error),
       exitCode: EXIT.PARAM,
     };
   }

@@ -3,7 +3,12 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivateHttpOptions, privateGet } from "../../http-private.js";
 import { parseResponse } from "../../parse-response.js";
 import type { Result } from "../../types.js";
-import { IntegerStringSchema, MSG_ORDER_ID, validatePair } from "../../validators.js";
+import {
+  formatZodError,
+  IntegerStringSchema,
+  MSG_ORDER_ID,
+  validatePair,
+} from "../../validators.js";
 import { OrderSchema } from "../shared-schemas.js";
 
 export type Order = z.infer<typeof OrderSchema>;
@@ -21,7 +26,7 @@ export async function order(
   if (!idv.success) {
     return {
       success: false,
-      error: idv.error.issues.map((i) => i.message).join("; "),
+      error: formatZodError(idv.error),
       exitCode: EXIT.PARAM,
     };
   }

@@ -6,7 +6,7 @@ import { type GetPairs, resolveDryRunFee } from "../../fees.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { DryRunData, Result } from "../../types.js";
-import { PairSchema, PositiveDecimalSchema } from "../../validators.js";
+import { formatZodError, PairSchema, PositiveDecimalSchema } from "../../validators.js";
 import { OrderSchema } from "../shared-schemas.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
@@ -68,8 +68,7 @@ export async function createOrder(
     confirm: args.confirm,
   });
   if (!parsed.success) {
-    const msg = parsed.error.issues.map((i) => i.message).join("; ");
-    return { success: false, error: msg, exitCode: EXIT.PARAM };
+    return { success: false, error: formatZodError(parsed.error), exitCode: EXIT.PARAM };
   }
 
   const body: Record<string, unknown> = {
