@@ -17,7 +17,7 @@ import {
 } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
 import type { Result } from "../../types.js";
-import { PairSchema, PositiveDecimalSchema } from "../../validators.js";
+import { formatZodError, PairSchema, PositiveDecimalSchema } from "../../validators.js";
 import { ticker } from "../public/ticker.js";
 import { validateOrderSize } from "./order-validate.js";
 
@@ -75,7 +75,7 @@ export async function paperCreateOrder(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues.map((i) => i.message).join("; "),
+      error: formatZodError(parsed.error),
       exitCode: EXIT.PARAM,
     };
   }

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import type { Result } from "../../types.js";
+import { formatZodError } from "../../validators.js";
 import type { ParsedValues } from "../handler-types.js";
 import { valStr } from "../handler-types.js";
 
@@ -36,7 +37,7 @@ export function parseMaxRetries(v: ParsedValues): Result<number> {
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues.map((i) => i.message).join("; "),
+      error: formatZodError(parsed.error),
       exitCode: EXIT.PARAM,
     };
   }

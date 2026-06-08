@@ -3,7 +3,7 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { DryRunData, Result } from "../../types.js";
-import { UUID_RE } from "../../validators.js";
+import { formatZodError, UUID_RE } from "../../validators.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
 
@@ -47,8 +47,7 @@ export async function confirmDepositsAll(
     confirm: args.confirm,
   });
   if (!parsed.success) {
-    const msg = parsed.error.issues.map((i) => i.message).join("; ");
-    return { success: false, error: msg, exitCode: EXIT.PARAM };
+    return { success: false, error: formatZodError(parsed.error), exitCode: EXIT.PARAM };
   }
 
   const body = { originator_uuid: parsed.data.originatorUuid };
