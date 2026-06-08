@@ -25,7 +25,7 @@ bitbank paper pnl --pair=btc_jpy                                                
 
 指値の挙動は次のとおりです。
 
-* GTC のみ（部分約定なし）。fill 判定は前回 tick 以降の 1m 足を時系列で走査し、買いは `low <= price`、売りは `high >= price` で全量約定します。約定価格は指値ぴったり（スリッページなし）。
+* GTC のみ（部分約定なし）。前回 tick 以降の 1m 足を時系列で走査し、**約定するかどうか**だけを足の high/low で判定します（買いは `low <= price`、売りは `high >= price`）。約定が成立したときの**約定価格は指値そのもの**として記録されます（スリッページなし）。
 * `paper assets` / `paper trade-history` / `paper active-orders` / `paper create-order` を呼ぶと、裏で lazy tick が走り、未解決の fill を解消してから結果を返します。明示的に解決したいときは `paper tick` を直接実行します。
 * 指値発注時は `price * amount + fee` 相当を JPY（買い）または `amount` を base 通貨（売り）でロック扱いにします。手数料は bitbank 公称テイカー手数料（0.12%）。
 * `paper reset` は state の誤削除を防ぐため `--confirm` 必須です。
