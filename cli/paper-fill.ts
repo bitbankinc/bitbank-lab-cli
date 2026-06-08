@@ -11,6 +11,7 @@ import { computeFill, resolveFeeRate } from "./fees.js";
 import type { HttpOptions } from "./http.js";
 import { type CachedPair, getPairsWithCache } from "./pairs-cache.js";
 import {
+  applyFillToBalances,
   defaultStatePath,
   loadState,
   type OpenOrder,
@@ -192,16 +193,12 @@ function applyFill(
   feeRate: number,
 ): { state: PaperState; entry: PaperHistoryEntry } {
   const [base, quote] = o.pair.split("_");
-  const balances = { ...state.balances };
   const notional = o.price * o.amount;
   const { feeQuote, cost, proceeds } = computeFill(notional, feeRate, quote);
-  if (o.side === "buy") {
-    balances[quote] = (balances[quote] ?? 0) - cost;
-    balances[base] = (balances[base] ?? 0) + o.amount;
-  } else {
-    balances[base] = (balances[base] ?? 0) - o.amount;
-    balances[quote] = (balances[quote] ?? 0) + proceeds;
-  }
+  const balances = applyFillToBalances(state.balances, o.side, base, quote, o.amount, {
+    cost,
+    proceeds,
+  });
   const filledAt = new Date(candle.timestamp + ONE_MIN_MS).toISOString();
   const entry: PaperHistoryEntry = {
     id: o.id,
