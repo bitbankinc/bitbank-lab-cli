@@ -1,6 +1,6 @@
 # Skills Index
 
-bitbank-cli-skills の Skill 一覧。
+bitbank-lab-cli の Skill 一覧。
 
 - **Primitive Skill** — 単一の責務を持つ Skill。ユーザーの発話に直接反応する
 - **Recipe Skill** — 複数の primitive を順に呼ぶ複合 Skill。`recipe-` プレフィックス、`metadata.recipe: true` を持つ（→ [`.claude/rules/skills.md`](../.claude/rules/skills.md)）

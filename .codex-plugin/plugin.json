@@ -6,8 +6,8 @@
     "name": "tjackiet",
     "url": "https://github.com/tjackiet"
   },
-  "homepage": "https://github.com/tjackiet/bitbank-cli-skills",
-  "repository": "https://github.com/tjackiet/bitbank-cli-skills",
+  "homepage": "https://github.com/tjackiet/bitbank-lab-cli",
+  "repository": "https://github.com/tjackiet/bitbank-lab-cli",
   "license": "MIT",
   "keywords": [
     "bitbank",
@@ -25,7 +25,7 @@
     "developerName": "tjackiet",
     "category": "Finance",
     "capabilities": ["Read"],
-    "websiteURL": "https://github.com/tjackiet/bitbank-cli-skills",
+    "websiteURL": "https://github.com/tjackiet/bitbank-lab-cli",
     "defaultPrompt": [
       "BTC の RSI を見て",
       "ポートフォリオの状況を見せて",

@@ -50,7 +50,7 @@ provenance 表示が無くなる点に注意。
 
 1. https://www.npmjs.com/package/bitbank-lab-cli/access で
    "Trusted Publisher" を追加
-2. GitHub repo: `tjackiet/bitbank-cli-skills`、workflow: `release.yml`、
+2. GitHub repo: `tjackiet/bitbank-lab-cli`、workflow: `release.yml`、
    environment は空でよい
 3. アカウント側で 2FA を `auth-and-writes` に設定（手動 publish 時の保険）
 

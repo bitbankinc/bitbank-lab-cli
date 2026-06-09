@@ -49,13 +49,13 @@
   "engines": {
     "node": ">=20"
   },
-  "homepage": "https://github.com/tjackiet/bitbank-cli-skills",
+  "homepage": "https://github.com/tjackiet/bitbank-lab-cli",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tjackiet/bitbank-cli-skills.git"
+    "url": "git+https://github.com/tjackiet/bitbank-lab-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/tjackiet/bitbank-cli-skills/issues"
+    "url": "https://github.com/tjackiet/bitbank-lab-cli/issues"
   },
   "keywords": [
     "bitbank",
