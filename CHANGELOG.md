@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-10
+
 ### Added
 
 - 機械可読カタログ `agents/tool-catalog.json` / `agents/error-catalog.json` を追加。
