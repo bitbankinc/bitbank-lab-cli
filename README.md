@@ -5,7 +5,7 @@
 [![npm](https://img.shields.io/npm/v/bitbank-lab-cli.svg)](https://www.npmjs.com/package/bitbank-lab-cli)
 [![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/tjackiet/bitbank-lab-cli?utm_source=oss&utm_medium=github&utm_campaign=tjackiet%2Fbitbank-lab-cli&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 
-bitbank 暗号資産取引所の CLI。
+暗号資産取引所 bitbank の CLI。
 
 ## はじめにお読みください
 
