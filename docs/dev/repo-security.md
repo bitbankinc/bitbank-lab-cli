@@ -43,7 +43,8 @@ Settings → Code security:
 - ✅ Dependency graph
 
 `.github/dependabot.yml` は通常更新用。security updates は別系統で
-critical / high の patch PR を即時に出す。
+critical / high の patch PR を即時に出す（version update 側の cooldown は
+適用されない。[dependency-cooldown.md](dependency-cooldown.md) 参照）。
 
 ## npm: 2FA を auth-and-writes に
 

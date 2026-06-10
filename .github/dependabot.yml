@@ -19,6 +19,12 @@ updates:
           - "patch"
     labels:
       - "dependencies"
+    # 依存クールダウン: 公開直後のバージョンを version update PR に含めない
+    # （security update は別系統で cooldown 対象外 = CVE patch は即時 PR）
+    # 詳細: docs/dev/dependency-cooldown.md
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -29,3 +35,4 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    # github-actions には cooldown を付けない（Dependabot 未サポート。付けると設定が拒否/無視される）

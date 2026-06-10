@@ -29,6 +29,7 @@ npm ci   # 依存インストール（初回のみ）
 - Skill 追加手順: [.claude/rules/skills.md](.claude/rules/skills.md)
 - trade 安全ガード: [.claude/rules/trading-safety.md](.claude/rules/trading-safety.md)
 - 表記規約: [docs/dev/conventions.md](docs/dev/conventions.md)
+- 依存クールダウン（`.npmrc` / Dependabot）: [docs/dev/dependency-cooldown.md](docs/dev/dependency-cooldown.md)
 
 ## PR 前の品質ゲート
 
