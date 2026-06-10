@@ -27,7 +27,7 @@ bitbank 暗号資産取引所の CLI。
 CLI は bitbank API への**薄いアクセス層**。分析ロジックは一切持たせていません。  
 Skills を編集・追加する等、ご自身の用途に合わせてカスタマイズしてください。
 
-- **MCP サーバー** ([bitbank-genesis-mcp-server](https://github.com/tjackiet/bitbank-genesis-mcp-server)) はサーバー側で計算済みの結論を LLM に渡す
+- **MCP サーバー** ([bitbank-lab-mcp](https://github.com/tjackiet/bitbank-lab-mcp)) はサーバー側で計算済みの結論を LLM に渡す
 - **この CLI** は生データを高速に取得し、LLM 自身に計算させる
 
 同じ bitbank API に対して、真逆のアプローチを提供します。モデルに生 OHLCV を渡せば、指標のパラメータもロジックも完全にカスタマイズ可能。MCP の固定実装では対応できない「自分だけの指標」が作れます。

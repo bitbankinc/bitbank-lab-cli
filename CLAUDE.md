@@ -30,7 +30,7 @@ npx tsx cli/index.ts    # CLI 実行
 
 - Zod スキーマ（`z.infer`）が型の単一ソース
 - 全コマンドは Result パターンで返す（例外は使わない）
-- MCP サーバー（`bitbank-genesis-mcp-server`）は別リポ。直接 import しない
+- MCP サーバー（`bitbank-lab-mcp`）は別リポ。直接 import しない
 - コマンド追加 → `.claude/rules/commands.md`
 - 取引安全設計 → `.claude/rules/trading-safety.md`
 - 機械可読カタログ → [`agents/`](agents/)。`tool-catalog.json`（全コマンド・

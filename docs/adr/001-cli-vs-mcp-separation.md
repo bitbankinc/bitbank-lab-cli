@@ -6,7 +6,7 @@ Accepted
 
 ## コンテキスト
 
-bitbank-genesis-mcp-server（MCP サーバー、22 ツール）が既に存在する。CLI × Skills スターターキットを新たに作るにあたり、同一リポか別リポかの判断が必要になった。
+bitbank-genesis-mcp-server（現: bitbank-lab-mcp）（MCP サーバー、22 ツール）が既に存在する。CLI × Skills スターターキットを新たに作るにあたり、同一リポか別リポかの判断が必要になった。
 
 ## 決定
 
