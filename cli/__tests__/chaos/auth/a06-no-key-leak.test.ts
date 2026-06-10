@@ -4,7 +4,7 @@ import { privatePost } from "../../../http-private-post.js";
 import { mockFetchRaw } from "../../test-helpers.js";
 
 const SECRET_KEY = "super_secret_api_key_12345";
-const SECRET_SECRET = "ultra_secret_api_secret_67890";
+const SECRET_SECRET = "ultra_secret_api_secret_67890"; // gitleaks:allow 漏えい検査用のダミー値（実鍵ではない）
 const CREDS = { apiKey: SECRET_KEY, apiSecret: SECRET_SECRET };
 const AUTH_ERROR = { success: 0, data: { code: 20001 } };
 

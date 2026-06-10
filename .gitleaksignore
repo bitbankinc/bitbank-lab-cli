@@ -1,0 +1,15 @@
+# gitleaks の全履歴スキャンで検出された誤検知の fingerprint 一覧。
+# 実鍵でないことを git show で個別確認済み。新規追加時は必ず値を確認し、
+# 根拠コメントを添えること。
+
+# テスト用ダミー secret（"ultra_secret_api_secret_67890"）。
+# 鍵漏えい検査テスト（chaos A-06）が使う固定ダミー値で実鍵ではない。
+# 現行コードの該当行には gitleaks:allow を付与済み。
+2e511014afd066199d4aee6ccd025fc62d247da6:cli/__tests__/chaos/auth/a06-no-key-leak.test.ts:generic-api-key:7
+
+# bitbank PubNub 公開サブスクライブキー（"sub-c-ecebae8e-..."）。
+# bitbank 公式公開ドキュメント（bitbankinc/bitbank-api-docs の
+# private-stream_JP.md）に同一値が掲載されているクライアント用公開キーで
+# 秘密情報ではない。ファイルは後に cli/commands/stream/private.ts へ移動し、
+# 現行コードの該当行には gitleaks:allow を付与済み。
+a19e120d69513026155ff435fff1af797d97930f:cli/stream-private.ts:generic-api-key:7

@@ -19,6 +19,7 @@ Settings → Branches → Add branch protection rule:
   - 必須 check:
     - `test`（`.github/workflows/ci.yml` の job 名）
     - `audit`（`.github/workflows/security.yml` の job 名）
+    - `gitleaks`（`.github/workflows/security.yml` の job 名。全 git 履歴の秘密情報スキャン）
 - ✅ Require conversation resolution before merging
 - ✅ Do not allow bypassing the above settings（admin も含めて enforce）
 - ❌ Allow force pushes / deletions（無効のまま）
