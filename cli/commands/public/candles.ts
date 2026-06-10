@@ -20,6 +20,7 @@ export type { Candle };
 
 const BATCH_SIZE = 10; // candles-range と同じ並列数（throttle.ts の lowWaterMark 配慮）
 const HARD_MAX_SEGMENTS = 100; // --limit が極端に大きい場合の暴走防止
+const DEFAULT_CANDLE_LIMIT = 1000; // --limit 省略時の既定取得件数。private input-schemas の MAX_COUNT とは別概念なので共有しない
 function validateType(type: string | undefined): Result<string> {
   const valid = VALID_TYPES.join(", ");
   if (type === undefined || type === "") {
@@ -177,6 +178,6 @@ export async function candles(args: CandlesArgs, opts?: HttpOptions): Promise<Re
     const meta = augmentMeta(0, [], undefined, detectLastIncomplete(data, validType));
     return meta ? { success: true, data, meta } : { success: true, data };
   }
-  const effectiveLimit = limit ?? 1000;
+  const effectiveLimit = limit ?? DEFAULT_CANDLE_LIMIT;
   return fetchAutoMerge(pair, validType, dateStr, effectiveLimit, first.data, opts, noCache);
 }

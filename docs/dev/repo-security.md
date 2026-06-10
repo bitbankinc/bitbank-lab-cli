@@ -19,6 +19,7 @@ Settings → Branches → Add branch protection rule:
   - 必須 check:
     - `test`（`.github/workflows/ci.yml` の job 名）
     - `audit`（`.github/workflows/security.yml` の job 名）
+    - `gitleaks`（`.github/workflows/security.yml` の job 名。全 git 履歴の秘密情報スキャン）
 - ✅ Require conversation resolution before merging
 - ✅ Do not allow bypassing the above settings（admin も含めて enforce）
 - ❌ Allow force pushes / deletions（無効のまま）
@@ -60,7 +61,7 @@ https://www.npmjs.com/settings/<user>/profile → Two-factor authentication
 
 セットアップ済みかは以下で確認できる:
 
-- Branch protection: `gh api repos/tjackiet/bitbank-cli-skills/branches/main/protection` が 200 を返すか
+- Branch protection: `gh api repos/tjackiet/bitbank-lab-cli/branches/main/protection` が 200 を返すか
 - Private vulnerability reporting: Settings → Code security のチェック状態
 - npm 2FA: `npm profile get` の `tfa` 欄が `auth-and-writes`
 - Trusted Publisher: https://www.npmjs.com/package/bitbank-lab-cli/access で表示されるか

@@ -1,16 +1,12 @@
-// 100行超: paper-state.json への load -> mutate -> save を lock file (O_EXCL)
-// で排他制御する。profiles-mutate.ts と同じ方式（node:fs の openSync 'wx'）。
-// 競合する create-order / tick / cancel-order が並行しても lost update や
+// paper-state.json への load -> mutate -> save を lock file (O_EXCL) で排他制御
+// する。競合する create-order / tick / cancel-order が並行しても lost update や
 // 履歴欠落が起きないよう、ファイル単位で直列化する。
-// stale lock は mtime しきい値で自動クリーンアップする。
-import { closeSync, mkdirSync, openSync, statSync, unlinkSync } from "node:fs";
-import { dirname } from "node:path";
-import { EXIT } from "./exit-codes.js";
+// ロック取得コアは lock-core.ts に集約（async sleep を使う理由もそちらに明記）。
+import { backoffMs, ensureLockDir, type Lock, lockTimeout, tryAcquireOnce } from "./lock-core.js";
 import { defaultStatePath, loadState, type PaperState, saveState } from "./paper-state.js";
 import type { Result } from "./types.js";
 
 const DEFAULT_MAX_WAIT_MS = 5_000;
-const STALE_LOCK_MS = 30_000;
 
 export type StateMutator<T> = (
   state: PaperState | null,
@@ -22,78 +18,26 @@ function lockPath(p: string): string {
   return `${p}.lock`;
 }
 
-// profile 側は sync sleep（Atomics.wait）だが、paper は Skill / agent 経由で
-// 同一プロセス内の Promise.all 並行呼び出しも起き得る。sync sleep だと
-// 待機側が event-loop をブロックして lock 保持側の async I/O が進まず
-// starvation するので、ここでは setTimeout ベースの async sleep を使う。
-// 観測可能な挙動（5s timeout / 30s stale TTL）は profiles-mutate.ts と一致。
+// paper は Skill / agent 経由で同一プロセス内 Promise.all 並行呼び出しも起き得る。
+// sync sleep だと待機側が event-loop をブロックし lock 保持側の async I/O が進まず
+// starvation するため async sleep を使う（詳細は lock-core.ts ヘッダ）。
 function asyncSleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-type Lock = { release: () => void };
-
 async function acquireLock(p: string, maxWaitMs: number): Promise<Result<Lock>> {
-  try {
-    mkdirSync(dirname(p), { recursive: true });
-  } catch {
-    // mkdir 失敗は openSync で再現させる
-  }
+  ensureLockDir(p);
+  const label = "paper state lock";
   const start = Date.now();
   while (true) {
-    try {
-      const fd = openSync(p, "wx", 0o600);
-      closeSync(fd);
-      return {
-        success: true,
-        data: {
-          release: () => {
-            try {
-              unlinkSync(p);
-            } catch {
-              // 既に消えていたら何もしない
-            }
-          },
-        },
-      };
-    } catch (e) {
-      const code = (e as NodeJS.ErrnoException).code;
-      if (code !== "EEXIST") {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          success: false,
-          error: `Failed to acquire paper state lock: ${msg}`,
-          exitCode: EXIT.GENERAL,
-        };
-      }
-      // 既知の残留レース（TOCTOU / 許容）: 複数プロセスが同一ロックを同時に
-      // stale 判定すると、二重に unlink → 再取得して lost update が起き得る。
-      // トークン照合 + O_EXCL 再取得で窓を最小化でき、単一ホスト通常運用なら
-      // 実用上防げる（完全な分散ロックにはしない）が、対象は資金非関与の
-      // ローカル state のみで、前プロセスのクラッシュ後 30s 経過してから 2 本
-      // 以上がほぼ同時競合する単一ユーザ CLI では非現実的なので許容する。
-      try {
-        const age = Date.now() - statSync(p).mtimeMs;
-        if (age > STALE_LOCK_MS) {
-          try {
-            unlinkSync(p);
-          } catch {
-            // 既に他プロセスが消していたら何もしない（上記残留レース）
-          }
-          continue;
-        }
-      } catch {
-        // stat 失敗（消えた直後など）→ retry
-      }
-      if (Date.now() - start >= maxWaitMs) {
-        return {
-          success: false,
-          error: `Failed to acquire paper state lock within ${maxWaitMs}ms (held by another process)`,
-          exitCode: EXIT.GENERAL,
-        };
-      }
-      await asyncSleep(5 + Math.floor(Math.random() * 15));
+    const step = tryAcquireOnce(p, label);
+    if (step.kind === "acquired") return { success: true, data: step.lock };
+    if (step.kind === "failed") return step.result;
+    if (step.kind === "locked") {
+      if (Date.now() - start >= maxWaitMs) return lockTimeout(label, maxWaitMs);
+      await asyncSleep(backoffMs());
     }
+    // "stale": ロック奪取済み → 即座に再試行（timeout 判定も sleep もしない）
   }
 }
 

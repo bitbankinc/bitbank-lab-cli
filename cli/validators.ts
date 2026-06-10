@@ -27,6 +27,10 @@ export function requireField<T>(value: T | undefined | null, message: string): R
   return { success: true, data: value };
 }
 
+export function formatZodError(error: z.ZodError): string {
+  return error.issues.map((i) => i.message).join("; ");
+}
+
 export const UUID_RE =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
@@ -73,7 +77,7 @@ export function validatePair(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues.map((i) => i.message).join("; "),
+      error: formatZodError(parsed.error),
       exitCode: EXIT.PARAM,
     };
   }

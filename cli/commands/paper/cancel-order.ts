@@ -4,6 +4,7 @@ import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import { defaultStatePath, nowIso, type OpenOrder, type PaperState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
 import type { Result } from "../../types.js";
+import { formatZodError } from "../../validators.js";
 
 const InputSchema = z.object({ id: z.string().trim().min(1, "--id is required") });
 
@@ -23,7 +24,7 @@ export async function paperCancelOrder(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues.map((i) => i.message).join("; "),
+      error: formatZodError(parsed.error),
       exitCode: EXIT.PARAM,
     };
   }

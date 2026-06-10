@@ -104,4 +104,4 @@ bitbank ticker --pair=xrp_jpy --format=json --machine
 
 - `data-verification` Skill: 異常値閾値、出来高ゼロ判定
 - `indicator-analysis` Skill: （将来）ペア特性に応じた指標パラメータ調整
-- MCP サーバー（bitbank-genesis-mcp-server）: 同一の分類基準を共有
+- MCP サーバー（bitbank-lab-mcp）: 同一の分類基準を共有

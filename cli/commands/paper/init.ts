@@ -3,7 +3,7 @@ import { EXIT } from "../../exit-codes.js";
 import { defaultStatePath, nowIso, type PaperState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
 import type { Result } from "../../types.js";
-import { PositiveDecimalSchema } from "../../validators.js";
+import { formatZodError, PositiveDecimalSchema } from "../../validators.js";
 
 const InitInputSchema = z.object({
   jpy: PositiveDecimalSchema,
@@ -21,7 +21,7 @@ export async function paperInit(args: PaperInitArgs): Promise<Result<PaperState>
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues.map((i) => i.message).join("; "),
+      error: formatZodError(parsed.error),
       exitCode: EXIT.PARAM,
     };
   }

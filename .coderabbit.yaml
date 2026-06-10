@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-# bitbank-cli-skills 用 CodeRabbit 設定。
+# bitbank-lab-cli 用 CodeRabbit 設定。
 # inheritance: false なので org UI 設定は継承されない。必要な項目はここに移植する。
 # 仕様: https://docs.coderabbit.ai/guides/configuration-overview
 
@@ -104,7 +104,7 @@ reviews:
     - label: breaking
       instructions: bin/, package.json の major/minor バージョン変更、cli/commands/registry.ts のコマンド削除
 
-  # bitbank-cli-skills は JSDoc 文化が薄いため docstring coverage チェックは無効化。
+  # bitbank-lab-cli は JSDoc 文化が薄いため docstring coverage チェックは無効化。
   pre_merge_checks:
     docstrings:
       mode: "off"

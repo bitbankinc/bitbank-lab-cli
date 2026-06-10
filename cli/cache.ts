@@ -91,7 +91,7 @@ export function writeCache(pair: string, type: string, date: string, data: unkno
   }
 }
 
-/** テスト用: インメモリキャッシュをクリア */
+/** test-only: インメモリキャッシュをクリア。cache.test.ts の beforeEach が使うテスト seam で dead code ではない */
 export function clearMemCache(): void {
   memCache.clear();
 }

@@ -159,6 +159,29 @@ export function availableOf(
   return total - locked;
 }
 
+// 約定の cost/proceeds を残高へ適用し、新しい balances を返す純関数。
+// buy は quote を cost 分減らし base を amount 分増やす / sell はその逆。
+// 成行・指値で同形なのでここに集約する。価格決定・手数料ロール・残高不足
+// チェックは呼び出し側に残す（成行/指値で差があるため共通化しない）。
+export function applyFillToBalances(
+  balances: Record<string, number>,
+  side: "buy" | "sell",
+  base: string,
+  quote: string,
+  amount: number,
+  { cost, proceeds }: { cost: number; proceeds: number },
+): Record<string, number> {
+  const next = { ...balances };
+  if (side === "buy") {
+    next[quote] = (next[quote] ?? 0) - cost;
+    next[base] = (next[base] ?? 0) + amount;
+  } else {
+    next[base] = (next[base] ?? 0) - amount;
+    next[quote] = (next[quote] ?? 0) + proceeds;
+  }
+  return next;
+}
+
 export async function loadState(path = defaultStatePath()): Promise<Result<PaperState | null>> {
   try {
     const buf = await readFile(path, "utf-8");

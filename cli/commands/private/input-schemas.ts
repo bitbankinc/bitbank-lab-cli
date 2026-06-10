@@ -2,6 +2,9 @@
 // 数値・タイムスタンプ・order は文字列のまま保持し、compactParams にそのまま渡す。
 import { z } from "zod";
 
+// formatZodError はカテゴリ非依存のため cli/validators.ts へ移設。後方互換で re-export。
+export { formatZodError } from "../../validators.js";
+
 // trade-history-all.ts の PAGE_SIZE に揃えた API 上限の目安
 const MAX_COUNT = 1000;
 
@@ -26,8 +29,4 @@ export function refineSinceEnd(val: { since?: string; end?: string }, ctx: z.Ref
       });
     }
   }
-}
-
-export function formatZodError(error: z.ZodError): string {
-  return error.issues.map((i) => i.message).join("; ");
 }

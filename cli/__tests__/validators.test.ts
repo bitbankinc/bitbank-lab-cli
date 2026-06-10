@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
+  formatZodError,
   MSG_AMOUNT,
   MSG_ASSET,
   MSG_ID,
@@ -63,5 +65,23 @@ describe("message constants", () => {
     expect(MSG_PAIR_CIRCUIT_BREAK).toBe(
       "pair is required. Example: npx bitbank circuit-break btc_jpy",
     );
+  });
+});
+
+describe("formatZodError", () => {
+  it("returns the single issue message", () => {
+    const r = z.string().min(3, "too short").safeParse("a");
+    expect(r.success).toBe(false);
+    if (!r.success) expect(formatZodError(r.error)).toBe("too short");
+  });
+
+  it("joins multiple issue messages with '; '", () => {
+    const schema = z.object({
+      a: z.string().min(1, "a required"),
+      b: z.string().min(2, "b too short"),
+    });
+    const r = schema.safeParse({ a: "", b: "x" });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(formatZodError(r.error)).toBe("a required; b too short");
   });
 });
