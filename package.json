@@ -39,7 +39,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.16",
+    "@biomejs/biome": "2.5.0",
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.8",
     "lefthook": "2.1.9",
