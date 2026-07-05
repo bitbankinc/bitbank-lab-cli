@@ -12,6 +12,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- 必要 Node.js を 20 以上 → **22 以上**に引き上げ（`engines` / `.nvmrc` / README /
+  各 SKILL.md の compatibility を同期）。Node.js 20 は 2026-04-30 に EOL 済みのため。
+  姉妹リポ bitbank-lab-mcp（Node 22+）とも要件が揃う。Node 20 環境では
+  `npm i -g` 時に engines 警告が出るようになる（0.x につき SemVer 慣習の範囲内）
+
 ## [0.1.3] - 2026-06-10
 
 ### Added

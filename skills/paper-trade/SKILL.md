@@ -8,7 +8,7 @@ description: |
   注意: 実発注（`bitbank trade ...`）は対象外。状態は
   `~/.bitbank/paper-state.json` にローカル保存される。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires bitbank CLI. Node.js 22+.
   Public API のみ使用するため `.env` は不要。
 metadata:
   author: bitbank-aiforge

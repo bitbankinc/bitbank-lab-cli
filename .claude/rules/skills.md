@@ -24,7 +24,7 @@ description: |
   Skill の説明。何ができるか、どんなリクエストに対応するか。
   トリガーとなるユーザーの発話例も含める。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 20+.
+  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"

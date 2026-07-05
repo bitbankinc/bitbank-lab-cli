@@ -9,7 +9,7 @@ description: |
   注意: 指標の現在値（RSI / SMA 等）は indicator-analysis、
   ローソク足ベースの分析は他 skill。本 skill は WS 取得手段に特化。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires bitbank CLI. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"

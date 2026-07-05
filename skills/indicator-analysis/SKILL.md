@@ -8,7 +8,7 @@ description: |
   注意: シグナルの予測力検証は signal-explorer、戦略 PnL は backtest、
   単一銘柄のリスク特性は volatility-profile が担当。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires bitbank CLI. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"

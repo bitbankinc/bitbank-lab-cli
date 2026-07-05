@@ -9,7 +9,7 @@ description: |
   注意: 売買シグナル系（RSI / クロス等）は indicator-analysis、
   銘柄間関係は correlation-analysis が担当。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires bitbank CLI. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
