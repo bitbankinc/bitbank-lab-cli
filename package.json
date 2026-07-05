@@ -33,7 +33,7 @@
     "version": "node scripts/sync-version.mjs && tsx scripts/gen-agents-catalog.ts && git add .claude-plugin/plugin.json .cursor-plugin/plugin.json .codex-plugin/plugin.json gemini-extension.json agents/tool-catalog.json agents/error-catalog.json"
   },
   "dependencies": {
-    "pubnub": "^11.0.0",
+    "pubnub": "^12.0.0",
     "socket.io-client": "^4.8.3",
     "tsx": "^4.19.0",
     "zod": "^3.24.0"
