@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-07-05
+
 ### Added
 
 - 全 SKILL.md の frontmatter に機械可読なバイナリ依存宣言
