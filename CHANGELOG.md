@@ -29,6 +29,10 @@
   （Codex plugin 実機フィードバックで `command not found: bitbank` →
   `Cannot find module 'tsx/cli'` の詰まりが確認されたため）
 
+- README を再構成: 冒頭に「前提条件」セクションを新設（Node.js 22+ / npm / 対応 OS /
+  macOS の Xcode Command Line Tools 注記）。Plugin 節に「CLI 本体」と「Plugin 登録」の
+  2 レイヤー整理表を追加し、CLI 本体が全ケースで必須という依存関係を明記
+
 ### Changed
 
 - `bin/bitbank`: `tsx` を解決できない環境（plugin cache 等、`node_modules` なし）で
@@ -39,6 +43,21 @@
   各 SKILL.md の compatibility を同期）。Node.js 20 は 2026-04-30 に EOL 済みのため。
   姉妹リポ bitbank-lab-mcp（Node 22+）とも要件が揃う。Node 20 環境では
   `npm i -g` 時に engines 警告が出るようになる（0.x につき SemVer 慣習の範囲内）
+
+- `package.json` の `repository.url` を publish 実行元（tjackiet）に一時的に戻した。
+  `npm publish --provenance` が package.json の repository と CI 実行リポジトリの
+  一致を検証するため。公式 org（bitbankinc）への npm オーナートランスファー完了時に戻す
+  （README / homepage / bugs の導線は bitbankinc のまま）
+
+### Fixed
+
+- README の Codex CLI プラグイン導入コマンドを実在するフローに修正
+  （誤: `codex plugin install <owner>/<repo>` → 正: `codex plugin marketplace add`
+  → `codex plugin list` で名前確認 → `codex plugin add <plugin>@<marketplace>`）
+- 依存の transitive 脆弱性 5 件（high 3 / low 2: `ws` / `form-data` / `esbuild` /
+  `@babel/core`）を `npm audit fix`（semver 互換更新）で解消
+- release workflow の npm を 11.5.1 → 11.18.0 に固定。11.5.1 は `.npmrc` の
+  `min-release-age`（npm >= 11.10）を知らず stderr 警告で E2E を壊していた
 
 ## [0.1.3] - 2026-06-10
 
