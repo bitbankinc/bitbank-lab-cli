@@ -9,10 +9,14 @@ description: |
   注意: 単一銘柄リスクは volatility-profile、シグナル予測力は
   signal-explorer、保有資産評価は portfolio が担当。
 compatibility: |
-  Requires bitbank CLI. Node.js 22+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # 銘柄間相関分析 Skill

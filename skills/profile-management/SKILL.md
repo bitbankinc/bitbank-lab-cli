@@ -8,10 +8,14 @@ description: |
   注意: secret は flag では渡さず、対話 hidden 入力か
   `BITBANK_API_SECRET` env のみ。bitbank API 自体は叩かない。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 22+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # Profile Management Skill

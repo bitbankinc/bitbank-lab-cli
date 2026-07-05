@@ -7,10 +7,14 @@ description: |
   「このデータ信頼できる？」「品質チェックして」
   注意: indicator-analysis や backtest の自動前処理としては起動しない。
 compatibility: |
-  Requires bitbank CLI. Node.js 22+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # データ検証 Skill

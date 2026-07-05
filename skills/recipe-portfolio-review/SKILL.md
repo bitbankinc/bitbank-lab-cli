@@ -9,13 +9,16 @@ description: |
   注意: 個別 skill の発話には反応せず、保有資産を起点に全体を束ねたい
   場面でのみ起動。最終判断は人間が下す。
 compatibility: |
-  Requires bitbank CLI. Node.js 22+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
   Private API commands require API key/secret in .env file.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
   recipe: true
   requires:
+    bins:
+      - bitbank
     skills:
       - portfolio
       - correlation-analysis

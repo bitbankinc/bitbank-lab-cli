@@ -86,7 +86,7 @@ bitbank paper create-order --pair=btc_jpy --side=buy --type=market --amount=0.00
 | **1. bitbank CLI 本体** | `npm i -g bitbank-lab-cli`（要 Node.js 22+、[前提条件](#前提条件) 参照） | **全ケースで必須**。価格取得・注文などの実処理はすべて CLI 本体が担う。どのエージェントを使うか（あるいはエージェントを使わずターミナルで叩くだけか）に関係なく必要 |
 | **2. Plugin（Skills）の登録** | エージェントごとに導線が異なる（下記） | エージェントから自然言語で操作したい場合。Plugin を登録すると同梱の Skill も一緒に登録される |
 
-> **依存関係に注意**: Plugin を入れただけでは動きません。Skill が組み立てたコマンドを実行するのは CLI 本体なので、レイヤー 1 のインストールが先に（または併せて）必要です。
+> **依存関係に注意**: Plugin を入れただけでは動きません。Skill が組み立てたコマンドを実行するのは CLI 本体なので、レイヤー 1 のインストールが先に（または併せて）必要です。plugin cache に同梱される `bin/bitbank` / `cli/index.ts` は依存（`node_modules`）を含まないため直接実行できません — CLI は必ず `npm i -g bitbank-lab-cli` で入れてください。
 >
 > なお **Claude Code / Cursor はリポジトリをクローンして開くだけでも Skill が有効になる**ため、その使い方なら Plugin 登録は不要です（[想定する使い方](#想定する使い方) 参照）。Plugin 登録は「リポジトリを開いていない場所でも Skill を使いたい」場合の導線です。
 

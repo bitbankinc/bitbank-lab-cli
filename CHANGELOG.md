@@ -12,7 +12,23 @@
 
 ## [Unreleased]
 
+### Added
+
+- 全 SKILL.md の frontmatter に機械可読なバイナリ依存宣言
+  `metadata.requires.bins: [bitbank]` を追加（kraken-cli の skills と同形式）。
+  chaos `s10` が全 skill の宣言と compatibility 文言（CLI 別途インストールの明記）を検査する
+- `skills/_shared/references/cli-conventions.md` に「起動方法の解決手順」を新設。
+  `command -v bitbank` → repo checkout なら `npx tsx cli/index.ts` → どちらも無ければ
+  `npm i -g bitbank-lab-cli` を案内して停止、の 3 段で解決する。plugin cache 内の
+  `bin/bitbank` / `cli/index.ts` は依存を含まず実行不可であることを明記
+  （Codex plugin 実機フィードバックで `command not found: bitbank` →
+  `Cannot find module 'tsx/cli'` の詰まりが確認されたため）
+
 ### Changed
+
+- `bin/bitbank`: `tsx` を解決できない環境（plugin cache 等、`node_modules` なし）で
+  生のスタックトレースではなく、`npm i -g bitbank-lab-cli` / `npm ci` への
+  誘導メッセージを stderr に出して exit 1 するようにした
 
 - 必要 Node.js を 20 以上 → **22 以上**に引き上げ（`engines` / `.nvmrc` / README /
   各 SKILL.md の compatibility を同期）。Node.js 20 は 2026-04-30 に EOL 済みのため。

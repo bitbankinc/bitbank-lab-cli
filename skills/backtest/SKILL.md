@@ -9,10 +9,14 @@ description: |
   注意: 現在値の読みは indicator-analysis、シグナル単体の予測力検証は
   signal-explorer が担当。
 compatibility: |
-  Requires bitbank CLI. Node.js 22+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # バックテスト Skill

@@ -9,10 +9,14 @@ description: |
   注意: 現在値の読みは indicator-analysis、コスト込み戦略 PnL は
   backtest が担当。本 skill はその間の「予測力スクリーニング」層。
 compatibility: |
-  Requires bitbank CLI. Node.js 22+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # シグナル探索 Skill
