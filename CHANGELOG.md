@@ -12,6 +12,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- README: Cursor 節を拡充。導入 2 経路（リポジトリを開くだけ / Plugin として
+  URL import）、Claude Code と `~/.claude/plugins/` を共有するため Claude Code 側で
+  install 済みなら Cursor でも有効になる点（実機確認ベース）、plugin が
+  バージョン固定キャッシュで自動追従しない点と更新手順を明記
+
 ## [0.1.5] - 2026-07-05
 
 > 0.1.4 は npm 未公開の欠番（release workflow の npm pin 問題でリリース中止。
