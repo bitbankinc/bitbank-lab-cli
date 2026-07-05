@@ -171,7 +171,7 @@ agy plugin install https://github.com/bitbankinc/bitbank-lab-cli
 
 Plugin install で skills が登録され、`bitbank` CLI（`npm i -g bitbank-lab-cli` で別途インストール）と組み合わせて使えます。自動 install したくない場合は [Codex CLI / Antigravity CLI で使う](#codex-cli--antigravity-cli-で使う) の手動コピー手順も使えます。
 
-> 旧 Gemini CLI（`gemini extensions install ...`）は 2026-06-18 に個人向け提供が終了し、Antigravity CLI（`agy`）へ移行しました。extension は Antigravity では **plugin** と呼ばれます。既存の Gemini CLI 環境からは `agy plugin import gemini` で移行できます。
+> 旧 Gemini CLI（`gemini extensions install ...`）は 2026-06-18 に個人向け提供が終了し、Antigravity CLI（`agy`）へ移行しました。extension は Antigravity では **plugin** と呼ばれます。既存の Gemini CLI 環境からは `agy plugin import gemini` で移行できます。本リポジトリはルートに Antigravity ネイティブの `plugin.json` と旧 `gemini-extension.json` を両置きしており、新旧どちらの CLI からも install できます。
 
 > 注: 各エージェントの plugin install コマンドは仕様変更が多いため、動かない場合は公式ドキュメントを確認してください。
 
@@ -845,4 +845,5 @@ docs/                   # ADR・フェーズ管理・カスタマイズガイド
 | `.claude-plugin/` | Claude Code plugin marketplace | dir（`plugin.json` / `marketplace.json`） |
 | `.cursor-plugin/` | Cursor plugin | dir（`plugin.json`） |
 | `.codex-plugin/` | Codex CLI plugin | dir（`plugin.json`） |
-| `gemini-extension.json` | 旧 Gemini CLI extension manifest（Antigravity CLI の plugin import が互換で読む） | file |
+| `plugin.json` | Antigravity CLI ネイティブ plugin manifest（skills は `skills/<name>/SKILL.md` を自動検出） | file |
+| `gemini-extension.json` | 旧 Gemini CLI extension manifest（新旧両 CLI から install できるよう `plugin.json` と両置き） | file |
