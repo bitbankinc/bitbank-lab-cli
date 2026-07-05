@@ -17,7 +17,7 @@
 ### Added
 
 - 全 SKILL.md の frontmatter に機械可読なバイナリ依存宣言
-  `metadata.requires.bins: [bitbank]` を追加（kraken-cli の skills と同形式）。
+  `metadata.requires.bins: [bitbank]` を追加。
   chaos `s10` が全 skill の宣言と compatibility 文言（CLI 別途インストールの明記）を検査する
 - `skills/_shared/references/cli-conventions.md` に「起動方法の解決手順」を新設。
   `command -v bitbank` → repo checkout なら `npx tsx cli/index.ts` → どちらも無ければ
