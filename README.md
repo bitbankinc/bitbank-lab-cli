@@ -18,6 +18,7 @@
 - **Node.js 22 以上**（[公式サイト](https://nodejs.org/) からインストール。`node -v` で確認できます）
 - npm（Node.js に同梱されています）
 - 対応 OS: macOS / Linux / Windows（WSL 含む）
+- **macOS で git を使う導線のみ**: Xcode Command Line Tools が必要です（リポジトリの clone や `codex plugin marketplace add` は内部で git を使います）。git や Homebrew を一度でも使った環境なら導入済みのことがほとんどですが、買ったばかりの Mac では未導入のことがあり、その場合 `xcode-select: No developer tools were found` で失敗します。`xcode-select --install` で導入できます
 
 > 本プロジェクトは npm に [`bitbank-lab-cli`](https://www.npmjs.com/package/bitbank-lab-cli) として公開済みです。通常利用ではソースのクローンは不要です（開発したい方向けの手順は [開発](#開発) を参照）。
 
