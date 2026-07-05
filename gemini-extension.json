@@ -1,6 +1,6 @@
 {
   "name": "bitbank-lab-cli",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Experimental CLI & Agent Skills starter kit for bitbank — botters lab community edition. Market data, paper trading, account read, and Private API trading with safety guards.",
   "contextFileName": "CONTEXT.md"
 }
