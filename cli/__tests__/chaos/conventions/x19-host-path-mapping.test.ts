@@ -32,6 +32,11 @@ function collectViolations(): string[] {
           `${file}:${line}: apiPublicGet("${path}...") — market data 系は publicGet を使う`,
         );
       }
+      if (path.startsWith("${")) {
+        violations.push(
+          `${file}:${line}: ${fn}(\`${path}...\`) — path 先頭が変数展開だと host 選択を静的検査できない。先頭は文字列リテラルにする`,
+        );
+      }
     }
   }
   return violations;
@@ -43,11 +48,14 @@ describe("Chaos X-19: publicGet / apiPublicGet の host-path 対応", () => {
     expect(violations, violations.join("\n")).toEqual([]);
   });
 
-  it("検査対象に publicGet / apiPublicGet の呼び出しが存在する（自壊検知）", () => {
-    let count = 0;
+  it("検査対象に publicGet / apiPublicGet の呼び出しがそれぞれ存在する（自壊検知）", () => {
+    const counts = { publicGet: 0, apiPublicGet: 0 };
     for (const file of tsFilesUnder("cli/commands")) {
-      count += [...readFileSync(file, "utf-8").matchAll(CALL_RE)].length;
+      for (const m of readFileSync(file, "utf-8").matchAll(CALL_RE)) {
+        counts[m[1] as keyof typeof counts]++;
+      }
     }
-    expect(count).toBeGreaterThan(0);
+    expect(counts.publicGet).toBeGreaterThan(0);
+    expect(counts.apiPublicGet).toBeGreaterThan(0);
   });
 });
