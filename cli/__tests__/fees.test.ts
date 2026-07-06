@@ -205,13 +205,13 @@ describe("resolveDryRunFee", () => {
     });
   });
 
-  it("対象ペアが一覧に無ければ公称 taker 率＋ note で概算", async () => {
+  it("対象ペアが一覧に無ければ既定フォールバック率＋ note で概算", async () => {
     const fee = await resolveDryRunFee(
       { ...LIMIT_BUY, pair: "doge_jpy" },
       seam([makePair({ name: "btc_jpy" })]),
     );
     expect(fee.rate).toBe(DEFAULT_TAKER_FEE_RATE);
-    expect(fee.note).toContain("公称 taker 率");
+    expect(fee.note).toContain("既定フォールバック率");
   });
 
   it("pairs 取得失敗でも throw せず default 率＋ note に degrade", async () => {
@@ -221,6 +221,6 @@ describe("resolveDryRunFee", () => {
     }));
     expect(fee.role).toBe("maker");
     expect(fee.rate).toBe(DEFAULT_TAKER_FEE_RATE);
-    expect(fee.note).toContain("公称 taker 率");
+    expect(fee.note).toContain("既定フォールバック率");
   });
 });

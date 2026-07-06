@@ -1,6 +1,6 @@
 {
   "name": "bitbank-lab-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Experimental CLI & Agent Skills starter kit for bitbank — botters lab community edition. A thin API access layer that hands raw OHLCV to the model so indicators and logic stay fully customizable.",
   "author": {
     "name": "tjackiet",

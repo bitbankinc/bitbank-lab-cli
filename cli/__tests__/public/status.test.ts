@@ -16,6 +16,16 @@ describe("status", () => {
     }
   });
 
+  it("requests api.bitbank.cc (not public.bitbank.cc)", async () => {
+    let capturedUrl = "";
+    const captureFetch: typeof globalThis.fetch = async (input) => {
+      capturedUrl = input.toString();
+      return new Response(JSON.stringify({ success: 1, data: MOCK_DATA }));
+    };
+    await status({ fetch: captureFetch, retries: 0 });
+    expect(capturedUrl).toBe("https://api.bitbank.cc/v1/spot/status");
+  });
+
   it("propagates API error", async () => {
     const result = await status({
       fetch: mockFetchRaw({ success: 0, data: { code: 70001 } }),

@@ -21,7 +21,7 @@ try {
       "bitbank: dependencies are not installed (cannot resolve 'tsx').",
       "  Fix (recommended): npm i -g bitbank-lab-cli",
       "  Fix (repo checkout): npm ci   # then ./install.sh or npx tsx cli/index.ts <cmd>",
-      "  Note: agent plugin caches (Claude Code / Codex / Cursor / Gemini) ship skills",
+      "  Note: agent plugin caches (Claude Code / Codex / Cursor / Antigravity) ship skills",
       "  only, without node_modules — this launcher cannot run from a plugin cache.",
       "",
     ].join("\n"),
