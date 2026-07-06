@@ -7,8 +7,10 @@
 import { type CachedPair, getPairsWithCache } from "./pairs-cache.js";
 import type { DryRunFee, Result } from "./types.js";
 
-// bitbank 公称テイカー手数料 0.12%。API 不在 / ペア未発見時のフォールバック。
-// 出典: https://bitbank.cc/docs/fees/
+// API 不在 / ペア未発見時の保守的フォールバック。過去の公称 taker 上限 0.12% に
+// 合わせた値で、現行の公称レートではない（レートはペア・時期で改定される。
+// 例: BTC/JPY は 2026-02 時点で maker 0.00% / taker 0.10%）。
+// 現行レートは常に /spot/pairs の取得値が優先される。参考: https://bitbank.cc/guide/fee
 export const DEFAULT_TAKER_FEE_RATE = 0.0012;
 
 /**
@@ -117,14 +119,14 @@ export function estimateOrderFee(pair: CachedPair | undefined, order: FeeOrder):
 /**
  * dry-run の手数料見積りを解決する。public の /spot/pairs を 1 回だけ引く
  * （キャッシュ済み・private/POST は叩かない）。getPairs 注入時はそれを使う。
- * pairs 取得失敗 / 対象ペア未発見でも見積りは止めず、公称 taker 率で概算した旨を
- * note に足して返す（オフラインでも dry-run を壊さない）。
+ * pairs 取得失敗 / 対象ペア未発見でも見積りは止めず、既定フォールバック率で概算した
+ * 旨を note に足して返す（オフラインでも dry-run を壊さない）。
  */
 export async function resolveDryRunFee(order: FeeOrder, getPairs?: GetPairs): Promise<DryRunFee> {
   const r = getPairs ? await getPairs() : await getPairsWithCache();
   const pair = r.success ? r.data.find((p) => p.name === order.pair) : undefined;
   const fee = estimateOrderFee(pair, order);
   if (pair) return fee;
-  const fallback = "ライブ手数料率を取得できず公称 taker 率(0.12%)で概算";
+  const fallback = "ライブ手数料率を取得できず既定フォールバック率(0.12%)で概算";
   return { ...fee, note: fee.note ? `${fee.note}; ${fallback}` : fallback };
 }
