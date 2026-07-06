@@ -18,7 +18,7 @@ skill 実行前に、以下の順で CLI の起動方法を解決する。skill 
    実行してください（Node.js 22+ が必要）」と案内して停止する
 
 > **plugin cache 環境の注意**: plugin install（Claude Code / Codex / Cursor /
-> Gemini）が配布するのは skills と `agents/` カタログだけで、**CLI の実行に必要な
+> Antigravity）が配布するのは skills と `agents/` カタログだけで、**CLI の実行に必要な
 > 依存（`node_modules`）は含まれない**。plugin cache 内の `bin/bitbank` や
 > `cli/index.ts` を直接叩いても `Cannot find module 'tsx/cli'` /
 > `Cannot find package 'zod'` で失敗するため、この経路は使わないこと
