@@ -79,18 +79,11 @@ bitbank paper create-order --pair=btc_jpy --side=buy --type=market --amount=0.00
 
 ## Plugin としてインストールする
 
-セットアップは **2 つのレイヤー** に分かれます。混同しやすいので先に整理します。
+Plugin が登録するのは **Skills（モデルへの指示書）だけ**で、実処理を担う CLI 本体は含まれません。**どの導線でも `npm i -g bitbank-lab-cli` が別途必須**です（[前提条件](#前提条件) 参照。plugin cache 同梱の `bin/bitbank` は依存を含まず直接実行できません）。
 
-| レイヤー | 何をするか | 必要になるケース |
-|---|---|---|
-| **1. bitbank CLI 本体** | `npm i -g bitbank-lab-cli`（要 Node.js 22+、[前提条件](#前提条件) 参照） | **全ケースで必須**。価格取得・注文などの実処理はすべて CLI 本体が担う。どのエージェントを使うか（あるいはエージェントを使わずターミナルで叩くだけか）に関係なく必要 |
-| **2. Plugin（Skills）の登録** | エージェントごとに導線が異なる（下記） | エージェントから自然言語で操作したい場合。Plugin を登録すると同梱の Skill も一緒に登録される |
+Plugin 登録が必要なのは「**リポジトリを開いていない場所でも Skill を使いたい**」場合だけです。Claude Code / Cursor でこのリポジトリを clone して開く使い方なら、Skill は自動で有効になるため登録不要です（[想定する使い方](#想定する使い方) 参照）。
 
-> **依存関係に注意**: Plugin を入れただけでは動きません。Skill が組み立てたコマンドを実行するのは CLI 本体なので、レイヤー 1 のインストールが先に（または併せて）必要です。plugin cache に同梱される `bin/bitbank` / `cli/index.ts` は依存（`node_modules`）を含まないため直接実行できません — CLI は必ず `npm i -g bitbank-lab-cli` で入れてください。
->
-> なお **Claude Code / Cursor はリポジトリをクローンして開くだけでも Skill が有効になる**ため、その使い方なら Plugin 登録は不要です（[想定する使い方](#想定する使い方) 参照）。Plugin 登録は「リポジトリを開いていない場所でも Skill を使いたい」場合の導線です。
-
-> 注: `/plugin install` は **ローカル版 Claude Code CLI**（ターミナル）で使う slash command です。Web 版（[claude.ai/code](https://claude.ai/code)）のクラウドサンドボックスでは動作しません。Web 版のコンテナは一時的で `bitbank` CLI を永続的に PATH へ通せないため、Skill が CLI を呼べません。ローカル環境で使ってください。
+> 注: `/plugin install` はローカル版 Claude Code CLI（ターミナル）用の slash command です。Web 版（[claude.ai/code](https://claude.ai/code)）はコンテナが一時的で `bitbank` CLI を PATH へ永続化できないため動作しません。
 
 ### Claude Code
 
@@ -146,7 +139,7 @@ codex plugin add <plugin>@<marketplace>
 - `<plugin>@<marketplace>` の名前は決め打ちせず、**`codex plugin list` に表示されたものをそのまま使ってください**（環境や manifest により変わります）。
 - 実行中、Codex が `~/.codex` 配下への書き込みの承認プロンプトを出すことがあります。**Yes** で進めてください。
 - **macOS**: 内部で `git clone` を実行するため Xcode Command Line Tools が必要です（[前提条件](#前提条件) 参照）。
-- CLI 本体（`npm i -g bitbank-lab-cli`）は別途必要です（上記レイヤー表を参照）。
+- CLI 本体（`npm i -g bitbank-lab-cli`）は別途必要です（[前提条件](#前提条件) 参照）。
 
 ### Antigravity CLI（旧 Gemini CLI）
 
