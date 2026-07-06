@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type HttpOptions, publicGet } from "../../http.js";
+import { apiPublicGet, type HttpOptions } from "../../http.js";
 import { parseResponse } from "../../parse-response.js";
 import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
@@ -17,6 +17,6 @@ const StatusSchema = z.object({
 export type StatusItem = z.infer<typeof StatusItemSchema>;
 
 export async function status(opts?: HttpOptions): Promise<Result<StatusItem[]>> {
-  const result = await publicGet<unknown>("/v1/spot/status", opts);
+  const result = await apiPublicGet<unknown>("/v1/spot/status", opts);
   return parseResponse(result, StatusSchema, "statuses");
 }
