@@ -74,6 +74,10 @@ bitbank profile add sub --description="サブ口座 read-only" --format=json
 **重要:** モデルからは絶対に `--api-secret=...` のような flag を作らない
 （そんな flag は実装されていない）。`BITBANK_API_KEY` / `BITBANK_API_SECRET`
 env vars が事前に export されていれば対話プロンプトはスキップされる。
+インライン env 代入（`BITBANK_API_SECRET=xxx bitbank profile add ...`）は
+shell 履歴に残るため作らず、ユーザーがチャットに secret を貼ってきた場合も
+その値をコマンド行には使わず、hidden プロンプトでの入力を案内する
+（貼られたキーはローテーション推奨）。
 
 #### 一覧
 
@@ -121,7 +125,13 @@ bitbank --profile=sub trade create-order ... --execute --confirm=I-UNDERSTAND-CR
 ## Gotchas
 
 - **secret は flag 受け禁止**: `--api-secret=...` 等は実装されていない。
-  shell 履歴に残るリスクを避けるため、env か対話 hidden 入力のみ
+  インライン env 代入（`BITBANK_API_SECRET=xxx bitbank profile add ...`）も
+  shell 履歴に残るため禁止。許可は「事前 export 済みの env」か
+  「対話 hidden 入力」のみ
+- **ユーザーがチャットに secret を貼ってしまった場合**: 貼られた値を flag /
+  インライン env 代入 / コマンド行には使わない。「secret はチャットではなく
+  CLI の hidden プロンプトで入力してください」と案内する。チャットログに
+  secret が残るため、貼られたキーはローテーション（再発行）を推奨する
 - **show の出力に secret は出ない**: `--format=json` でもマスクされる。
   「raw secret 見せて」と言われても、本 skill では出せない（profiles.json
   を直接 `cat` する場合は 0600 なので owner だけが読める）
