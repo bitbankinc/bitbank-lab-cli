@@ -9,10 +9,14 @@ description: |
   注意: 現在値の読みは indicator-analysis、コスト込み戦略 PnL は
   backtest が担当。本 skill はその間の「予測力スクリーニング」層。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # シグナル探索 Skill
@@ -324,8 +328,9 @@ ATR とは独立しているので「ボラ × モメンタム」の組み合わ
 - **ショートは方向検証用。** bitbank 現物ではロングのみ実行可能。簡易 PnL の
   ショートサイドはあくまで「シグナルの方向性が機能するか」を見るための
   数学的シミュレーションであり、実運用に直結しない
-- **コスト無視は本 skill 限定。** promising と判定されても、手数料 0.12% × 往復で
-  簡単に利益が消える。本格評価は必ず backtest skill へ
+- **コスト無視は本 skill 限定。** promising と判定されても、往復の手数料
+  （`bitbank pairs` の taker レート × 2）で簡単に利益が消える。
+  本格評価は必ず backtest skill へ
 - **データ本数。** 短期足は最低 1,000 本、できれば 5,000 本以上。
   少ないと相関が偶然に支配される
 - **API がエラーを返した場合は `_shared/references/bitbank-api-formats.md` を参照**

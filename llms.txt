@@ -49,6 +49,6 @@
 
 ## Optional
 
-- [GitHub リポジトリ](https://github.com/tjackiet/bitbank-lab-cli): ソース・Issue・最新版
+- [GitHub リポジトリ](https://github.com/bitbankinc/bitbank-lab-cli): ソース・Issue・最新版
 - [npm: bitbank-lab-cli](https://www.npmjs.com/package/bitbank-lab-cli): 配布パッケージ
 - [LICENSE](LICENSE): MIT License

@@ -9,12 +9,15 @@ description: |
   注意: 個別 skill の発話（RSI 見て / ボラ見て）には反応せず、全体を
   束ねたい場面でのみ起動。最終判断は人間が下す。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
   recipe: true
   requires:
+    bins:
+      - bitbank
     skills:
       - portfolio
       - volatility-profile

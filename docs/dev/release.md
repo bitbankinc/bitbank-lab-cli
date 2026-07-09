@@ -4,10 +4,14 @@
 
 ## バージョン同期
 
-`package.json` と plugin manifest 4 種（`.claude-plugin/plugin.json` /
+`package.json` と plugin manifest 5 種（`.claude-plugin/plugin.json` /
 `.cursor-plugin/plugin.json` / `.codex-plugin/plugin.json` /
-`gemini-extension.json`）の 5 ファイルが同じ version を持つ必要がある。
-**手動で個別編集しないこと**（同期漏れの温床）。
+`gemini-extension.json` / `plugin.json`）の 6 ファイルが同じ version を
+持つ必要がある。**手動で個別編集しないこと**（同期漏れの温床）。
+
+ルートの `plugin.json` は Antigravity CLI（旧 Gemini CLI）のネイティブ
+plugin manifest。旧 CLI 互換の `gemini-extension.json` と両置きすることで
+新旧どちらの CLI からもリモート install できる。
 
 `.claude-plugin/marketplace.json` も同じディレクトリにあるが、これは
 plugin manifest ではなく marketplace カタログ。plugin の version 同期
@@ -27,7 +31,7 @@ CI で検出する（`cli/__tests__/chaos/conventions/x17-agents-catalog-drift.t
 ## 手順
 
 ```bash
-npm version patch        # 0.1.0 → 0.1.1 (5 ファイル同期 + commit + tag)
+npm version patch        # 0.1.0 → 0.1.1 (6 ファイル同期 + commit + tag)
 git push --follow-tags   # tag を含めて push
 # tag を push すると .github/workflows/release.yml が起動し、
 # OIDC trusted publishing 経由で `npm publish --provenance` を実行する。
@@ -50,7 +54,7 @@ provenance 表示が無くなる点に注意。
 
 1. https://www.npmjs.com/package/bitbank-lab-cli/access で
    "Trusted Publisher" を追加
-2. GitHub repo: `tjackiet/bitbank-lab-cli`、workflow: `release.yml`、
+2. GitHub repo: `bitbankinc/bitbank-lab-cli`、workflow: `release.yml`、
    environment は空でよい
 3. アカウント側で 2FA を `auth-and-writes` に設定（手動 publish 時の保険）
 

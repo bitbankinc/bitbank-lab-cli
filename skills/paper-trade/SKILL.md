@@ -8,11 +8,15 @@ description: |
   注意: 実発注（`bitbank trade ...`）は対象外。状態は
   `~/.bitbank/paper-state.json` にローカル保存される。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
   Public API のみ使用するため `.env` は不要。
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # ペーパートレード Skill

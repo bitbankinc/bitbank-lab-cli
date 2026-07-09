@@ -24,10 +24,14 @@ description: |
   Skill の説明。何ができるか、どんなリクエストに対応するか。
   トリガーとなるユーザーの発話例も含める。
 compatibility: |
-  Requires bitbank CLI (npx tsx cli/index.ts). Node.js 20+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
 metadata:
   author: bitbank-aiforge
   version: "1.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # <Skill 名> Skill
@@ -70,6 +74,8 @@ metadata:
   version: "1.0"
   recipe: true
   requires:
+    bins:
+      - bitbank
     skills:
       - <呼び出す skill 名>
       - ...
@@ -77,6 +83,16 @@ metadata:
 
 - `metadata.recipe: true` で recipe であることを明示
 - `metadata.requires.skills` に依存する skill を列挙する。順序は実行順に揃える
+
+### requires.bins（全 skill 共通）
+
+- 全 skill（recipe 含む）は `metadata.requires.bins` に `bitbank` を宣言する
+  （kraken-cli の skills が使う機械可読なバイナリ依存宣言に合わせた形式）
+- plugin install は CLI 本体を含まないため、`compatibility` にも
+  「install separately: npm i -g bitbank-lab-cli」を明記する
+- CLI が見つからないときの解決手順は
+  `skills/_shared/references/cli-conventions.md` の「起動方法の解決手順」が単一ソース
+- chaos `s10` が全 SKILL.md の `requires.bins` 宣言と compatibility 文言を検査する
 
 ### 設計原則
 

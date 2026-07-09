@@ -3,12 +3,26 @@
 全 skill 共通の bitbank CLI 呼び出しルール。SKILL.md からは
 `_shared/references/cli-conventions.md` で参照する。
 
-## 起動方法（短縮形と等価形）
+## 起動方法の解決手順
 
-- `./install.sh` を一度実行済みなら `bitbank <cmd>` でどのディレクトリからでも
-  起動できる（`npm link` で PATH に通っている）
-- 未実行の環境では `npx tsx cli/index.ts <cmd>` で同じ呼び出しになる
-- skill 内のコマンド例は `bitbank ...` 形式で統一して記述する
+skill 実行前に、以下の順で CLI の起動方法を解決する。skill 内のコマンド例は
+`bitbank ...` 形式で統一して記述する（手順 1 で解決済みの前提で読む）。
+
+1. **`command -v bitbank` が通る** → そのまま `bitbank <cmd>` を使う
+   （`npm i -g bitbank-lab-cli`、または repo で `./install.sh`＝`npm link` 済みの状態）
+2. 通らない場合、**カレントが repo checkout**（`package.json` の `name` が
+   `bitbank-lab-cli` で、`npm ci` 済み＝`node_modules/` がある）なら
+   `npx tsx cli/index.ts <cmd>` で同じ呼び出しになる
+3. **どちらも成立しなければ CLI は実行できない**。推測でパスを探し回らず、
+   ユーザーに「CLI 本体が未インストールです。`npm i -g bitbank-lab-cli` を
+   実行してください（Node.js 22+ が必要）」と案内して停止する
+
+> **plugin cache 環境の注意**: plugin install（Claude Code / Codex / Cursor /
+> Antigravity）が配布するのは skills と `agents/` カタログだけで、**CLI の実行に必要な
+> 依存（`node_modules`）は含まれない**。plugin cache 内の `bin/bitbank` や
+> `cli/index.ts` を直接叩いても `Cannot find module 'tsx/cli'` /
+> `Cannot find package 'zod'` で失敗するため、この経路は使わないこと
+> （`npx tsx` が導入するのは tsx だけで、zod 等の依存は解決されない）。
 
 ## 出力フォーマット
 

@@ -12,14 +12,17 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           registry-url: "https://registry.npmjs.org"
 
-      - run: npm install -g npm@11.5.1
+      # OIDC trusted publishing は npm >= 11.5.1、.npmrc の min-release-age は
+      # npm >= 11.10 が必要（未満だと未知 config 警告が stderr に出て
+      # E2E の「stderr 空」検証を壊す）。両方満たす版に固定する
+      - run: npm install -g npm@11.18.0
 
       - run: npm ci --ignore-scripts
 

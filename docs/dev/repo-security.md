@@ -62,7 +62,7 @@ https://www.npmjs.com/settings/<user>/profile → Two-factor authentication
 
 セットアップ済みかは以下で確認できる:
 
-- Branch protection: `gh api repos/tjackiet/bitbank-lab-cli/branches/main/protection` が 200 を返すか
+- Branch protection: `gh api repos/bitbankinc/bitbank-lab-cli/branches/main/protection` が 200 を返すか
 - Private vulnerability reporting: Settings → Code security のチェック状態
 - npm 2FA: `npm profile get` の `tfa` 欄が `auth-and-writes`
 - Trusted Publisher: https://www.npmjs.com/package/bitbank-lab-cli/access で表示されるか

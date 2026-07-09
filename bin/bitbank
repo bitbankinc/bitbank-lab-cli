@@ -11,7 +11,23 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = resolve(here, "..", "cli", "index.ts");
-const tsxCli = require.resolve("tsx/cli");
+
+let tsxCli;
+try {
+  tsxCli = require.resolve("tsx/cli");
+} catch {
+  process.stderr.write(
+    [
+      "bitbank: dependencies are not installed (cannot resolve 'tsx').",
+      "  Fix (recommended): npm i -g bitbank-lab-cli",
+      "  Fix (repo checkout): npm ci   # then ./install.sh or npx tsx cli/index.ts <cmd>",
+      "  Note: agent plugin caches (Claude Code / Codex / Cursor / Antigravity) ship skills",
+      "  only, without node_modules — this launcher cannot run from a plugin cache.",
+      "",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
 
 const child = spawn(process.execPath, [tsxCli, entry, ...process.argv.slice(2)], {
   stdio: "inherit",

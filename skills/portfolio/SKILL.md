@@ -8,11 +8,15 @@ description: |
   注意: 任意ペアの相関分析は correlation-analysis、単一銘柄のリスク
   特性は volatility-profile が担当。本 skill は保有資産の評価に特化。
 compatibility: |
-  Requires bitbank CLI. Node.js 20+.
+  Requires the bitbank CLI on PATH (install separately: npm i -g bitbank-lab-cli).
+  Plugin install alone does NOT bundle the CLI or its dependencies. Node.js 22+.
   Private API commands require API key/secret in .env file.
 metadata:
   author: bitbank-aiforge
   version: "2.0"
+  requires:
+    bins:
+      - bitbank
 ---
 
 # ポートフォリオ Skill

@@ -12,6 +12,60 @@
 
 ## [Unreleased]
 
+### Added
+
+- README: Cursor 節を拡充。導入 2 経路（リポジトリを開くだけ / Plugin として
+  URL import）、Claude Code と `~/.claude/plugins/` を共有するため Claude Code 側で
+  install 済みなら Cursor でも有効になる点（実機確認ベース）、plugin が
+  バージョン固定キャッシュで自動追従しない点と更新手順を明記
+
+## [0.1.5] - 2026-07-05
+
+> 0.1.4 は npm 未公開の欠番（release workflow の npm pin 問題でリリース中止。
+> 修正後 0.1.5 として公開）。
+
+### Added
+
+- 全 SKILL.md の frontmatter に機械可読なバイナリ依存宣言
+  `metadata.requires.bins: [bitbank]` を追加。
+  chaos `s10` が全 skill の宣言と compatibility 文言（CLI 別途インストールの明記）を検査する
+- `skills/_shared/references/cli-conventions.md` に「起動方法の解決手順」を新設。
+  `command -v bitbank` → repo checkout なら `npx tsx cli/index.ts` → どちらも無ければ
+  `npm i -g bitbank-lab-cli` を案内して停止、の 3 段で解決する。plugin cache 内の
+  `bin/bitbank` / `cli/index.ts` は依存を含まず実行不可であることを明記
+  （Codex plugin 実機フィードバックで `command not found: bitbank` →
+  `Cannot find module 'tsx/cli'` の詰まりが確認されたため）
+
+- README を再構成: 冒頭に「前提条件」セクションを新設（Node.js 22+ / npm / 対応 OS /
+  macOS の Xcode Command Line Tools 注記）。Plugin 節に「CLI 本体」と「Plugin 登録」の
+  2 レイヤー整理表を追加し、CLI 本体が全ケースで必須という依存関係を明記
+
+### Changed
+
+- `bin/bitbank`: `tsx` を解決できない環境（plugin cache 等、`node_modules` なし）で
+  生のスタックトレースではなく、`npm i -g bitbank-lab-cli` / `npm ci` への
+  誘導メッセージを stderr に出して exit 1 するようにした
+
+- 必要 Node.js を 20 以上 → **22 以上**に引き上げ（`engines` / `.nvmrc` / README /
+  各 SKILL.md の compatibility を同期）。Node.js 20 は 2026-04-30 に EOL 済みのため。
+  姉妹リポ bitbank-lab-mcp（Node 22+）とも要件が揃う。Node 20 環境では
+  `npm i -g` 時に engines 警告が出るようになる（0.x につき SemVer 慣習の範囲内）
+
+- `package.json` の `repository.url` を publish 実行元（tjackiet）に一時的に戻した。
+  `npm publish --provenance` が package.json の repository と CI 実行リポジトリの
+  一致を検証するため。公式 org（bitbankinc）への npm オーナートランスファー完了時に戻す
+  （README / homepage / bugs の導線は bitbankinc のまま）
+
+### Fixed
+
+- README の Codex CLI プラグイン導入コマンドを実在するフローに修正
+  （誤: `codex plugin install <owner>/<repo>` → 正: `codex plugin marketplace add`
+  → `codex plugin list` で名前確認 → `codex plugin add <plugin>@<marketplace>`）
+- 依存の transitive 脆弱性 5 件（high 3 / low 2: `ws` / `form-data` / `esbuild` /
+  `@babel/core`）を `npm audit fix`（semver 互換更新）で解消
+- release workflow の npm を 11.5.1 → 11.18.0 に固定。11.5.1 は `.npmrc` の
+  `min-release-age`（npm >= 11.10）を知らず stderr 警告で E2E を壊していた
+
 ## [0.1.3] - 2026-06-10
 
 ### Added

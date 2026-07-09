@@ -12,12 +12,12 @@ cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==> Checking Node.js..."
 if ! command -v node >/dev/null 2>&1; then
-  echo "Error: 'node' not found in PATH. Install Node.js 20+ first." >&2
+  echo "Error: 'node' not found in PATH. Install Node.js 22+ first." >&2
   exit 1
 fi
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-if [ "$NODE_MAJOR" -lt 20 ]; then
-  echo "Error: Node.js >=20 required (engines.node). Found: $(node --version)" >&2
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  echo "Error: Node.js >=22 required (engines.node). Found: $(node --version)" >&2
   exit 1
 fi
 echo "    $(node --version) ok."

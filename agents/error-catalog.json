@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "cli_version": "0.1.3",
+  "cli_version": "0.1.6",
   "generator": "scripts/gen-agents-catalog.ts",
   "description": "Machine-readable error catalog for the bitbank CLI. Generated from cli/error-codes.ts (ERROR_CODES / apiErrorExitCode / classifyHttpError) + cli/exit-codes.ts. Maps API error codes to categories and aggregates retry guidance per category. Companion human doc: skills/_shared/references/error-catalog.md. Do not edit by hand.",
   "envelope": {
