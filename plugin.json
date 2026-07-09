@@ -1,6 +1,6 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "bitbank-lab-cli",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Experimental CLI & Agent Skills starter kit for bitbank — botters lab community edition. Market data, paper trading, account read, and Private API trading with safety guards."
 }

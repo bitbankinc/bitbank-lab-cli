@@ -1,6 +1,6 @@
 {
   "name": "bitbank-lab-cli",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Experimental CLI & Agent Skills starter kit for bitbank — botters lab community edition. Market data, paper trading, account read, and Private API trading with safety guards.",
   "type": "module",
   "bin": {
@@ -52,7 +52,7 @@
   "homepage": "https://github.com/bitbankinc/bitbank-lab-cli",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tjackiet/bitbank-lab-cli.git"
+    "url": "git+https://github.com/bitbankinc/bitbank-lab-cli.git"
   },
   "bugs": {
     "url": "https://github.com/bitbankinc/bitbank-lab-cli/issues"
