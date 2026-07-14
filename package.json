@@ -29,8 +29,7 @@
     "lint": "biome check cli/",
     "lint:fix": "biome check --fix cli/",
     "format": "biome format --write cli/",
-    "typecheck": "tsc --noEmit",
-    "version": "node scripts/sync-version.mjs && tsx scripts/gen-agents-catalog.ts && git add .claude-plugin/plugin.json .cursor-plugin/plugin.json .codex-plugin/plugin.json gemini-extension.json plugin.json agents/tool-catalog.json agents/error-catalog.json"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "pubnub": "^12.0.0",

@@ -693,7 +693,9 @@ npm run typecheck  # 型チェック
 
 ### リリース
 
-npm publish 手順とバージョン同期の仕組みは [`docs/dev/release.md`](docs/dev/release.md) を参照。`npm version <bump>` で 5 ファイル一括同期されるので、`package.json` や plugin manifest を手動編集しないこと。
+npm publish 手順は [`docs/dev/release.md`](docs/dev/release.md) を参照。`v*` tag を
+push すると release workflow が version 注入・plugin manifest 同期・GitHub Release
+作成まで実行する。
 
 ### コントリビューター向けセットアップ
 

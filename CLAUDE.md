@@ -44,5 +44,6 @@ npx tsx cli/index.ts    # CLI 実行
 - コミット: `<type>: <概要>`（日本語 OK）
 - 外部依存最小。`tsx` で直接実行。ビルドステップなし
 - 開発フェーズ → [`docs/dev/phases.md`](docs/dev/phases.md)
-- リリース手順 → [`docs/dev/release.md`](docs/dev/release.md)（`npm version <bump>` 経由で 5 ファイル同期。手動編集禁止）
+- リリース手順 → [`docs/dev/release.md`](docs/dev/release.md)（tag push で release.yml が
+  version 注入・plugin manifest 同期・npm publish・GitHub Release を実行）
 - Skill 追加 → `.claude/rules/skills.md`

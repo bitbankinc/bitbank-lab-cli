@@ -1,49 +1,89 @@
 # リリース手順
 
-`bitbank-lab-cli` の npm publish フロー。
+`bitbank-lab-cli` の npm publish フロー。`bitbank-lab-mcp` と同じ
+tag 駆動 + GitHub Actions 多段階パイプライン。
+
+## ワークフロー概要
+
+`.github/workflows/release.yml` は 3 job で構成される:
+
+1. `ci` — tag 上のコードで lint / typecheck / test を再実行
+2. `npm-publish` — tag から version を注入し plugin manifest・agents カタログを
+   同期してから `npm publish --provenance`
+3. `github-release` — GitHub Release を自動作成（リリースノート自動生成）
+
+トリガー:
+
+- `v*` tag の push（通常ルート）
+- `workflow_dispatch`（手動起動、tag 名を入力）
 
 ## バージョン同期
 
-`package.json` と plugin manifest 5 種（`.claude-plugin/plugin.json` /
-`.cursor-plugin/plugin.json` / `.codex-plugin/plugin.json` /
-`gemini-extension.json` / `plugin.json`）の 6 ファイルが同じ version を
-持つ必要がある。**手動で個別編集しないこと**（同期漏れの温床）。
+publish 時に release workflow が以下を実行する（ローカルでの事前同期は不要）:
+
+1. `npm version <tag-version> --no-git-tag-version` — `package.json` を tag に合わせる
+2. `scripts/sync-version.mjs` — plugin manifest 5 種 + ルート `plugin.json` へ転写
+3. `scripts/gen-agents-catalog.ts` — `agents/tool-catalog.json` /
+   `agents/error-catalog.json` を再生成（`cli_version` を埋め込む）
+
+対象ファイル（計 6 + 生成物 2）:
+
+- `package.json`
+- `.claude-plugin/plugin.json` / `.cursor-plugin/plugin.json` /
+  `.codex-plugin/plugin.json` / `gemini-extension.json` / `plugin.json`
+- `agents/tool-catalog.json` / `agents/error-catalog.json`
 
 ルートの `plugin.json` は Antigravity CLI（旧 Gemini CLI）のネイティブ
 plugin manifest。旧 CLI 互換の `gemini-extension.json` と両置きすることで
 新旧どちらの CLI からもリモート install できる。
 
-`.claude-plugin/marketplace.json` も同じディレクトリにあるが、これは
-plugin manifest ではなく marketplace カタログ。plugin の version 同期
-対象外なので `scripts/sync-version.mjs` の targets には入れない
-（オプションの `version` フィールドを将来追加する場合も同様）。
+`.claude-plugin/marketplace.json` は marketplace カタログであり version 同期
+対象外（`scripts/sync-version.mjs` の targets に入れない）。
 
-`npm version <bump>` 実行時に `scripts.version` フック経由で
-`scripts/sync-version.mjs` が走り、`package.json` の新 version を
-plugin manifest に転写してから commit + tag が作られる。
-
-あわせて同フックが `scripts/gen-agents-catalog.ts` を再実行し、
-`agents/tool-catalog.json` / `agents/error-catalog.json`（どちらも
-`cli_version` を埋め込む生成物）を新 version で再生成してステージする。
-これらは手書きせず常に再生成する。再生成漏れは x17 ドリフトテストが
-CI で検出する（`cli/__tests__/chaos/conventions/x17-agents-catalog-drift.test.ts`）。
+main ブランチ上の `package.json` / plugin manifest は、公開済み npm version と
+一致しないことがある（MCP と同様）。npm tarball 内では publish 直前に全て
+揃う。
 
 ## 手順
 
 ```bash
-npm version patch        # 0.1.0 → 0.1.1 (6 ファイル同期 + commit + tag)
-git push --follow-tags   # tag を含めて push
-# tag を push すると .github/workflows/release.yml が起動し、
-# OIDC trusted publishing 経由で `npm publish --provenance` を実行する。
-# 完了後に /tmp で動作確認 (鉄則)
-cd /tmp && npx -y bitbank-lab-cli@<新 version> ticker btc_jpy
+# 1. CHANGELOG の [Unreleased] を更新して main にマージ
+
+# 2. tag を作成して push
+git tag v0.2.1
+git push origin v0.2.1
+
+# tag push で release.yml が起動し、OIDC trusted publishing 経由で
+# npm publish + GitHub Release が実行される。
+
+# 3. 完了後に /tmp で動作確認 (鉄則)
+cd /tmp && npx -y bitbank-lab-cli@0.2.1 ticker btc_jpy
 ```
+
+### prerelease
+
+`-alpha` / `-beta` / `-rc` を含む tag は npm dist-tag `beta` で公開され、
+GitHub Release は prerelease として作成される:
+
+```bash
+git tag v0.3.0-beta.1
+git push origin v0.3.0-beta.1
+```
+
+### 手動起動（workflow_dispatch）
+
+GitHub Actions の Release workflow から手動実行し、tag 名（例: `v0.2.1`）を
+指定できる。通常は tag push で十分。
 
 ### 手動 publish（フォールバック）
 
 OIDC が使えない / workflow が失敗した場合の緊急用:
 
 ```bash
+VERSION=0.2.1
+npm version "$VERSION" --no-git-tag-version
+node scripts/sync-version.mjs
+npx tsx scripts/gen-agents-catalog.ts
 npm publish --otp=<OTP>
 ```
 
@@ -55,14 +95,15 @@ provenance 表示が無くなる点に注意。
 1. https://www.npmjs.com/package/bitbank-lab-cli/access で
    "Trusted Publisher" を追加
 2. GitHub repo: `bitbankinc/bitbank-lab-cli`、workflow: `release.yml`、
-   environment は空でよい
-3. アカウント側で 2FA を `auth-and-writes` に設定（手動 publish 時の保険）
+   environment: `production`
+3. GitHub repo に `production` environment を作成（Settings → Environments）
+4. アカウント側で 2FA を `auth-and-writes` に設定（手動 publish 時の保険）
 
 その他のリポジトリ側初回設定（branch protection / private vulnerability
 reporting 等）は [`repo-security.md`](repo-security.md) を参照。
 
 `patch` / `minor` / `major` は SemVer に従う。0.x は SemVer 上 minor で
-breaking 可なので初期改修は `npm version patch` で増やしていく。
+breaking 可なので初期改修は patch 相当の tag を増やしていく。
 
 ## publish 後の検証
 
