@@ -28,7 +28,7 @@ export function handler(
     const result =
       Object.keys(params).length > 0 ? await mod[fnName](params, opts) : await mod[fnName](opts);
     // public / private のみ取得コンテキストを付与（paper / trade は素通し）。
-    const withCtx = withRequestContext(result, modulePath, params);
+    const withCtx = withRequestContext(result, modulePath, params, ctx?.command);
     output(withCtx, fmt, values.raw === true, values.machine === true);
   };
 }

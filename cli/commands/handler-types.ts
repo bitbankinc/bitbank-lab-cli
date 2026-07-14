@@ -11,9 +11,12 @@ export function valStr(v: ParsedValues, key: string): string | undefined {
 
 /** Runtime context threaded from CLI entry to command handlers.
  * credentials が undefined の場合、private API は呼べない（HTTP helper 側で
- * resolveCredentials() フォールバックも切れているため、明示エラーになる）。 */
+ * resolveCredentials() フォールバックも切れているため、明示エラーになる）。
+ * command は router が解決した CLI コマンド名。meta.request.command のラベルの
+ * 単一ソース（実装ファイル名はコマンド名と一致しないことがある）。 */
 export type RuntimeContext = {
   credentials?: ApiCredentials;
+  command?: string;
 };
 
 export type CommandHandler = (

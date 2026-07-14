@@ -51,7 +51,7 @@ async function main(): Promise<void> {
     fail(machine, credsResult.error, credsResult.exitCode ?? EXIT.GENERAL);
     return;
   }
-  const ctx: RuntimeContext = { credentials: credsResult.data };
+  const ctx: RuntimeContext = { credentials: credsResult.data, command };
   const format = (values.format ?? "json") as Format;
   if (!["json", "table", "csv"].includes(format)) {
     fail(machine, `Unknown format "${format}". Use json, table, or csv.`, EXIT.PARAM);

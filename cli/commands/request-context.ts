@@ -24,18 +24,23 @@ function buildRequest(command: string, params: Record<string, unknown>): Request
 
 /** 取得コンテキスト（request / timezone / source / fetchedAt / returnedRows）を meta に付与。
  *  既存 meta（candles の gaps 等）は壊さず context で上書きマージする。
- *  失敗結果と public/private 以外（paper 等）は素通し。 */
+ *  失敗結果と public/private 以外（paper 等）は素通し。
+ *  command には router が解決した CLI コマンド名を渡す。ファイル名由来の cls.command は
+ *  未指定時（テスト等の直接呼び出し）のフォールバック。ファイル名とコマンド名は
+ *  trade-history（dispatcher が trade-history-all.ts に同居）や tickers-jpy
+ *  （tickers.ts の別関数）でズレるため、ラベルの単一ソースにしない。 */
 export function withRequestContext<T>(
   result: Result<T>,
   modulePath: string,
   params: Record<string, unknown>,
+  command?: string,
 ): Result<T> {
   if (!result.success) return result;
   const cls = classify(modulePath);
   if (!cls) return result;
   const meta: ResultMeta = {
     ...result.meta,
-    request: buildRequest(cls.command, params),
+    request: buildRequest(command ?? cls.command, params),
     timezone: "UTC",
     source: cls.source,
     fetchedAt: nowIso(),
