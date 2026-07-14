@@ -12,6 +12,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- リリースワークフローを `bitbank-lab-mcp` に揃えた。`npm version <bump>` の
+  ローカル前提を廃止し、tag push（`v*`）または `workflow_dispatch` で
+  `release.yml` が CI gate → version 注入・plugin manifest / agents カタログ同期
+  → npm publish → GitHub Release 自動作成を実行する。OIDC trusted publisher の
+  environment は `production` に変更
+
 ### Added
 
 - README: Cursor 節を拡充。導入 2 経路（リポジトリを開くだけ / Plugin として

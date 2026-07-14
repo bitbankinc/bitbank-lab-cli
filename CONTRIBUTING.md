@@ -68,5 +68,6 @@ npx vitest run         # テスト
 
 ## リリース（メンテナ向け）
 
-npm publish とバージョン同期は `npm version <bump>` 経由で行います（5 ファイルを自動同期、
-**手動編集禁止**）。手順は [docs/dev/release.md](docs/dev/release.md) を参照してください。
+npm publish は tag push で `.github/workflows/release.yml` が起動し、version 注入・
+plugin manifest 同期・agents カタログ再生成を経て publish する。手順は
+[docs/dev/release.md](docs/dev/release.md) を参照してください。

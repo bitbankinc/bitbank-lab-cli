@@ -7,7 +7,7 @@ clone したユーザーは基本的に読む必要はない。
 
 - `phases.md` — 開発フェーズの履歴と TODO
 - `conventions.md` — メンテナ向けのコード規約メモ
-- `release.md` — リリース手順（`npm version <bump>` で 5 ファイル同期）
+- `release.md` — リリース手順（tag push → release.yml で version 注入・publish）
 - `repo-security.md` — GitHub / npm の管理者向け初期セットアップ
 
 配布側ユーザーが参照すべきドキュメントは `docs/customization-guide.md` /

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Sync version from package.json to plugin manifests.
-// Wired into `npm version` lifecycle via scripts.version in package.json,
-// so `npm version patch` updates all 6 files in one commit.
+// Invoked by .github/workflows/release.yml after `npm version --no-git-tag-version`
+// so the published tarball carries matching plugin manifest versions.
 // Regex (not JSON.parse → stringify) preserves each file's existing
 // indentation and key order.
 import { readFileSync, writeFileSync } from "node:fs";
