@@ -15,6 +15,8 @@ const REQUIRED_VIZ_SKILLS = [
   "correlation-analysis",
   "volatility-profile",
   "portfolio",
+  "indicator-analysis",
+  "paper-trade",
 ];
 
 function realSkillDirs(): string[] {

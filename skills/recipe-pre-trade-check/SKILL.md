@@ -111,6 +111,16 @@ metadata:
 | WAIT | RSI 過熱 / 売られすぎ、BB 拡大中（エントリーの位置取りが悪い） |
 | NO-GO | データ欠損あり、ボラ過熱でストップ幅が許容超、JPY 残高不足 |
 
+### 可視化の扱い
+
+- 可視化はオプション（デフォルト off）。規約は
+  `_shared/references/visualization-guide.md` に従う
+- **recipe 独自のチャートは定義しない**。ユーザーが図を求めたら、対応する
+  step の構成 skill の標準チャート（例: Step 1 → `portfolio.allocation`、
+  Step 2 → `volatility-profile.return-distribution`、Step 4 →
+  `indicator-analysis.price-overlay`）を、その skill の可視化節の
+  仕様どおりに描く（Step 3 の data-verification に標準チャートはない）
+
 ## Gotchas
 
 - **この recipe は判断の補助。最終判断は人間が下す**。GO が出ても約定するのはユーザーの責任
