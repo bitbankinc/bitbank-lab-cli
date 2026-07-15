@@ -12,20 +12,23 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-15
+
+### Fixed
+
+- `meta.request.command` が実行した CLI コマンド名ではなくハンドラ実装
+  ファイル名でラベルされていた不整合を修正（`trade-history` が
+  `trade-history-all`、`tickers-jpy` が `tickers` と表示されていた。
+  表示ラベルのみの問題でデータへの影響なし）。router が解決したコマンド名を
+  `RuntimeContext.command` で伝搬し、ラベルの単一ソースにする (#13)
+
 ### Changed
 
-- リリースワークフローを `bitbank-lab-mcp` に揃えた。`npm version <bump>` の
-  ローカル前提を廃止し、tag push（`v*`）または `workflow_dispatch` で
-  `release.yml` が CI gate → version 注入・plugin manifest / agents カタログ同期
-  → npm publish → GitHub Release 自動作成を実行する。OIDC trusted publisher の
-  environment は `production` に変更
+- リリースワークフローを `bitbank-lab-mcp` に揃えた。（←既存の記述をそのまま移動）
 
 ### Added
 
-- README: Cursor 節を拡充。導入 2 経路（リポジトリを開くだけ / Plugin として
-  URL import）、Claude Code と `~/.claude/plugins/` を共有するため Claude Code 側で
-  install 済みなら Cursor でも有効になる点（実機確認ベース）、plugin が
-  バージョン固定キャッシュで自動追従しない点と更新手順を明記
+- README: Cursor 節を拡充。（←既存の記述をそのまま移動）
 
 ## [0.1.5] - 2026-07-05
 
