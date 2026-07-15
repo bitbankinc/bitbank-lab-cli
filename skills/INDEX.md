@@ -83,3 +83,4 @@ Skill の追加・recipe 化の原則は [`.claude/rules/skills.md`](../.claude/
 - `pair-classification.md` — ペア分類（流動性・カテゴリ等）
 - `cli-conventions.md` — CLI 呼び出し規約（`--format=json` / Result パターン等）
 - `error-catalog.md` — bitbank API エラーコードと対処
+- `visualization-guide.md` — 可視化（グラフ化）規約（トリガー・matplotlib・チャート ID・出力先・安全規律）
