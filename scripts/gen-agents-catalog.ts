@@ -1,10 +1,12 @@
-// agents/ の機械可読カタログ生成器。tool-catalog.json と error-catalog.json を
-// 単一ソース（cli/commands/schema・confirm-guard・cli/error-codes・cli/exit-codes）から
-// 生成する。手書き禁止: cli/__tests__/chaos/conventions/x17 が「regenerate して
+// agents/ の機械可読カタログ生成器。tool-catalog.json / error-catalog.json /
+// chart-catalog.json を単一ソース（cli/commands/schema・confirm-guard・
+// cli/error-codes・cli/exit-codes・skills/*/SKILL.md 可視化節）から生成する。
+// 手書き禁止: cli/__tests__/chaos/conventions/x17 が「regenerate して
 // committed と差分ゼロ」を検査するため、出力に時刻などの非決定要素を入れないこと。
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildChartCatalog } from "./chart-catalog.js";
 import { commandDescriptions } from "../cli/commands/registry.js";
 import { commandDetail } from "../cli/commands/schema/handler.js";
 import { ALL_SCHEMAS } from "../cli/commands/schema/registry.js";
@@ -170,18 +172,25 @@ export function buildErrorCatalog() {
 
 // ---- entrypoint -------------------------------------------------------------
 
+export { buildChartCatalog };
+
 function main(): void {
   const dir = join(ROOT, "agents");
   mkdirSync(dir, { recursive: true });
   const tool = buildToolCatalog();
   const error = buildErrorCatalog();
+  const chart = buildChartCatalog();
   writeFileSync(join(dir, "tool-catalog.json"), serialize(tool));
   writeFileSync(join(dir, "error-catalog.json"), serialize(error));
+  writeFileSync(join(dir, "chart-catalog.json"), serialize(chart));
   console.log(
     `agents/tool-catalog.json: ${tool.command_count} commands (${tool.dangerous_count} dangerous)`,
   );
   console.log(
     `agents/error-catalog.json: ${error.api_codes.length} codes, ${error.categories.length} categories`,
+  );
+  console.log(
+    `agents/chart-catalog.json: ${chart.chart_count} charts across ${chart.skills_with_charts.length} skills`,
   );
 }
 

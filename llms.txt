@@ -31,7 +31,7 @@
 
 - [.claude/rules/commands.md](.claude/rules/commands.md): コマンド分類（public / private / trade / paper / profile / meta）と追加手順
 - [.claude/rules/trading-safety.md](.claude/rules/trading-safety.md): trade の安全ガード（`--execute` / `--confirm` 二段確認 / POST 非リトライ）
-- [agents/tool-catalog.json](agents/tool-catalog.json) / [agents/error-catalog.json](agents/error-catalog.json): 機械可読カタログ（全コマンド + params(JSON Schema)/output/`dangerous` フラグ、エラーコード→カテゴリ + retry 指針）。`scripts/gen-agents-catalog.ts` が単一ソースから生成（手書き禁止）。CLI を実行せず repo を読むだけで全コマンドを把握する用途
+- [agents/tool-catalog.json](agents/tool-catalog.json) / [agents/error-catalog.json](agents/error-catalog.json) / [agents/chart-catalog.json](agents/chart-catalog.json): 機械可読カタログ（全コマンド + params(JSON Schema)/output/`dangerous` フラグ、エラーコード→カテゴリ + retry 指針、skill 標準チャートの ID・仕様）。`scripts/gen-agents-catalog.ts` が単一ソースから生成（手書き禁止）。CLI を実行せず repo を読むだけで全コマンドを把握する用途
 
 ## ガイドと設計記録
 

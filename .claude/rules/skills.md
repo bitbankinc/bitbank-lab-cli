@@ -71,6 +71,9 @@ metadata:
 - recipe は自前のチャートを定義しない（構成 skill の標準チャートを使う）
 - chaos `s11` が「可視化節を持つ skill は共有ガイドを参照していること」
   「チャート ID の prefix 一致・グローバル一意性」を検査する
+- 標準チャート表は `scripts/gen-agents-catalog.ts` が `agents/chart-catalog.json`
+  に自動集約する（**手書き禁止**、chaos `x17` が drift 検査）。表を追加・変更
+  したら `npx tsx scripts/gen-agents-catalog.ts` で regenerate してコミットする
 
 ## Recipe Skill
 

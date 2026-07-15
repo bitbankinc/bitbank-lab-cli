@@ -24,14 +24,16 @@ publish 時に release workflow が以下を実行する（ローカルでの事
 1. `npm version <tag-version> --no-git-tag-version` — `package.json` を tag に合わせる
 2. `scripts/sync-version.mjs` — plugin manifest 5 種 + ルート `plugin.json` へ転写
 3. `scripts/gen-agents-catalog.ts` — `agents/tool-catalog.json` /
-   `agents/error-catalog.json` を再生成（`cli_version` を埋め込む）
+   `agents/error-catalog.json` / `agents/chart-catalog.json` を再生成
+   （`cli_version` を埋め込む）
 
-対象ファイル（計 6 + 生成物 2）:
+対象ファイル（計 6 + 生成物 3）:
 
 - `package.json`
 - `.claude-plugin/plugin.json` / `.cursor-plugin/plugin.json` /
   `.codex-plugin/plugin.json` / `gemini-extension.json` / `plugin.json`
-- `agents/tool-catalog.json` / `agents/error-catalog.json`
+- `agents/tool-catalog.json` / `agents/error-catalog.json` /
+  `agents/chart-catalog.json`
 
 ルートの `plugin.json` は Antigravity CLI（旧 Gemini CLI）のネイティブ
 plugin manifest。旧 CLI 互換の `gemini-extension.json` と両置きすることで
