@@ -47,6 +47,8 @@
 - ファイル名: `<チャート ID の . を - に置換>-<対象>-<YYYYMMDD-HHmmss>.png`
   - `<対象>` はペア（`btc_jpy`）、複数ペアの連結（`btc_jpy-eth_jpy`）、
     またはポートフォリオ全体なら `portfolio` のような対象スラッグ
+  - `<YYYYMMDD-HHmmss>` は **UTC 基準**（リポ規約「日付キーは UTC」と同じ。
+    JST やローカル時刻を使わない）
   - 例: `backtest-equity-curve-btc_jpy-20260715-133005.png`
 - **1 図 1 ファイル**。複数チャートを 1 枚に詰め込まない（サブプロットは
   同一チャート ID の構成要素に限る）
@@ -84,6 +86,9 @@
 - 取得時刻（envelope `meta.fetchedAt`）
 - 末尾未確定足を除外した場合は `last incomplete candle excluded`
 - `gaps` / `truncated` / `partial` があった場合はその旨
+- **時刻表記はフッター・ファイル名とも UTC（`Z` 付き）で統一**する
+  （例: `fetched 2026-07-15T04:00Z`。`local` 表記や JST を混ぜない。
+  JST はテキスト本文側の説明でのみ使う）
 
 例:
 

@@ -68,7 +68,7 @@
       "id": "indicator-analysis.price-overlay",
       "skill": "indicator-analysis",
       "title": "価格 + トレンド系オーバーレイ",
-      "spec": "close の折れ線 + SMA(20/50/200) + ボリンジャーバンド(20, 2σ) の帯（半透明 fill）。y=価格（JPY）。凡例必須"
+      "spec": "close の折れ線（既定）またはローソク足 + SMA(20/50/200) + ボリンジャーバンド(20, 2σ) の帯（半透明 fill）。求めに応じて下段に出来高サブパネル。y=価格（JPY）。凡例必須"
     },
     {
       "id": "indicator-analysis.oscillators",
@@ -86,7 +86,7 @@
       "id": "portfolio.allocation",
       "skill": "portfolio",
       "title": "資産構成",
-      "spec": "出力項目 1 の評価額比率の横棒グラフ（評価額の大きい順、JPY 現金を含む）。各バーに比率 % を注記し、ticker 取得時刻をフッターに"
+      "spec": "出力項目 1 の評価額比率のドーナツ（評価額の大きい順、JPY 現金を含む、中央に総評価額）。各スライスに比率 % を注記し、小口は Others に集約（下記）。ticker 取得時刻をフッターに。詳細比較用に横棒版への切替も可"
     },
     {
       "id": "portfolio.value-history",
