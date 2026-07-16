@@ -204,13 +204,21 @@ shift(1) なし: 累積PnL +14.1%, シャープ 0.92
 |---|---|---|
 | `backtest.equity-curve` | 累積損益曲線 | x=時間、y=資金（JPY）。戦略 equity と Buy & Hold の 2 系列 + 初期資金の水平線。手数料条件（taker/maker・レート・フォールバックか否か）をフッターに明記 |
 | `backtest.drawdown` | ドローダウン曲線 | equity のランニング最大値からの下落率（%）を塗りつぶしで。最大ドローダウンの位置と値を注記 |
+| `backtest.equity-drawdown` | 損益スナップショット（統合版） | 上段（高さ 2/3）: equity-curve と同構成。下段（高さ 1/3）: drawdown と同構成（underwater 塗りつぶし + 最大 DD 注記）。**共有 x 軸**・タイトルとフッターは 1 つ。quantstats の snapshot に相当する定番レイアウト |
 | `backtest.trades-on-price` | 約定マーカー付き価格チャート | close の折れ線 + エントリー（▲）/ イグジット（▼）マーカー。凡例は `simulated entry` / `simulated exit`（過去のシミュレーション約定であり推奨ではない） |
 | `backtest.leak-check` | リークサニティ比較 | Step 3.5 の shift(1) あり / なしの累積 PnL 2 系列。`VALIDATION ONLY — do not trade the no-shift series` を図中に明記 |
 
 チャート固有の注意:
 
-- `equity-curve` / `drawdown` の数値は Step 6 の総損益・最大ドローダウンと
-  一致していること（Step 5 の自己チェックと同じ整合性検証を図にも適用する）
+- **チャートの選び方（既定マッピング）**: 「損益をプロットして」「成績を
+  グラフで」のような損益系の総称的な依頼には **`equity-drawdown`（統合版）
+  1 枚を既定**とする。DD は損益の読みの一部であり、テキスト出力が必ず
+  最大 DD を含むのと同じ思想（上がり方だけ見せると楽観バイアスを再導入する）。
+  「損益曲線**だけ**」なら `equity-curve` 単独、「ドローダウンを」なら
+  `drawdown` 単独。統合版と単独版を同時に出すのはユーザーが明示したときだけ
+- `equity-curve` / `drawdown` / `equity-drawdown` の数値は Step 6 の
+  総損益・最大ドローダウンと一致していること（Step 5 の自己チェックと
+  同じ整合性検証を図にも適用する）
 - `trades-on-price` はトレード数が多いとマーカーが潰れる。100 トレードを
   大きく超える場合は期間分割（複数ファイル）を提案する
 - `leak-check` の shift なし系列は検証用使い捨てパス。図を保存しても

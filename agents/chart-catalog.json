@@ -5,7 +5,7 @@
   "description": "Machine-readable chart catalog for the bitbank-lab-cli Agent Skills. Generated from the 可視化 (visualization) sections of skills/*/SKILL.md. Each chart is a stable ID (`<skill>.<slug>`; renaming is a breaking change) plus its spec. Rendering conventions (opt-in trigger discipline, matplotlib resolution, output path/naming, style, provenance footer, safety rules) are defined in the shared guide — charts are opt-in and never replace text output. Do not edit by hand — run `npx tsx scripts/gen-agents-catalog.ts`.",
   "visualization_guide": "skills/_shared/references/visualization-guide.md",
   "default_behavior": "off (opt-in only; see visualization_guide trigger discipline)",
-  "chart_count": 21,
+  "chart_count": 22,
   "skills_with_charts": [
     "backtest",
     "correlation-analysis",
@@ -27,6 +27,12 @@
       "skill": "backtest",
       "title": "ドローダウン曲線",
       "spec": "equity のランニング最大値からの下落率（%）を塗りつぶしで。最大ドローダウンの位置と値を注記"
+    },
+    {
+      "id": "backtest.equity-drawdown",
+      "skill": "backtest",
+      "title": "損益スナップショット（統合版）",
+      "spec": "上段（高さ 2/3）: equity-curve と同構成。下段（高さ 1/3）: drawdown と同構成（underwater 塗りつぶし + 最大 DD 注記）。**共有 x 軸**・タイトルとフッターは 1 つ。quantstats の snapshot に相当する定番レイアウト"
     },
     {
       "id": "backtest.trades-on-price",
