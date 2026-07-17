@@ -305,6 +305,33 @@ ATR とは独立しているので「ボラ × モメンタム」の組み合わ
 
 ローカル環境なので、このファイルのデフォルト値を直接編集しても OK。
 
+## 可視化（オプション）
+
+トリガー規律・実行環境の解決・出力先・スタイル・安全規律は
+`_shared/references/visualization-guide.md` に従う。**デフォルトは off**
+（ユーザーが明示的に求めたとき、または提案に同意したときだけ描く）。
+チャートはテキスト出力（テーブル + 判定サマリー）の後に描き、
+その置き換えにはしない。
+
+本 skill の標準チャート:
+
+| チャート ID | 内容 | 主な構成要素 |
+|---|---|---|
+| `signal-explorer.scatter` | シグナル vs 将来リターン散布図 | Step 1 の `s[t]` × `r_fwd[t]` の散布 + 最小二乗直線。Pearson / Spearman r をタイトルに併記 |
+| `signal-explorer.lag-correlation` | ラグ相関プロファイル | Step 3 の `corr_lag[k]`（k=1..max_lag）の棒グラフ + r=0 の水平線。多重比較への注意を脚注に |
+| `signal-explorer.autocorrelation` | シグナル自己相関（粘着性） | Step 4 の自己相関の棒グラフ。粘着 / 非粘着の判定ラベルをタイトルに |
+| `signal-explorer.sign-pnl` | 符号ベース簡易 PnL 比較 | Step 6 の 3 系列（生符号 / Z-score 符号 / Buy & Hold）の累積 PnL。`cost & sizing ignored; short side = math simulation (bitbank spot is long-only)` を図中に明記 |
+| `signal-explorer.leak-check` | リーク検証比較 | Step 7 の shift(1) あり / なしの累積 PnL 2 系列。`VALIDATION ONLY — do not trade the no-shift series` を図中に明記 |
+
+チャート固有の注意:
+
+- `scatter` は NaN 除外後の系列で描く（Z-score 序盤の NaN・経路 C の欠損行を
+  含めない）。点数が多い場合は `alpha` を下げて重なりを見せる
+- `lag-correlation` / `autocorrelation` の値は本文のテーブルと一致していること
+  （Validation Loop と同じ整合性検証を図にも適用する）
+- `sign-pnl` / `leak-check` の系列はいずれもコスト無視の予測力チェック用。
+  本格評価の図が欲しい場合は backtest skill の `backtest.equity-curve` へ誘導する
+
 ## Gotchas
 
 - **将来リターンの向きを間違えるとリーク。** `shift(-1)` が未来、`shift(1)` が過去。

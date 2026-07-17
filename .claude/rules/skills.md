@@ -55,6 +55,26 @@ metadata:
   `<domain>-patterns.md` で命名
 - CLI コマンドの実行例を含め、モデルが正確にコマンドを組み立てられるようにする
 
+## 可視化節（オプション）
+
+分析結果をグラフ化する skill は、SKILL.md に `## 可視化（オプション）` 節を置き、
+標準チャートを定義する。
+
+- 描画方法（トリガー規律・実行環境の解決・出力先・スタイル・安全規律）は
+  `skills/_shared/references/visualization-guide.md` が単一ソース。各 skill には
+  **チャート仕様**（何を・どの軸で・どの参照線と共に描くか）だけを書き、
+  描画手順をコピーしない
+- 各チャートに `<skill-name>.<kebab-case-slug>` 形式の安定 ID を振り、
+  節内の標準チャート表の先頭列で定義する（例: `backtest.equity-curve`）。
+  prefix は skill ディレクトリ名と一致させる。ID のリネームは breaking change
+- 可視化はデフォルト off（opt-in）。テキスト出力を置き換えない
+- recipe は自前のチャートを定義しない（構成 skill の標準チャートを使う）
+- chaos `s11` が「可視化節を持つ skill は共有ガイドを参照していること」
+  「チャート ID の prefix 一致・グローバル一意性」を検査する
+- 標準チャート表は `scripts/gen-agents-catalog.ts` が `agents/chart-catalog.json`
+  に自動集約する（**手書き禁止**、chaos `x17` が drift 検査）。表を追加・変更
+  したら `npx tsx scripts/gen-agents-catalog.ts` で regenerate してコミットする
+
 ## Recipe Skill
 
 複数の skill を順に呼び出して一連のワークフローにまとめるものを recipe と呼ぶ。

@@ -1,0 +1,152 @@
+{
+  "schema_version": "1.0",
+  "cli_version": "0.2.0",
+  "generator": "scripts/gen-agents-catalog.ts",
+  "description": "Machine-readable chart catalog for the bitbank-lab-cli Agent Skills. Generated from the 可視化 (visualization) sections of skills/*/SKILL.md. Each chart is a stable ID (`<skill>.<slug>`; renaming is a breaking change) plus its spec. Rendering conventions (opt-in trigger discipline, matplotlib resolution, output path/naming, style, provenance footer, safety rules) are defined in the shared guide — charts are opt-in and never replace text output. Do not edit by hand — run `npx tsx scripts/gen-agents-catalog.ts`.",
+  "visualization_guide": "skills/_shared/references/visualization-guide.md",
+  "default_behavior": "off (opt-in only; see visualization_guide trigger discipline)",
+  "chart_count": 22,
+  "skills_with_charts": [
+    "backtest",
+    "correlation-analysis",
+    "indicator-analysis",
+    "paper-trade",
+    "portfolio",
+    "signal-explorer",
+    "volatility-profile"
+  ],
+  "charts": [
+    {
+      "id": "backtest.equity-curve",
+      "skill": "backtest",
+      "title": "累積損益曲線",
+      "spec": "x=時間、y=資金（JPY）。戦略 equity と Buy & Hold の 2 系列 + 初期資金の水平線。手数料条件（taker/maker・レート・フォールバックか否か）をフッターに明記"
+    },
+    {
+      "id": "backtest.drawdown",
+      "skill": "backtest",
+      "title": "ドローダウン曲線",
+      "spec": "equity のランニング最大値からの下落率（%）を塗りつぶしで。最大ドローダウンの位置と値を注記"
+    },
+    {
+      "id": "backtest.equity-drawdown",
+      "skill": "backtest",
+      "title": "損益スナップショット（統合版）",
+      "spec": "上段（高さ 2/3）: equity-curve と同構成。下段（高さ 1/3）: drawdown と同構成（underwater 塗りつぶし + 最大 DD 注記）。**共有 x 軸**・タイトルとフッターは 1 つ。quantstats の snapshot に相当する定番レイアウト"
+    },
+    {
+      "id": "backtest.trades-on-price",
+      "skill": "backtest",
+      "title": "約定マーカー付き価格チャート",
+      "spec": "close の折れ線 + エントリー（▲）/ イグジット（▼）マーカー。凡例は `simulated entry` / `simulated exit`（過去のシミュレーション約定であり推奨ではない）"
+    },
+    {
+      "id": "backtest.leak-check",
+      "skill": "backtest",
+      "title": "リークサニティ比較",
+      "spec": "Step 3.5 の shift(1) あり / なしの累積 PnL 2 系列。`VALIDATION ONLY — do not trade the no-shift series` を図中に明記"
+    },
+    {
+      "id": "correlation-analysis.heatmap",
+      "skill": "correlation-analysis",
+      "title": "リターン相関ヒートマップ",
+      "spec": "Step 3 の n×n 行列。0 中心の diverging カラーマップ（`vmin=-1, vmax=1`）+ セルに数値注記。タイトルに `return-based` を明記（価格相関でないこと）"
+    },
+    {
+      "id": "correlation-analysis.rolling",
+      "skill": "correlation-analysis",
+      "title": "ローリング相関の時系列",
+      "spec": "Step 5 の窓別（短期 / 長期）ローリング相関 + 全期間 r の水平線。不安定性（全期間 r からの乖離）が読めるようにする"
+    },
+    {
+      "id": "correlation-analysis.env-split",
+      "skill": "correlation-analysis",
+      "title": "環境別相関の比較",
+      "spec": "Step 7 の up / down 相関をペアごとのグループ棒 + 差分。条件銘柄バイアスの注記を脚注に"
+    },
+    {
+      "id": "correlation-analysis.cross-correlogram",
+      "skill": "correlation-analysis",
+      "title": "ラグ相関",
+      "spec": "Step 8 の lag = −k〜+k の棒グラフ。lag=0 を強調表示。多重比較への注意を脚注に"
+    },
+    {
+      "id": "indicator-analysis.price-overlay",
+      "skill": "indicator-analysis",
+      "title": "価格 + トレンド系オーバーレイ",
+      "spec": "close の折れ線（既定）またはローソク足 + SMA(20/50/200) + ボリンジャーバンド(20, 2σ) の帯（半透明 fill）。求めに応じて下段に出来高サブパネル。y=価格（JPY）。凡例必須"
+    },
+    {
+      "id": "indicator-analysis.oscillators",
+      "skill": "indicator-analysis",
+      "title": "オシレーター系サブプロット",
+      "spec": "上段: RSI(14) と 30/70 の水平線。下段: MACD / シグナル / ヒストグラム。同一チャート ID 内のサブプロット構成（1 図 1 ファイルの規約内）"
+    },
+    {
+      "id": "paper-trade.pnl-by-pair",
+      "skill": "paper-trade",
+      "title": "ペア別 P&L",
+      "spec": "`paper pnl` の realizedPnl / unrealizedPnl / totalPnl をペアごとのグループ棒 + 合計。y=JPY。0 の水平線を引く"
+    },
+    {
+      "id": "portfolio.allocation",
+      "skill": "portfolio",
+      "title": "資産構成",
+      "spec": "出力項目 1 の評価額比率のドーナツ（評価額の大きい順、JPY 現金を含む、中央に総評価額）。ラベルは凡例方式が既定・小口は Others に集約（いずれも下記）。ticker 取得時刻をフッターに。詳細比較用に横棒版への切替も可"
+    },
+    {
+      "id": "portfolio.value-history",
+      "skill": "portfolio",
+      "title": "JPY 建て資産推移",
+      "spec": "出力項目 2 の月次評価額。銘柄別の積み上げ棒（または合計線 + 銘柄別線）。`holdings fixed at current amounts`（保有量は現在値固定）を図中に明記"
+    },
+    {
+      "id": "signal-explorer.scatter",
+      "skill": "signal-explorer",
+      "title": "シグナル vs 将来リターン散布図",
+      "spec": "Step 1 の `s[t]` × `r_fwd[t]` の散布 + 最小二乗直線。Pearson / Spearman r をタイトルに併記"
+    },
+    {
+      "id": "signal-explorer.lag-correlation",
+      "skill": "signal-explorer",
+      "title": "ラグ相関プロファイル",
+      "spec": "Step 3 の `corr_lag[k]`（k=1..max_lag）の棒グラフ + r=0 の水平線。多重比較への注意を脚注に"
+    },
+    {
+      "id": "signal-explorer.autocorrelation",
+      "skill": "signal-explorer",
+      "title": "シグナル自己相関（粘着性）",
+      "spec": "Step 4 の自己相関の棒グラフ。粘着 / 非粘着の判定ラベルをタイトルに"
+    },
+    {
+      "id": "signal-explorer.sign-pnl",
+      "skill": "signal-explorer",
+      "title": "符号ベース簡易 PnL 比較",
+      "spec": "Step 6 の 3 系列（生符号 / Z-score 符号 / Buy & Hold）の累積 PnL。`cost & sizing ignored; short side = math simulation (bitbank spot is long-only)` を図中に明記"
+    },
+    {
+      "id": "signal-explorer.leak-check",
+      "skill": "signal-explorer",
+      "title": "リーク検証比較",
+      "spec": "Step 7 の shift(1) あり / なしの累積 PnL 2 系列。`VALIDATION ONLY — do not trade the no-shift series` を図中に明記"
+    },
+    {
+      "id": "volatility-profile.return-distribution",
+      "skill": "volatility-profile",
+      "title": "リターン分布ヒストグラム",
+      "spec": "対数リターンのヒストグラム + 同じ mean / σ の正規分布 pdf の重ね描き + ±2σ / ±3σ の縦線。歪度・超過尖度・ファットテール倍率をフッターに"
+    },
+    {
+      "id": "volatility-profile.hourly-volume",
+      "skill": "volatility-profile",
+      "title": "時間帯別出来高プロファイル",
+      "spec": "hour（0〜23）× 平均出来高の棒グラフ。x 軸は UTC を主とし JST を併記（本文セット 3 と同じ UTC hour 集約 + JST 併記）。最大 / 最小時間帯を注記"
+    },
+    {
+      "id": "volatility-profile.volume-return-scatter",
+      "skill": "volatility-profile",
+      "title": "出来高 × \\",
+      "spec": "リターン\\"
+    }
+  ]
+}

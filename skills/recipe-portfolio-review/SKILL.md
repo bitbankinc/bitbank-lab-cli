@@ -113,6 +113,16 @@ metadata:
 | 注意 | 1 銘柄に 50%超 集中 or 保有ペア相関が常時 0.8 超、特定銘柄のボラ過熱 |
 | 要見直し | 全保有銘柄が高相関で実質 1 銘柄、JPY 余力ゼロでボラ過熱、含み損が許容超 |
 
+### 可視化の扱い
+
+- 可視化はオプション（デフォルト off）。規約は
+  `_shared/references/visualization-guide.md` に従う
+- **recipe 独自のチャートは定義しない**。ユーザーが図を求めたら、対応する
+  step の構成 skill の標準チャート（例: Step 1 → `portfolio.allocation`、
+  Step 2 → `correlation-analysis.heatmap`、Step 3 →
+  `volatility-profile.return-distribution`）を、その skill の
+  可視化節の仕様どおりに描く
+
 ## Gotchas
 
 - **この recipe は判断の補助。リバランス実行はユーザーの責任**
