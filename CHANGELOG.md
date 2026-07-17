@@ -12,6 +12,31 @@
 
 ## [Unreleased]
 
+### Added
+
+- 分析系 Skill に可視化（グラフ出力）レイヤーを追加。共有規約
+  `skills/_shared/references/visualization-guide.md`（opt-in トリガー・
+  matplotlib 解決手順・出力先/ファイル名（UTC 統一）・スタイル・来歴フッター・
+  安全規律）を単一ソースとし、7 skill（backtest / signal-explorer /
+  correlation-analysis / volatility-profile / portfolio / indicator-analysis /
+  paper-trade）に標準チャート計 22 種を安定 ID
+  （例: `backtest.equity-drawdown`、`correlation-analysis.heatmap`）付きで定義。
+  recipe 2 本は構成 skill の標準チャートを参照する。
+  可視化はデフォルト off（opt-in）でテキスト出力を置き換えない
+- 機械可読チャートカタログ `agents/chart-catalog.json` を追加。
+  `scripts/gen-agents-catalog.ts` が SKILL.md の可視化表から自動生成する
+  （手書き禁止、chaos `x17` が drift を検査）
+- chaos `s11` を新設: 可視化節を持つ skill の共有ガイド参照、チャート ID の
+  prefix 一致・グローバル一意性を検査する
+
+### Changed
+
+- backtest skill の手数料文言を「実行時取得」前提に刷新。レートはペアごとに
+  異なり campaign で無料化もあるため、学習知識・他ペアの数字を使い回さず
+  `bitbank pairs` から毎回取得する旨に変更。具体的なレートは SKILL.md に
+  書かず、公式ガイドへのリンクと `cli/fees.ts` の `DEFAULT_TAKER_FEE_RATE`
+  を単一ソースにする（ドキュメント内の数字が新たなハードコード源になるのを防ぐ）
+
 ## [0.2.1] - 2026-07-15
 
 ### Fixed
