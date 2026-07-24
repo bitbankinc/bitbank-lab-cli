@@ -16,7 +16,15 @@ const nn = { type: ["number", "null"] };
 export const privateTransferSchemas: Record<string, SchemaDef> = {
   "deposit-history": {
     category: "private",
-    params: { asset, count, since, end },
+    params: {
+      asset,
+      count,
+      since,
+      end,
+      all: p("boolean", "Fetch all pages (auto-paginate; default cap 1000 pages)"),
+      year: p("string", "JST tax year (YYYY); implies --all, filters to JST 1/1–12/31"),
+      "max-pages": p("string", "Max pages to fetch with --all/--year (default: 1000; positive integer)"),
+    },
     output: {
       type: "array",
       items: {

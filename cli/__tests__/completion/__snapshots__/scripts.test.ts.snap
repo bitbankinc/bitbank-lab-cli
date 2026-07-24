@@ -92,7 +92,7 @@ _bitbank() {
         trade-history) opts="$opts --pair --count --order-id --since --end --order --all --max-pages" ;;
         trade-history-all) opts="$opts --pair --since --end --max-pages" ;;
         margin-positions) opts="$opts --pair" ;;
-        deposit-history) opts="$opts --asset --count --since --end" ;;
+        deposit-history) opts="$opts --asset --count --since --end --all --year --max-pages" ;;
         unconfirmed-deposits) opts="$opts --asset" ;;
         withdrawal-accounts) opts="$opts --asset" ;;
         withdrawal-history) opts="$opts --asset --count --since --end" ;;
@@ -213,7 +213,7 @@ _bitbank() {
       trade-history) opts="$opts --pair --count --order-id --since --end --order --all --max-pages" ;;
       trade-history-all) opts="$opts --pair --since --end --max-pages" ;;
       margin-positions) opts="$opts --pair" ;;
-      deposit-history) opts="$opts --asset --count --since --end" ;;
+      deposit-history) opts="$opts --asset --count --since --end --all --year --max-pages" ;;
       unconfirmed-deposits) opts="$opts --asset" ;;
       withdrawal-accounts) opts="$opts --asset" ;;
       withdrawal-history) opts="$opts --asset --count --since --end" ;;
