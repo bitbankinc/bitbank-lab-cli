@@ -218,6 +218,64 @@
   2. 付録 B（【方針】台帳 P-01〜P-12）の税務監修
   3. FAQ 2-2 の令和 6 年 12 月版との差分確認
   4. 免責文言一式の法務レビュー
-- **実機確認**: #1〜#6 完了（残: 現行提供ペアに非 JPY 建てがあるかの 1 コマンド確認）
+- **実機確認**: #1〜#6 完了。`/spot/pairs`（ペア定義マスタ）は BTC 建て 15 本を返すが
+  全て delist 済み（取引不可）＝現行の取引可能ペアは全て JPY 建て（実機確認 #4）
 - **B 層ヒアリング**: アカウントマネージャー経由の規模感データ
   （上位 botter の年間約定件数の桁・法人比率・税務処理の現状ワークフロー）
+
+## 実装状況・引き継ぎ（2026-07-24）
+
+> 計画フェーズは会社リポへのパッチ受け渡しで進めた。以降は個人フォーク
+> `tjackiet/bitbank-lab-cli`（bitbankinc の true fork）に接続した**新セッションで
+> 直接 push + CodeRabbit** で進める。会社リポは着地先（fork → bitbankinc の PR）に徹する。
+> 新セッションはまず本節・[tax-research.md](tax-research.md)・[ADR-004](../adr/004-tax-logic-in-cli-exception.md) を読むこと。
+
+### 前提（新セッション開始時に確認）
+
+- ブランチ `claude/crypto-tax-data-roadmap-svquwl` が **`06130b7` 以降**であること
+  （`git log --oneline` に `feat: deposit-history に --all` が見えるか）。無ければ
+  旧セッションの週次パッチが未適用 → 適用してから始める
+- `npm ci` 後、pre-commit（biome + tsc + 全テスト）が緑
+
+### 実装済み
+
+- **① JST 年境界ヘルパー**（`cli/date-utils.ts`, `a313997`）:
+  `jstYear(ms)` / `jstYearRangeMs(year)→{startMs,endMs}`（半開区間）/ `jstIso(ms)`。
+  epoch を +9h ずらして getUTC* で読み TZ 非依存（x13 と同じ安定性をテスト）。
+  税務の年分は JST（ADR-004 の例外）。テスト `cli/__tests__/date-utils-jst.test.ts`
+- **② deposit-history に `--all` / `--year`**（`cli/commands/private/deposit-history-all.ts`,
+  `06130b7`）: 後方 end 走査で全件ページング・uuid dedup・max-pages 安全弁。
+  `--year=<YYYY>` は jstYearRangeMs で範囲を絞り jstYear で厳密フィルタ（end 境界の
+  含む/排他に依存しない）。--year は --all を含意し --since/--end と併用不可。出力は
+  found_at 昇順。schema def / agents カタログ / completion 更新済み。
+  テスト `cli/__tests__/private/deposit-history-all.test.ts`
+
+### 次タスク（Week 2 残り。②のパターンを踏襲）
+
+- **③ withdrawal-history に `--all` / `--year`**: `deposit-history-all.ts` のミラー。
+  差分に注意: tsKey は `requested_at`、**withdrawal は asset 必須**。まず単一 asset の
+  --all/--year を実装し、全 asset 横断（asset ループ）を別フラグにするかは要判断
+- **④ trade-history 全ペア横断**: `trade-history-all` は単一 pair 必須。全ペアを取るには
+  `bitbank pairs`（**delist 込みマスタ**・実機 #4）をループして各 pair で全件取得しマージ。
+  円換算・按分はしない（生データ取得のみ）
+- **⑤ error-catalog の 50009**: 実機 #2 で「pair × order_id の複合キー不一致でも 50009」
+  が判明。`agents/error-catalog.json` は生成物（x17）→ `scripts/gen-agents-catalog.ts`
+  の単一ソース側を直して regenerate
+
+### 実装 gotchas（chaos 規約）
+
+- Result パターン（throw 禁止 x01）、Zod が型の単一ソース、`--format=json|table|csv`
+- **1 ファイル 100 行**（x04）。超過は冒頭に `// 100行超: <理由>` コメント
+- handler description / schema def を変えたら **`npx tsx scripts/gen-agents-catalog.ts`**
+  （x17 drift）+ completion スナップショット更新
+  **`npx vitest run cli/__tests__/completion/scripts.test.ts -u`**
+- private テストは実 API を叩かずモック（`mockFetchData` / `mockFetchDataCapture` /
+  `__fixtures__/private/`）
+
+### 段階3（Week 6）着手前に決める設計
+
+- **P-02 内部 Decimal 非丸め・浮動小数点禁止**（tax-research §3）→ JS number 不可。
+  decimal ライブラリ or BigInt 固定小数点の自作を **Week 6 冒頭に ADR 化**。丸めは
+  付録 D の互換モードで再現、FAQ 設例をゴールデンテスト
+- **信用の二重計上禁止**: 実現損益は決済レコードの `profit_loss`（ネット値）を採用し、
+  fee / interest を再控除しない（実機 #2）
