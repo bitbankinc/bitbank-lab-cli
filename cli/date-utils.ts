@@ -1,4 +1,5 @@
-// 100行超: UTC 基準の日付演算・足周期・次境界判定を 1 ファイルに集約
+// 100行超: UTC 基準の日付演算・足周期・次境界判定に加え、税務用の JST 年境界
+// （ADR-004 の例外）を 1 ファイルに集約
 export const YEARLY_TYPES = new Set(["4hour", "8hour", "12hour", "1day", "1week", "1month"]);
 
 // 非うるう年での 1 セグメント（短期足は 1 日分、年タイプは 1 年分）あたりのローソク本数
@@ -115,4 +116,35 @@ export function nextBoundaryMs(type: string, ts: number): number {
   const m = d.getUTCMonth(); // 0-11
   // Date.UTC は UTC 00:00 を返す。bitbank の 1month 足は UTC 月初 00:00 起点。
   return Date.UTC(m === 11 ? y + 1 : y, m === 11 ? 0 : m + 1, 1);
+}
+
+// --- 税務用の JST 年境界（ADR-004 の例外）---
+// 通常 CLI は日付境界を UTC 固定で扱う（上記）。ただし確定申告の対象「年分」は
+// JST の 1/1〜12/31 で区切られるため、税務集計だけは JST 基準の年判定を使う。
+// ホスト TZ 非依存を保つため、epoch を +9h ずらして getUTC* で読む（Asia/Tokyo に依存しない）。
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+/** epoch ms を JST の西暦年（number）で返す。税務の年分判定用（year_jst）。 */
+export function jstYear(ms: number): number {
+  return new Date(ms + JST_OFFSET_MS).getUTCFullYear();
+}
+
+/**
+ * JST の指定年（例: 2026）の期間を UNIX epoch ms の半開区間 [startMs, endMs) で返す。
+ * startMs = その年 1/1 00:00:00 JST、endMs = 翌年 1/1 00:00:00 JST（排他）。
+ * 例: jstYearRangeMs(2026) = { startMs: 1767193200000, endMs: 1798729200000 }。
+ * JST 00:00 は UTC 前日 15:00 なので Date.UTC(y,0,1)（UTC 元日 00:00）から 9h 引く。
+ */
+export function jstYearRangeMs(year: number): { startMs: number; endMs: number } {
+  return {
+    startMs: Date.UTC(year, 0, 1) - JST_OFFSET_MS,
+    endMs: Date.UTC(year + 1, 0, 1) - JST_OFFSET_MS,
+  };
+}
+
+/** epoch ms を JST の ISO 8601 文字列（+09:00 付き）で返す。正規化の ts_jst 用。 */
+export function jstIso(ms: number): string {
+  const d = new Date(ms + JST_OFFSET_MS);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}+09:00`;
 }
