@@ -1,0 +1,4 @@
+{
+  "name": "bitbank-lab-cli",
+  "install": "npm ci"
+}
