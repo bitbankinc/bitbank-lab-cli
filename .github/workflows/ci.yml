@@ -8,7 +8,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       # pre-commit hook（lefthook）は --no-verify で迂回できるうえ CI では走らない。
       # 追跡ファイル全体を検査して、迂回・過去分の混入も落とす（docs/dev/tax-fixtures-plan.md）。
       # 検出パターンの単一ソースは pre-commit と共有のスクリプト側にある
