@@ -14,7 +14,7 @@ jobs:
       # 検出パターンの単一ソースは pre-commit と共有のスクリプト側にある
       - name: No real account data tracked
         run: sh scripts/check-no-real-account-data.sh tracked
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
       - run: npm ci
