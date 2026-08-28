@@ -37,6 +37,7 @@ bitbank API を叩く薄い CLI。以下のカテゴリを提供します。
 - **Trade** — 資金操作（ドライランデフォルト）
 - **Paper** — ペーパートレード（仮想資金 × ライブ価格）
 - **Profile** — API キー切替プロファイル管理
+- **Tax** — 税務・会計データ整形（読み取り専用。private GET のみ）
 - **WebSocket** — リアルタイム配信（`stream` / `watch`）
 
 ```bash
@@ -56,6 +57,7 @@ bitbank paper create-order --pair=btc_jpy --side=buy --type=market --amount=0.00
 「ポートフォリオの状況を見せて」     → portfolio
 「BTC を仮想で 0.01 買って」        → paper-trade
 「買う前にざっと見て」              → recipe-pre-trade-check
+「確定申告のデータを作りたい」      → tax-report
 ```
 
 カテゴリは分析系・取引系（paper-trade）・ユーティリティ・Recipe。  
@@ -234,6 +236,7 @@ profile を 1 つも登録していない環境では、従来通り `BITBANK_AP
 | コマンド | 説明 | 使用例 |
 |---------|------|--------|
 | `assets` | 保有資産一覧 | `assets --format=table` |
+| `balance-history` | 各時点の保有と JPY 建て評価額を復元 | `balance-history --days=30` |
 | `order` | 注文情報照会 | `order --pair=btc_jpy --order-id=123` |
 | `orders-info` | 複数注文照会 | `orders-info --pair=btc_jpy --order-ids=1,2,3` |
 | `active-orders` | アクティブ注文 | `active-orders --pair=btc_jpy` |
@@ -251,6 +254,8 @@ profile を 1 つも登録していない環境では、従来通り `BITBANK_AP
 > 安全弁）。上限到達時は途中までのデータと共に `partial: true` /
 > `meta.truncated: true` / `meta.reason: "MAX_PAGES"` を返します。
 > 重複検出による停止ロジックは従来通り動作します。
+
+> `balance-history` は現在の残高から約定・入出金を逆算して各時点の保有を復元します（CLI 内で計算を行う例外。[ADR-007](docs/adr/007-balance-history-reconstruction-in-cli.md)）。期間は `--days`（既定 30）または `--since`、刻みは `--granularity=day|month` で指定します。履歴が打ち切られた場合は `partial` / `meta.truncated` / `completeness` / `warnings` の 4 経路で申告するので、数値だけを見ずにそちらも確認してください。
 
 ### Trade（資金操作 — ドライランデフォルト）
 
@@ -292,6 +297,39 @@ Trade コマンドは `bitbank trade <subcommand>` の形で呼び出します�
 > 指値は GTC のみ（部分約定なし）。fill 判定は前回 tick 以降の 1m 足を時系列で走査し、`buy: candle.low <= price` / `sell: candle.high >= price` で全量約定します。約定価格は指値ぴったり（スリッページなし）。`paper assets` / `paper trade-history` / `paper active-orders` / `paper create-order` を呼ぶと裏で lazy tick が走り、未解決の fill を解消してから結果を返します。明示的に解決したい場合は `paper tick` を直接実行してください。`lastTickAt` から 24h 以上空くと対象期間を直近 24h に制限し、stderr に警告を出します。
 >
 > 指値発注時は `price * amount + fee` 相当を JPY（買い）または `amount` を base 通貨（売り）で「ロック扱い」にします。`paper assets` の `available` は `total - locked` で、`available` 不足の指値発注は Err になります。手数料は対象ペアのライブ maker/taker レート（`/spot/pairs` 由来・24h キャッシュ。取得できないときのみ既定 0.12% にフォールバック）。スリッページは入っていません。
+
+### Profile（API キー切替）
+
+`bitbank profile <subcommand>` で複数の API キーを名前付きに管理します。bitbank API は叩かず、`profiles.json`（0600 / atomic write）へのローカル CRUD のみです。
+
+| コマンド | 説明 | 使用例 |
+|---------|------|--------|
+| `profile add` | プロファイルを追加 | `profile add main --default` |
+| `profile list` | 一覧（secret は出さない） | `profile list` |
+| `profile show` | 1 件表示（secret は常にマスク） | `profile show main` |
+| `profile set-default` | 既定プロファイルを変更 | `profile set-default sub` |
+| `profile remove` | 削除（`--confirm` 必須） | `profile remove sub --confirm` |
+
+> secret を受け取る flag は存在しません（shell 履歴に残るため）。`BITBANK_API_SECRET` env か、対話プロンプトの hidden 入力のみで受け取ります。profile を 1 つも登録していない環境では、従来どおり `BITBANK_API_KEY` / `BITBANK_API_SECRET` env vars が読まれます。
+
+### Tax（税務・会計データ整形 — 読み取り専用）
+
+`bitbank tax <subcommand>` で確定申告用の参考データを整形します。
+CLI が分析ロジックを持たない原則の例外で、税務は「間違えられない」領域のため損益計算を CLI 側に置いています（[ADR-004](docs/adr/004-tax-logic-in-cli-exception.md)）。
+**private GET のみを叩き、POST には絶対に到達しません。** ユーザー指定の CSV は読むだけで、書き出しも送信もしません。
+
+| コマンド | 説明 | 使用例 |
+|---------|------|--------|
+| `tax events` | 約定・入出金を税務イベントへ正規化 | `tax events --year=2025` |
+| `tax reconcile` | 理論残高と `assets` を突合（検出のみ・修正はしない） | `tax reconcile` |
+| `tax pnl` | 取引集計 + 参考損益（表示ガードを通った銘柄のみ） | `tax pnl --year=2025 --taxation=comprehensive --attest` |
+| `tax verify-report` | 年間取引報告書 CSV と API 由来の集計を突合 | `tax verify-report --year=2025 --csv=./report.csv` |
+
+> 出力は**税計算用参考データ**であり、税務上の所得金額ではありません。申告要否・税額の判定はしません。
+>
+> `tax pnl` の参考損益は、`--attest`（同一銘柄を他所で保有・取引していないことの申告）・未解決入庫の不在・前年繰越の確定・残高突合の一致が**すべて揃った銘柄でだけ**数値が出ます。1 つでも欠ければ理由付きでブロックされます（[ADR-006](docs/adr/006-reference-pnl-guard-scope.md)）。評価方法は `--method=total-average`（既定）/ `moving-average`、年分は JST 基準です。
+>
+> 販売所（即時売買）の取引は API に一切現れません。販売所を使っている場合は、4 コマンドすべてに `--brokerage-csv=<売買履歴CSV>` を渡してください。渡さないと集計から丸ごと抜けます。
 
 ### Stream（リアルタイム）
 
@@ -557,7 +595,7 @@ Skill はモデルへの指示書であり、CLI コマンドを組み合わせ�
 「指値で BTC を 1000 万円で買い注文」
 ```
 
-### ユーティリティ（2本）
+### ユーティリティ（3本）
 
 #### profile-management
 
@@ -579,6 +617,16 @@ bitbank の WebSocket public stream で ticker をリアルタイム購読。1 �
 「BTC の ticker をライブで見たい」
 「ライブで last を 10 秒だけ見たい」
 「リアルタイム価格監視」
+```
+
+#### tax-report
+
+確定申告向けの取引集計・残高突合・年間取引報告書との突合・参考損益。計算は CLI（`bitbank tax`）が行い、Skill 側では一切計算しない。出すのは税計算用参考データであり、申告要否・税額の判定はしない。
+
+```
+「確定申告のデータを作りたい」
+「年間取引報告書と合ってる？」
+「取得価額を出して」
 ```
 
 ### Recipe（2本）

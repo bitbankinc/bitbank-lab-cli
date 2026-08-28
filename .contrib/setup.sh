@@ -33,6 +33,19 @@ fi
 ln -s ".contrib/cursorrules" "$target"
 echo "linked: $target -> .contrib/cursorrules"
 
+# gitleaks の導入確認。pre-commit の秘密情報スキャンが使う（lefthook.yml）。
+# 未導入でも commit 自体は通る（警告のみ）ので、ここは案内に留めて失敗させない。
+# なお lefthook のフック配線は npm install の副作用で入るため、この setup.sh を
+# 実行しなかった人にはこの案内は届かない。あくまで補助。
+echo ""
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "✅ gitleaks: $(gitleaks version 2>/dev/null || echo 'installed')"
+else
+  echo "⚠️  gitleaks が見つかりません。pre-commit の秘密情報スキャンが効きません。"
+  echo "    install: brew install gitleaks  /  https://github.com/gitleaks/gitleaks#installing"
+  echo "    未導入を commit エラーにしたい場合は LEFTHOOK_REQUIRE_GITLEAKS=1 を設定してください。"
+fi
+
 echo ""
 echo "✅ 開発者用 hook と settings をリンクしました。"
 echo "   .claude/settings.json / .claude/hooks/ / .cursorrules は .gitignore 済みです。"

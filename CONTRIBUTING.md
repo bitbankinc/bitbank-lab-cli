@@ -22,6 +22,58 @@ npm ci   # 依存インストール（初回のみ）
 - README:「[コントリビューター向けセットアップ](README.md#コントリビューター向けセットアップ)」
 - [.contrib/setup.sh](.contrib/setup.sh) / [.contrib/README.md](.contrib/README.md)
 
+## 秘密情報の誤コミット防止（gitleaks）
+
+pre-commit フック（lefthook）が、ステージ済みの**内容**を gitleaks で走査する
+（フック自体は `npm ci` の lefthook postinstall で `.git/hooks/` に配線される）。
+CI の Security Audit がやっている検査を commit 時点に前倒しし、鍵がリポジトリに入る前に
+止める（使う gitleaks のバージョンは CI と一致するとは限らない。後述）。
+
+**gitleaks のインストールを強く推奨する。** 未導入でも commit は通るが、その場合
+ローカルの秘密情報チェックは効いていない（警告を出してスキップする）:
+
+```bash
+brew install gitleaks          # macOS
+# その他: https://github.com/gitleaks/gitleaks#installing
+gitleaks version               # CI は 8.30.1 に固定。ローカルも同等以上を推奨
+```
+
+CI（`.github/workflows/security.yml`）は SHA256 検証済みの **8.30.1** を使う。ローカルは
+PATH 上の gitleaks を使うためバージョンが一致するとは限らないが、検出ルールは版で増えるので
+新しい側に倒しておく。最終的な判定は CI の固定バージョンが行う。
+
+### 環境変数
+
+| 変数 | 効果 |
+|---|---|
+| `LEFTHOOK_REQUIRE_GITLEAKS=1` | gitleaks 未導入を**エラー**として commit を中断する。厳格に運用したい場合に設定する |
+| `LEFTHOOK_SKIP_GITLEAKS=1` | スキャン自体をスキップする。回避した理由を PR に必ず明記すること |
+
+いずれも値が `1` のときだけ有効。`0` や `false` を設定しても既定の動作のままになる。
+
+**誤検知だった場合**は、実鍵でないことを確認したうえで、行末に**その言語のコメント構文で**
+`gitleaks:allow` を付ける（TypeScript なら `// gitleaks:allow`、shell / YAML なら
+`# gitleaks:allow`）。JSON のようにコメントを書けない形式では代わりに `.gitleaksignore` に
+fingerprint と理由コメントを追加する。`LEFTHOOK_SKIP_GITLEAKS` での回避は最後の手段とする。
+
+ファイル名ベースの検査（`.env` / `.env.*` / `*.pem` / `*.key` / `id_rsa*` / `id_ed25519*` /
+`credentials.json`。`.env.example` のみ除外）は
+同じ pre-commit の `secret-file-names` が担う。`.gitignore` は `git add -f` と追跡済みファイルを
+防げないため、2 段構えにしている。
+
+### なぜ pre-commit で止めるのか
+
+一度 commit すると、鍵は git 履歴に残る。push 前に気づいても、除去には履歴の書き換えと
+鍵の失効・再発行が必要で、push 後であればなおさら手間が増える。
+
+CI の gitleaks（`.github/workflows/security.yml`）は全履歴をスキャンする最終防衛線だが、
+そこで検知した時点では既に履歴に入っている。**履歴に入る前に止められる唯一の場所が
+pre-commit** なので、ここを本命の防御と位置づけている。
+
+GitHub の Push protection も push 時点の網で、かつ bitbank は secret scanning の
+パートナーではないため **bitbank API キー専用の検出器が存在しない**（詳細は
+[docs/dev/repo-security.md](docs/dev/repo-security.md)）。
+
 ## 開発規約
 
 - 全体方針・アーキテクチャ: [CLAUDE.md](CLAUDE.md)

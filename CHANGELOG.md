@@ -12,6 +12,46 @@
 
 ## [Unreleased]
 
+### Added
+
+- **pre-commit で秘密情報を走査するようにした**（`lefthook.yml`）。ステージ済みの
+  「中身」を gitleaks で、ファイル名を `secret-file-names` で検査する。一度 commit すると
+  鍵は git 履歴に残り、除去には履歴の書き換えと鍵の失効・再発行が要る。CI
+  （`security.yml`）の全履歴スキャンは最終防衛線だが、そこで検知した時点で既に履歴に
+  入っているため、**履歴に入る前に止められる唯一の場所**として pre-commit を本命の防御に
+  据えた。GitHub の push protection も push 時点の網であり、かつ bitbank は GitHub の
+  secret scanning パートナーではないため bitbank API キー専用の検出器が存在しない
+  （[repo-security.md](docs/dev/repo-security.md)）。gitleaks 未導入の環境では警告のみで
+  スキップし、コントリビュータの参入障壁にはしない（`LEFTHOOK_REQUIRE_GITLEAKS=1` で
+  未導入をエラーに、`LEFTHOOK_SKIP_GITLEAKS=1` でスキャン自体をスキップできる）。
+  ローカルは PATH 上の gitleaks を使うため、CI が SHA256 検証つきで固定する 8.30.1 と
+  バージョンが一致するとは限らない。最終的な判定は CI の固定バージョンが行う
+- `.gitignore` に認証情報らしきファイル（`*.pem` / `*.key` / `id_rsa*` / `id_ed25519*` /
+  `credentials.json`）を追加した。`.gitignore` は `git add -f` と追跡済みファイルを防げない
+  ため、同じ集合を pre-commit の `secret-file-names` でも見る 2 段構えにしている
+- 運用手順を [CONTRIBUTING.md](CONTRIBUTING.md)（環境変数・誤検知時の `gitleaks:allow`・
+  なぜ pre-commit で止めるのか）と [repo-security.md](docs/dev/repo-security.md)
+  （Secret Protection / Push protection の設定とその限界）に記述した。
+  `.contrib/setup.sh` は gitleaks の導入有無を確認して案内する
+
+### Changed
+
+- **CI の非ブロッキングな `npm audit` を削除し、`security.yml` に一本化した**
+  （`.github/workflows/ci.yml`）。`security.yml` は `--audit-level=high` でブロッキングに
+  走り、high は critical を含むため、ci.yml 側に critical の audit を置いても
+  `security.yml` の部分集合にしかならなかった。非ブロッキングな audit を重ねると
+  「チェックがある」ように見えて実際には止まらないため、あえて置かない
+
+### Fixed
+
+- **README が実装に追従していなかったのを直した。** コマンド一覧に `bitbank tax`
+  （`events` / `reconcile` / `pnl` / `verify-report`）・`balance-history`・`profile` の
+  3 つが載っておらず、Agent Skills にも `tax-report` が無かった（カテゴリ小計が
+  7 + 1 + 2 + 2 = 12 本のまま。実数は 13 本）。chaos `s09` が検査するのは Skill の
+  **総数**プローズだけで、README でそれに当たるディレクトリツリー注記は 13 本と正しかった
+  ため、カテゴリ小計のズレは誰にも検出されないまま残っていた。`skills/INDEX.md` と
+  `docs/skill-workflow.md` は 3 つとも収録済みで、追従できていなかったのは README だけ
+
 ## [0.4.0] - 2026-08-17
 
 ### Added

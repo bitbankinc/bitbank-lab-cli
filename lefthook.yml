@@ -17,6 +17,49 @@ pre-commit:
       glob: "cli/**/*.{ts,json}"
       run: |
         ! grep -rn 'BITBANK_API_KEY\|BITBANK_API_SECRET\|API_KEY=' --include='*.ts' --include='*.json' --exclude-dir=__tests__ cli/ | grep -v -e 'process\.env\.' -e '"BITBANK_API' || (echo '❌ シークレットがコードに含まれています' && exit 1)
+    secret-file-names:
+      # ファイル名だけの検査。`.gitignore` は `git add -f` と追跡済みファイルを
+      # 防げないため、その穴を埋める。中身の検査は下の gitleaks が担う
+      run: |
+        for f in {staged_files}; do
+          case "$(basename "$f")" in
+            .env.example) ;;
+            .env|.env.*|*.pem|*.key|id_rsa*|id_ed25519*|credentials.json)
+              echo "❌ 秘密情報らしきファイルがステージされています: $f"
+              exit 1
+              ;;
+          esac
+        done
+    # 上の secret-check / secret-file-names はファイル名と既知の変数名しか見ない。
+    # ソース中にベタ書きされた鍵を捕まえるため、gitleaks でステージ済みの「中身」を
+    # 走査する。CI（security.yml）がやっている検査を commit 時点に前倒しするものだが、
+    # ここは PATH 上の gitleaks を使うため、CI が固定する 8.30.1 とバージョンが一致する
+    # とは限らず、既定ルールにも差が出うる（最終判定は CI の固定バージョンが行う）。
+    #
+    # 一度 commit すると鍵は git 履歴に残り、除去には履歴の書き換えと鍵の失効・再発行が
+    # 必要になる。CI（.github/workflows/security.yml）の全履歴スキャンは最終防衛線だが、
+    # そこで検知した時点で既に履歴に入っているため、その手前で止めるのがこのフックの役割。
+    #
+    # gitleaks 未導入の環境では警告のみでスキップする（コントリビュータの参入障壁に
+    # しないため）。未導入を失敗として扱いたい場合は LEFTHOOK_REQUIRE_GITLEAKS=1 を設定する。
+    gitleaks:
+      run: |
+        if [ "${LEFTHOOK_SKIP_GITLEAKS:-}" = "1" ]; then
+          echo "WARN: gitleaks scan skipped (LEFTHOOK_SKIP_GITLEAKS=1)."
+          exit 0
+        fi
+        if ! command -v gitleaks >/dev/null 2>&1; then
+          echo "gitleaks not found — staged secret scan cannot run."
+          echo "  install: brew install gitleaks  /  https://github.com/gitleaks/gitleaks#installing"
+          if [ "${LEFTHOOK_REQUIRE_GITLEAKS:-}" = "1" ]; then
+            echo "ERROR: LEFTHOOK_REQUIRE_GITLEAKS=1 が設定されているため commit を中断する。"
+            exit 1
+          fi
+          echo "WARN: ローカルの秘密情報チェックが無効な状態で commit する。"
+          echo "      厳格に運用する場合は LEFTHOOK_REQUIRE_GITLEAKS=1 を設定すること。"
+          exit 0
+        fi
+        gitleaks git --staged --redact --verbose --no-banner --exit-code 1
     no-real-account-data:
       # 検出パターンの単一ソースは scripts/check-no-real-account-data.sh（CI も同じものを呼ぶ）
       run: sh scripts/check-no-real-account-data.sh staged
