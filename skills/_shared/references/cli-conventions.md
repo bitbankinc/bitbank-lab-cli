@@ -40,6 +40,8 @@ skill 実行前に、以下の順で CLI の起動方法を解決する。skill 
   - `completion`: 補完スクリプトを stdout に吐くだけで API も呼ばない
   - `profile add`: secret を対話 hidden 入力で受けるインタラクティブコマンド
 - `table` / `csv` は人間向けの整形であり、モデルがパースする用途では使わない
+  （`periodical-brief --format=table` はダイジェスト本文をそのまま出す独自経路。cron / 通知
+  向けで、skill 経路では `--machine` の `data.text` から同じ本文を読む）
 - JSON 以外をパースしようとすると整形の揺れで壊れるため、例外を作らない
 
 ### `--machine` envelope の読み方
@@ -159,7 +161,9 @@ bitbank assets --format=json --machine
 - ペーパートレード（仮想資金）。`bitbank paper <cmd>` で呼び出す
 - 実 API は public ticker のみを叩く（private/trade は触らない）。`.env` 不要
 - 状態は `~/.bitbank/paper-state.json`（または `$XDG_DATA_HOME/bitbank/paper-state.json`）
-  に保存される
+  に保存される。`BITBANK_PAPER_STATE_PATH=<path>` で上書き可（複数口座の切替用）
+- 全 paper コマンドは `--machine` の envelope に `meta.statePath`（実際に読み書きした
+  state file）を載せる。複数口座を使い分けるときはこれで参照先を確認する
 - 主要例:
 
   ```bash

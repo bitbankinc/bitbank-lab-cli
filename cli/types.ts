@@ -48,6 +48,7 @@ export type ResultMeta = {
   timezone?: "UTC"; // 取得時の日付基準。常に "UTC"
   source?: Source; // 取得元（public / private）
   fetchedAt?: string; // 取得時刻（ISO 8601 / UTC）
+  statePath?: string; // paper が読み書きした state file の絶対パス（paper 専用。cli/paper-result.ts）
 };
 
 export type Result<T> =

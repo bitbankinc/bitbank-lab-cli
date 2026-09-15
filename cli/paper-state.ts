@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { z } from "zod";
 import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { DEFAULT_TAKER_FEE_RATE } from "./fees.js";
+import { snapAmount } from "./paper-precision.js";
 import type { Result } from "./types.js";
 
 export const PaperHistoryEntrySchema = z.object({
@@ -163,6 +164,7 @@ export function availableOf(
 // buy は quote を cost 分減らし base を amount 分増やす / sell はその逆。
 // 成行・指値で同形なのでここに集約する。価格決定・手数料ロール・残高不足
 // チェックは呼び出し側に残す（成行/指値で差があるため共通化しない）。
+// 更新後の残高は snapAmount で固定桁に丸め、累積誤差を持ち越さない（issue #30）。
 export function applyFillToBalances(
   balances: Record<string, number>,
   side: "buy" | "sell",
@@ -173,11 +175,11 @@ export function applyFillToBalances(
 ): Record<string, number> {
   const next = { ...balances };
   if (side === "buy") {
-    next[quote] = (next[quote] ?? 0) - cost;
-    next[base] = (next[base] ?? 0) + amount;
+    next[quote] = snapAmount((next[quote] ?? 0) - cost);
+    next[base] = snapAmount((next[base] ?? 0) + amount);
   } else {
-    next[base] = (next[base] ?? 0) - amount;
-    next[quote] = (next[quote] ?? 0) + proceeds;
+    next[base] = snapAmount((next[base] ?? 0) - amount);
+    next[quote] = snapAmount((next[quote] ?? 0) + proceeds);
   }
   return next;
 }

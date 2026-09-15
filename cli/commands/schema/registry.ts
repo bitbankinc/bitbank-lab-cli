@@ -4,6 +4,7 @@ import { privateBalanceSchemas } from "./defs-private-balance.js";
 import { privateMarginSchemas } from "./defs-private-margin.js";
 import { privateTransferSchemas } from "./defs-private-transfer.js";
 import { profileSchemas } from "./defs-profile.js";
+import { publicBriefSchemas } from "./defs-public-brief.js";
 import { publicDataSchemas } from "./defs-public-data.js";
 import { publicMarketSchemas } from "./defs-public-market.js";
 import { streamSchemas } from "./defs-stream.js";
@@ -14,6 +15,7 @@ import { type SchemaDef, schemaKey } from "./types.js";
 const DEFS: Record<string, SchemaDef>[] = [
   publicMarketSchemas,
   publicDataSchemas,
+  publicBriefSchemas,
   privateAccountSchemas,
   privateBalanceSchemas,
   privateTransferSchemas,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
+import { withStatePath } from "../../paper-result.js";
 import { defaultStatePath, nowIso, type OpenOrder, type PaperState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
 import type { Result } from "../../types.js";
@@ -38,7 +39,7 @@ export async function paperCancelOrder(
     feeRate: args.feeRate,
   });
   if (!tick.success) return tick;
-  return updateState<{ canceled: OpenOrder }>(
+  const r = await updateState<{ canceled: OpenOrder }>(
     (state) => {
       if (!state) {
         return {
@@ -63,4 +64,5 @@ export async function paperCancelOrder(
     },
     { path },
   );
+  return withStatePath(r, path);
 }

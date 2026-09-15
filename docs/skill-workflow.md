@@ -1,8 +1,8 @@
 # Skill の使い所ガイド
 
-全 13 の Skill をどう組み合わせて使うかの一例です。「現状把握 → 環境分析 → 仮説検証 → 戦略評価 → モニタリング」の流れに沿って使い分けるのがおすすめです。
+全 14 の Skill をどう組み合わせて使うかの一例です。「現状把握 → 環境分析 → 仮説検証 → 戦略評価 → モニタリング」の流れに沿って使い分けるのがおすすめです。
 
-内訳は分析コア 7（portfolio / volatility-profile / correlation-analysis / data-verification / indicator-analysis / signal-explorer / backtest）＋ ペーパートレード（paper-trade）＋ ユーティリティ 2（profile-management / watch-live）＋ 税務（tax-report）＋ recipe 2（recipe-pre-trade-check / recipe-portfolio-review）です。
+内訳は分析コア 8（portfolio / volatility-profile / correlation-analysis / data-verification / indicator-analysis / signal-explorer / backtest / periodical-brief）＋ ペーパートレード（paper-trade）＋ ユーティリティ 2（profile-management / watch-live）＋ 税務（tax-report）＋ recipe 2（recipe-pre-trade-check / recipe-portfolio-review）です。
 
 > **各 Skill の責務・カテゴリ・代表トリガーの一覧は正典カタログ [`skills/INDEX.md`](../skills/INDEX.md) に集約しています。** 本ガイドは「どの順で使うか」という流れに絞っているので、個々の Skill の詳細や呼び出し例はそちらを参照してください（数の二重管理を避けるため、列挙は INDEX.md 側を正とします）。
 
@@ -20,6 +20,7 @@
 ### 3. 個別銘柄チェック（売買判断の「読み」）
 
 - **data-verification**：分析前にデータの健全性を担保（任意）。
+- **periodical-brief**：複数銘柄の商い状況を 1 銘柄 3 行で一覧（毎朝の入口。気になった銘柄を次へ回す）。
 - **indicator-analysis**：RSI・MACD・BB 等で現在地を把握。
 
 ### 4. 仮説検証（その指標、信じていいの？）

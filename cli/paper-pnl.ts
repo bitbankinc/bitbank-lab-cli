@@ -1,3 +1,4 @@
+import { BALANCE_EPS, snapAmount } from "./paper-precision.js";
 import type { PaperHistoryEntry } from "./paper-state.js";
 import type { Result } from "./types.js";
 
@@ -28,7 +29,9 @@ export type ComputePnlInput = {
   pairFilter?: string;
 };
 
-const EPS = 1e-12;
+// 誤差許容は残高側（paper-precision.ts）と同じ値。position も残高と同じ桁で
+// snap し、`pnl` の position と `assets` の total が一致するようにする（issue #30）。
+const EPS = BALANCE_EPS;
 
 export function computePositions(
   history: PaperHistoryEntry[],
@@ -41,7 +44,7 @@ export function computePositions(
     if (h.side === "buy") {
       const newPos = cur.position + h.amount;
       cur.avgCost = (cur.avgCost * cur.position + (h.fillPrice + perUnitFee) * h.amount) / newPos;
-      cur.position = newPos;
+      cur.position = snapAmount(newPos);
     } else {
       const newPos = cur.position - h.amount;
       if (newPos < -EPS) {
@@ -51,7 +54,7 @@ export function computePositions(
         };
       }
       cur.realizedPnl += (h.fillPrice - cur.avgCost) * h.amount - h.feeQuote;
-      cur.position = newPos < 0 ? 0 : newPos;
+      cur.position = newPos < 0 ? 0 : snapAmount(newPos);
     }
     pos[h.pair] = cur;
   }

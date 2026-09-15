@@ -38,6 +38,11 @@ npx tsx cli/index.ts    # CLI 実行
   `bitbank-lab-mcp`（各ファイル冒頭に明記）。**private GET のみ**。数値は倍精度で、
   ADR-005 の厳密有理数は税務経路に限る。履歴の打ち切りは
   `partial` / `meta.truncated` / `completeness` / `warnings` の 4 経路で申告する
+- **例外: `periodical-brief`**（[ADR-008](docs/adr/008-periodical-brief-indicators-in-cli.md)）は
+  複数銘柄の RSI / MACD / SMA / ATR と曜日別出来高を CLI 側で計算し、1 銘柄 3 行に圧縮して返す。
+  生ローソク足を LLM に渡すと数万トークンを消費し検算も高コストなための例外。
+  計算本体は `cli/brief/`。**public GET のみ**・指標は**確定足のみ**で計算・売買判断は出さない。
+  一部銘柄の失敗は `errors` + `partial` で申告し、全銘柄失敗時だけ Result failure を返す
 - **1 ファイル 100 行は目安**。超えたら設計を見直す（責務が広がっていないか、
   リトライ・パース・整形などが混ざっていないか）。どうしても超過に妥当な
   理由がある場合は、ファイル冒頭にコメントで理由を書く

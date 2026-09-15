@@ -1,3 +1,4 @@
+import { withStatePath } from "../../paper-result.js";
 import { defaultStatePath, deleteState } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 
@@ -14,5 +15,5 @@ export async function paperReset(args: PaperResetArgs = {}): Promise<Result<{ de
     };
   }
   const path = args.statePath ?? defaultStatePath();
-  return deleteState(path);
+  return withStatePath(await deleteState(path), path);
 }

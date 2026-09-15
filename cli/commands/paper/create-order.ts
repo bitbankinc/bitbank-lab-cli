@@ -7,6 +7,8 @@ import { computeFill, makerRateResolver, resolveFeeRate } from "../../fees.js";
 import type { HttpOptions } from "../../http.js";
 import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
+import { BALANCE_EPS, hasEnough } from "../../paper-precision.js";
+import { withStatePath } from "../../paper-result.js";
 import {
   applyFillToBalances,
   availableOf,
@@ -102,12 +104,12 @@ export async function paperCreateOrder(
   });
   if (!tick.success) return tick;
   if (parsed.data.type === "limit") {
-    return placeLimit(parsed.data, args.feeRate, pairsR.data, path);
+    return withStatePath(await placeLimit(parsed.data, args.feeRate, pairsR.data, path), path);
   }
   // 成行は必ず taker。サイズ検証で使った pairs から該当ペアを引き、
   // ライブ taker_fee_rate_quote を fillMarket に渡す（campaign 追従）。
   const pair = pairsR.data.find((p) => p.name === parsed.data.pair);
-  return fillMarket(parsed.data, pair, args.feeRate, path, opts);
+  return withStatePath(await fillMarket(parsed.data, pair, args.feeRate, path, opts), path);
 }
 
 async function placeLimit(
@@ -139,11 +141,12 @@ async function placeLimit(
         createdAt: nowIso(),
       };
       const projected: PaperState = { ...state, openOrders: [...state.openOrders, order] };
+      // ロック後の available が EPS を超えて負なら不足（誤差分は許容。issue #30）
       if (input.side === "buy") {
-        if (availableOf(projected, quote, fee) < 0) {
+        if (availableOf(projected, quote, fee) < -BALANCE_EPS) {
           return { success: false, error: `insufficient ${quote} for limit buy lock` };
         }
-      } else if (availableOf(projected, base, fee) < 0) {
+      } else if (availableOf(projected, base, fee) < -BALANCE_EPS) {
         return { success: false, error: `insufficient ${base} for limit sell lock` };
       }
       const newState: PaperState = { ...projected, updatedAt: order.createdAt };
@@ -182,14 +185,16 @@ async function fillMarket(
       }
       // 残高不足チェックは適用前に side ごとに行う（成行のみの責務。指値は
       // ロック時に検証済み）。チェック通過後に共通の applyFillToBalances で適用。
+      // 比較は hasEnough で EPS を許容する（pnl の position をそのまま渡した
+      // 全量売却が丸め誤差で弾かれないように。issue #30）。
       if (input.side === "buy") {
         const avail = availableOf(state, quote, feeRate);
-        if (avail < cost) {
+        if (!hasEnough(avail, cost)) {
           return { success: false, error: `insufficient ${quote}: need ${cost}, have ${avail}` };
         }
       } else {
         const avail = availableOf(state, base, feeRate);
-        if (avail < amount) {
+        if (!hasEnough(avail, amount)) {
           return { success: false, error: `insufficient ${base}: need ${amount}, have ${avail}` };
         }
       }

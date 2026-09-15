@@ -1,4 +1,5 @@
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
+import { withStatePath } from "../../paper-result.js";
 import { defaultStatePath, loadState, type PaperHistoryEntry } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 
@@ -30,5 +31,5 @@ export async function paperTradeHistory(
       error: "paper state not initialized. Run 'bitbank paper init --jpy=<amount>' first.",
     };
   }
-  return { success: true, data: r.data.history };
+  return withStatePath({ success: true, data: r.data.history }, path);
 }
