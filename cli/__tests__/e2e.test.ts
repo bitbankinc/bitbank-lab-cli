@@ -27,6 +27,23 @@ describe("CLI E2E", () => {
     expect(stdout).toContain("Usage: bitbank");
   });
 
+  it.each([
+    ["--version"],
+    ["-v"],
+  ])("%s prints the version and exits 0 (issue #28)", async (flag) => {
+    const { stdout, exitCode } = await run(flag);
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it("--version --machine returns the standard envelope", async () => {
+    const { stdout, exitCode } = await run("--version", "--machine");
+    expect(exitCode).toBe(0);
+    const env = JSON.parse(stdout) as { success: boolean; data: { version: string } };
+    expect(env.success).toBe(true);
+    expect(env.data.version).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
   it("shows subcommand help with <command> --help", async () => {
     const { stdout, exitCode } = await run("ticker", "--help");
     expect(exitCode).toBe(0);
@@ -57,6 +74,18 @@ describe("CLI E2E", () => {
     const { stderr, exitCode } = await run("nonexistent-command");
     expect(exitCode).toBe(4);
     expect(stderr).toContain("Unknown command");
+  });
+
+  it("periodical-brief rejects an invalid --top with exit code 4 (no network)", async () => {
+    const { stderr, exitCode } = await run("periodical-brief", "--top=abc");
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("--top must be a positive integer");
+  });
+
+  it("periodical-brief --help shows usage", async () => {
+    const { stdout, exitCode } = await run("periodical-brief", "--help");
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("Usage: bitbank periodical-brief");
   });
 
   it("outputs JSON envelope on --machine for unknown command", async () => {

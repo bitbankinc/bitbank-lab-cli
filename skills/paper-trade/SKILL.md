@@ -41,7 +41,12 @@ metadata:
 ## 前提
 
 - `~/.bitbank/paper-state.json` に状態（残高・履歴）が保存される。
-  XDG が設定されていれば `$XDG_DATA_HOME/bitbank/paper-state.json` が優先
+  XDG が設定されていれば `$XDG_DATA_HOME/bitbank/paper-state.json` が優先、
+  `BITBANK_PAPER_STATE_PATH` が設定されていればそれが最優先（複数口座の切替用）
+- **参照先は `meta.statePath` で確認する。** 全 paper コマンドが `--machine` の envelope に
+  実際に読み書きした state file を載せる。ユーザーが複数の仮想口座を使い分けている
+  文脈では、残高や損益を報告する前にこの値が意図した口座かを確かめる（環境変数の
+  付け忘れは既定パスへ静かにフォールバックし、エラーにならない）
 - 実発注（`bitbank trade ...`）とは完全に独立。paper はライブ価格と
   1m candles を読むだけで、private/trade エンドポイントは絶対に叩かない
 - 成行（`market`）は last 価格で即時 fill。指値（`limit`、GTC のみ）は
@@ -200,7 +205,7 @@ CLI を呼ぶときは必ず `--format=json --machine` を付ける（共通規�
 - **手数料レートは 24h キャッシュ。** `/spot/pairs` は 24h キャッシュされる
   ため、campaign 開始直後はレート反映が最大 24h 遅れることがある。
   `paper create-order --refresh-pairs` で即時に取り直せる
-- **パスは `~/.bitbank/paper-state.json`。** 削除したい場合は
-  `paper reset --confirm` を使う（手で消さなくてよい）
+- **パスは `~/.bitbank/paper-state.json`（`BITBANK_PAPER_STATE_PATH` で上書き可）。**
+  削除したい場合は `paper reset --confirm` を使う（手で消さなくてよい）
 - **paper の trade-history と private の trade-history は別物。**
   前者は仮想履歴、後者は実約定履歴。ユーザー発話から取り違えない

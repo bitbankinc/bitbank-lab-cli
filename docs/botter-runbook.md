@@ -63,6 +63,8 @@ CLI 側の保証（詳細は [README セットアップ](../README.md#セット�
 仮想資金 × ライブ価格のシミュレーションで戦略を回す。**実 API は public ticker と 1m candles
 のみ**を叩き、private / trade エンドポイントには一切触れない。状態は
 `~/.bitbank/paper-state.json`（または `$XDG_DATA_HOME/bitbank/paper-state.json`）にローカル保存される。
+`BITBANK_PAPER_STATE_PATH=<path>` で保存先を切り替えられ（戦略ごとに口座を分ける等）、
+各コマンドの `meta.statePath` で実際に読んだファイルを確認できる。
 
 ```bash
 bitbank paper init --jpy=1000000                                              # 仮想口座を初期化

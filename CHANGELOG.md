@@ -12,7 +12,36 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-14
+
 ### Added
+
+- **`bitbank periodical-brief` を追加**（upstream #21）。複数銘柄の商い状況を 1 銘柄 3 行
+  （現在値・始値比・RSI14・MACD 符号・SMA20/50/200 との位置・曜日別出来高・直近確定日の
+  値動き・ATR14）に圧縮して返す。銘柄は位置引数 / `--pairs` / `--top=N`（24h 売買代金上位）/
+  `--all`（現行の取扱い JPY 建て全銘柄）。生ローソク足を LLM に渡すと 1 回の日次分析で
+  数万トークンを消費し検算も高コストなため、指標計算を CLI 側に置く。分析ロジックを CLI に
+  置かない原則（ADR-002）の例外で、根拠は
+  [ADR-008](docs/adr/008-periodical-brief-indicators-in-cli.md)。**public GET のみ**・
+  指標は**確定日足のみ**で計算・売買判断は出さない。同時実行は既定 16（`--concurrency`）で、
+  無制限だと 30 銘柄超で失速する実測に基づく。一部銘柄の失敗は落とさず `errors` +
+  `partial: true` で申告する。`--format=table` はダイジェスト本文をそのまま出す
+  （cron / 通知向け）。対の Skill `periodical-brief`（「朝のブリーフ出して」）を追加。
+  **提案・出力書式・取得設計・参考実装（Rust）・レート制限と CPU 時間の実測は
+  [@aobathree](https://github.com/aobathree)**（upstream #21）による。TypeScript 版は
+  それを本 CLI の規約（Result パターン・Zod・`KNOWN_PAIRS` への絞り込み・部分失敗の申告）に
+  移植したもので、差分は ADR-008 に記載
+
+- **paper: 全コマンドが `meta.statePath` で参照した state file を申告するようになった**（#27）。
+  `BITBANK_PAPER_STATE_PATH` で複数の仮想口座を切り替えて使う場合、環境変数を付け忘れると
+  既定パスへ静かにフォールバックし、別口座の残高が `success: true` で返っていた。
+  `--machine` / `--format=json` の envelope に載る。あわせて `BITBANK_PAPER_STATE_PATH` を
+  README・runbook・Skill の参照資料に記載した（従来は `cli/paper-state.ts` にしか無かった）
+
+- **`bitbank --version` / `-v` を追加した**（#28）。package.json の version を出す。
+  `--machine` 併用時は他コマンドと同じ envelope（`{"success":true,"data":{"version":...}}`）。
+  fnm 等で Node ごとにグローバル install が分かれ、シェルと launchd で別バージョンが
+  動いていた事例が 1 コマンドで見分けられるようになる
 
 - **pre-commit で秘密情報を走査するようにした**（`lefthook.yml`）。ステージ済みの
   「中身」を gitleaks で、ファイル名を `secret-file-names` で検査する。一度 commit すると
@@ -43,6 +72,14 @@
   「チェックがある」ように見えて実際には止まらないため、あえて置かない
 
 ### Fixed
+
+- **paper: 残高の丸め誤差で全量売却が永久に通らなくなる問題を直した**（#30）。
+  売買を繰り返すと残高が `0.0031999999999999967` のように目減りし、`pnl` の
+  position（`0.0032`）をそのまま `create-order --side=sell` に渡すと
+  `insufficient` で弾かれ続けていた。約定後の残高と履歴から積む position を
+  同じ桁（10 桁）で snap し（`cli/paper-precision.ts`）、残高チェックは `1e-9` の
+  誤差を許容する。`pnl` と `assets` が同じ数値を返すようになる。修正前に書かれた
+  誤差入りの state もそのまま全量売却できる
 
 - **README が実装に追従していなかったのを直した。** コマンド一覧に `bitbank tax`
   （`events` / `reconcile` / `pnl` / `verify-report`）・`balance-history`・`profile` の

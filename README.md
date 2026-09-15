@@ -230,6 +230,9 @@ profile を 1 つも登録していない環境では、従来通り `BITBANK_AP
 | `circuit-break` | サーキットブレーカー | `bitbank circuit-break btc_jpy` |
 | `status` | 取引所ステータス | `bitbank status` |
 | `pairs` | ペア設定情報 | `bitbank pairs` |
+| `periodical-brief` | 複数銘柄の商い状況ダイジェスト（1 銘柄 3 行） | `bitbank periodical-brief --top=10` |
+
+> `periodical-brief` は RSI14 / MACD / SMA20-50-200 / ATR14 と曜日別出来高を **CLI 内で計算**し、1 銘柄 3 行に圧縮して返します（分析ロジックを CLI に置かない原則の例外。[ADR-008](docs/adr/008-periodical-brief-indicators-in-cli.md)）。指標は確定日足のみで計算し、売買判断は出しません。銘柄は位置引数（`periodical-brief btc_jpy sol_jpy`）、`--top=N`（24h 売買代金上位）、`--all`（現行の取扱い JPY 建て全銘柄。母集団は `cli/pairs.ts` の `KNOWN_PAIRS` で、新規上場ペアは同ファイルと `skills/_shared/references/pair-classification.md` に追記しないと `--all` / `--top` に載りません）で指定します。`--format=table` はダイジェスト本文をそのまま出すので cron や通知にそのまま流せます。一部銘柄の取得に失敗しても落とさず `errors` + `partial: true` で申告します。
 
 ### Private（要認証）
 
@@ -280,6 +283,10 @@ Trade コマンドは `bitbank trade <subcommand>` の形で呼び出します�
 `bitbank paper <subcommand>` でライブ価格 × 仮想資金のシミュレーションを行います。  
 実 API は public ticker のみ叩き、private / trade エンドポイントには一切触れません。  
 状態は `~/.bitbank/paper-state.json`（または `$XDG_DATA_HOME/bitbank/paper-state.json`）に保存されます。
+`BITBANK_PAPER_STATE_PATH=<path>` で保存先を上書きでき、複数の仮想口座を切り替えて使えます。
+全 paper コマンドは実際に読み書きした state file を `meta.statePath` で返す（`--machine` /
+`--format=json` の envelope に載る）ので、環境変数の付け忘れで既定パスへフォールバックしていないか
+確認できます。
 
 | コマンド | 説明 | 使用例 |
 |---------|------|--------|
@@ -294,6 +301,10 @@ Trade コマンドは `bitbank trade <subcommand>` の形で呼び出します�
 | `paper pnl` | 損益サマリ（realized + unrealized、ペア別 + 合計） | `paper pnl --pair=btc_jpy` |
 | `paper reset` | 仮想口座をリセット（`--confirm` 必須） | `paper reset --confirm` |
 
+> **paper state の参照先。** `bitbank paper assets --machine` の `meta.statePath` が想定したファイルを
+> 指しているか確認してください。`BITBANK_PAPER_STATE_PATH` を付け忘れると既定パスの別口座が
+> `success: true` で返り、エラーにはなりません。
+>
 > 指値は GTC のみ（部分約定なし）。fill 判定は前回 tick 以降の 1m 足を時系列で走査し、`buy: candle.low <= price` / `sell: candle.high >= price` で全量約定します。約定価格は指値ぴったり（スリッページなし）。`paper assets` / `paper trade-history` / `paper active-orders` / `paper create-order` を呼ぶと裏で lazy tick が走り、未解決の fill を解消してから結果を返します。明示的に解決したい場合は `paper tick` を直接実行してください。`lastTickAt` から 24h 以上空くと対象期間を直近 24h に制限し、stderr に警告を出します。
 >
 > 指値発注時は `price * amount + fee` 相当を JPY（買い）または `amount` を base 通貨（売り）で「ロック扱い」にします。`paper assets` の `available` は `total - locked` で、`available` 不足の指値発注は Err になります。手数料は対象ペアのライブ maker/taker レート（`/spot/pairs` 由来・24h キャッシュ。取得できないときのみ既定 0.12% にフォールバック）。スリッページは入っていません。
@@ -468,6 +479,18 @@ bitbank candles btc_jpy --type=1day --format=json --machine
 [`skills/_shared/references/cli-conventions.md`](skills/_shared/references/cli-conventions.md)
 を参照してください。
 
+### `--version`（インストール済みバージョンの確認）
+
+`bitbank --version`（または `-v`）で package.json の version を表示します。
+fnm / nvm で Node を複数入れていると npm のグローバルは Node ごとに分かれるため、
+シェルと cron / launchd で別バージョンの `bitbank` が動いていることがあります。
+挙動が食い違ったらまずこれで揃っているか確認してください。
+
+```bash
+bitbank --version             # → 0.4.0
+bitbank --version --machine   # → {"success":true,"data":{"version":"0.4.0"}}
+```
+
 ## Shell 補完
 
 `bitbank completion <shell>` で補完スクリプトを stdout に出力します。
@@ -511,7 +534,7 @@ Skill はモデルへの指示書であり、CLI コマンドを組み合わせ�
 > Skill の使い所はこちら → [Skill 使い所ガイド](docs/skill-workflow.md)
 > 全 Skill の責務・カテゴリ・代表トリガーの一覧（正典カタログ）→ [Skills Index](skills/INDEX.md)
 
-### 分析系（7本）
+### 分析系（8本）
 
 #### portfolio
 
@@ -561,6 +584,16 @@ Skill はモデルへの指示書であり、CLI コマンドを組み合わせ�
 「BTC の RSI を見て」
 「移動平均のクロスを確認して」
 「ETH の4時間足でテクニカル分析して」
+```
+
+#### periodical-brief
+
+複数銘柄の商い状況を 1 銘柄 3 行のダイジェストで一覧。現在値・RSI14・MACD 符号・SMA20/50/200 との位置・曜日別出来高・ATR14。計算は CLI（`bitbank periodical-brief`）が確定日足だけで行い、Skill 側では計算しない。生ローソク足を文脈に入れないので、銘柄を増やしても 1 銘柄あたり 3 行しか増えない。
+
+```
+「朝のブリーフ出して」
+「出来高上位 10 銘柄の様子は？」
+「全銘柄の商い状況ざっと見せて」
 ```
 
 #### signal-explorer
@@ -673,6 +706,13 @@ bitbank の WebSocket public stream で ticker をリアルタイム購読。1 �
 | `signal-explorer` | [Vol.05 テクニカル指標の作成と評価](https://github.com/i-love-profit/crypto-data-analysis-course/blob/main/vol05_technical_indicators.ipynb)（後半） / [Vol.06 指標の探索](https://github.com/i-love-profit/crypto-data-analysis-course/blob/main/vol06_indicator_exploration.ipynb) / [Vol.04 リードラグ分析](https://github.com/i-love-profit/crypto-data-analysis-course/blob/main/vol04_lead_lag_analysis.ipynb)（リーク検証手法） |
 | `backtest` | [Vol.04 リードラグ分析](https://github.com/i-love-profit/crypto-data-analysis-course/blob/main/vol04_lead_lag_analysis.ipynb)（リーク・コスト感度） + 教材横断のリスク指標 |
 
+`periodical-brief` コマンドと同名の Skill は、[aobathree](https://github.com/aobathree) 氏の提案
+（[bitbankinc/bitbank-lab-cli#21](https://github.com/bitbankinc/bitbank-lab-cli/issues/21)）に基づいています。
+1 銘柄 3 行の出力書式、1 銘柄 4 リクエストの取得設計、同時実行数の上限（無制限だと 30 銘柄超で失速する）
+という核心部分はすべて同氏の参考実装（Rust）と実測データによるもので、CLI 内部にネイティブ実装する
+根拠となった CPU 時間 42 倍差の計測も同氏の提供です。設計判断の詳細と参考実装からの意図的な差分は
+[ADR-008](docs/adr/008-periodical-brief-indicators-in-cli.md) に記録しています。丁寧な提案と検証に感謝いたします。
+
 ## フィードバック
 
 バグ報告・機能リクエストは [GitHub Issues](https://github.com/bitbankinc/bitbank-lab-cli/issues) へお願いします。  
@@ -774,7 +814,7 @@ cli/
     paper/              # ペーパートレード（ライブ価格 × ローカル state、9）
     stream.ts           # リアルタイムストリーム
   __tests__/            # 全コマンドのテスト（件数は npx vitest run 参照）
-skills/                 # Agent Skills（13本 + _shared/references/）
+skills/                 # Agent Skills（14本 + _shared/references/）
 docs/                   # ADR・フェーズ管理・カスタマイズガイド
 .contrib/               # コントリビューター向け hook tooling（clone 利用者は不要）
 ```

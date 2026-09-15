@@ -44,6 +44,7 @@ export function showHelp(): void {
   console.log("  --log-file=<path>        Trade audit log path (default: ~/.bitbank-trade.log)");
   console.log("  --no-log                 Skip writing the trade audit log");
   console.log("  --help                   Show this help");
+  console.log("  --version, -v            Print the installed CLI version");
 }
 
 export function showTradeHelp(): void {

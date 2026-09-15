@@ -4,6 +4,7 @@ import { privateBalanceCommands } from "./private-balance-handlers.js";
 import { privateCommands } from "./private-handlers.js";
 import { privateTransferCommands } from "./private-transfer-handlers.js";
 import { profileCommands } from "./profile-handlers.js";
+import { publicBriefCommands } from "./public-brief-handler.js";
 import { publicCommands } from "./public-handlers.js";
 import { streamCommands } from "./stream-handler.js";
 import { taxCommands } from "./tax-handlers.js";
@@ -12,6 +13,7 @@ import { watchCommands } from "./watch-handler.js";
 
 export const COMMANDS: Record<string, CommandEntry> = {
   ...publicCommands,
+  ...publicBriefCommands,
   ...privateCommands,
   ...privateBalanceCommands,
   ...privateTransferCommands,

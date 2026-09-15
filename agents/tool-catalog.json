@@ -3,7 +3,7 @@
   "cli_version": "0.0.0-dev",
   "generator": "scripts/gen-agents-catalog.ts",
   "description": "Machine-readable command catalog for the bitbank CLI. Generated from cli/commands/schema (ALL_SCHEMAS) + trade confirm-guard (CONFIRM_PHRASES). `command` is the full invocation path: subcommand groups (trade / tax / paper / profile) are spelled `<group> <name>`, everything else is a bare name. `dangerous: true` marks fund-affecting trade commands that require --execute together with --confirm=<confirm>; paper and profile touch no real funds, so their --confirm flags (paper reset, profile remove) are plain required booleans declared in `params` and are not dangerous. A param with `positional: true` is passed as a bare argument, not a flag. Do not edit by hand — run `npx tsx scripts/gen-agents-catalog.ts`.",
-  "command_count": 48,
+  "command_count": 49,
   "dangerous_count": 5,
   "commands": [
     {
@@ -501,6 +501,231 @@
             "amount_digits": {
               "type": "number"
             }
+          }
+        }
+      }
+    },
+    {
+      "command": "periodical-brief",
+      "category": "public",
+      "auth_required": false,
+      "description": "3-line trading digest per pair (price, RSI/MACD/SMA trend, weekday volume, ATR) from confirmed daily candles",
+      "dangerous": false,
+      "params": {
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "type": "string",
+            "description": "Pairs as bare arguments (e.g. `periodical-brief btc_jpy eth_jpy`) or comma-separated via --pairs. Default: btc_jpy eth_jpy xrp_jpy",
+            "positional": true
+          },
+          "top": {
+            "type": "number",
+            "description": "Auto-select the top N tradable JPY pairs by 24h turnover (vol × last)"
+          },
+          "all": {
+            "type": "boolean",
+            "description": "All tradable JPY pairs, sorted by 24h turnover"
+          },
+          "concurrency": {
+            "type": "number",
+            "description": "Max pairs processed in parallel (default 16, max 64)",
+            "default": 16
+          },
+          "no-cache": {
+            "type": "boolean",
+            "description": "Bypass the local candle cache"
+          }
+        },
+        "required": []
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "as_of": {
+            "type": "string"
+          },
+          "as_of_jst": {
+            "type": "string"
+          },
+          "pairs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pair": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                },
+                "intraday_pct": {
+                  "type": "number"
+                },
+                "daily_incomplete": {
+                  "type": "boolean"
+                },
+                "rsi14": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "macd_hist": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "macd_sign": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "+",
+                    "-",
+                    null
+                  ]
+                },
+                "sma20": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "sma50": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "sma200": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "trend": {
+                  "type": "string",
+                  "enum": [
+                    "UP",
+                    "DOWN",
+                    "MIX"
+                  ]
+                },
+                "position": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "volume": {
+                  "type": "object",
+                  "properties": {
+                    "today_jst": {
+                      "type": "number"
+                    },
+                    "weekday_avg": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "sat_avg": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "sun_avg": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "sat_vs_weekday_pct": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "avg_30d": {
+                      "type": "number"
+                    },
+                    "sample_days": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "last_confirmed": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "date": {
+                      "type": "string"
+                    },
+                    "weekday": {
+                      "type": "string",
+                      "enum": [
+                        "Mon",
+                        "Tue",
+                        "Wed",
+                        "Thu",
+                        "Fri",
+                        "Sat",
+                        "Sun"
+                      ]
+                    },
+                    "open": {
+                      "type": "number"
+                    },
+                    "close": {
+                      "type": "number"
+                    },
+                    "change_pct": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "atr14": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "lines": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                }
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pair": {
+                  "type": "string"
+                },
+                "error": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "text": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
           }
         }
       }

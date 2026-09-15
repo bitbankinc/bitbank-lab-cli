@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { type FetchCandles, type GetPairs, runTick, type TickResult } from "../../paper-fill.js";
+import { withStatePath } from "../../paper-result.js";
+import { defaultStatePath } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 import { formatZodError, PairSchema } from "../../validators.js";
 
@@ -24,12 +26,14 @@ export async function paperTick(args: PaperTickArgs = {}): Promise<Result<TickRe
       exitCode: EXIT.PARAM,
     };
   }
-  return runTick({
-    statePath: args.statePath,
+  const path = args.statePath ?? defaultStatePath();
+  const r = await runTick({
+    statePath: path,
     pair: parsed.data.pair,
     fetchCandles: args.fetchCandles,
     getPairs: args.getPairs,
     nowMs: args.nowMs,
     feeRate: args.feeRate,
   });
+  return withStatePath(r, path);
 }

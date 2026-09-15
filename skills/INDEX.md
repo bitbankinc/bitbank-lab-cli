@@ -26,6 +26,7 @@ Skill の追加・recipe 化の原則は [`.claude/rules/skills.md`](../.claude/
 | Skill | 説明 | 代表トリガー |
 |---|---|---|
 | [`indicator-analysis`](indicator-analysis/SKILL.md) | SMA / RSI / MACD / BB の現在値を計算し、トレンド・売買シグナルを読む | 「RSI 見て」「今買い時？」「相場の雰囲気は？」 |
+| [`periodical-brief`](periodical-brief/SKILL.md) | 複数銘柄の商い状況を 1 銘柄 3 行で一覧（RSI / MACD / SMA 位置 / 曜日別出来高 / ATR。計算は CLI 側） | 「朝のブリーフ出して」「出来高上位 10 銘柄の様子は？」 |
 | [`watch-live`](watch-live/SKILL.md) | WebSocket public stream で ticker をリアルタイム watch（要 `--duration` / `--count`） | 「ticker をライブで見たい」「リアルタイム価格監視」 |
 
 ## Risk & Statistics（リスク特性・統計）

@@ -28,11 +28,17 @@ function helpDone(r: Result<void>, machine: boolean): void {
 }
 
 async function main(): Promise<void> {
-  const { positionals: p1 } = parseArgs({
+  const { positionals: p1, values: v1 } = parseArgs({
     allowPositionals: true,
     options: COMMON_OPTIONS,
     strict: false,
   });
+  // `--version` / `-v` はコマンド解決より前に終端する（API・認証・format に触れない）。
+  if (v1.version === true) {
+    const { versionHandler } = await import("./commands/version.js");
+    versionHandler(v1.machine === true);
+    return;
+  }
   if (p1.length === 0) {
     showHelp();
     return;

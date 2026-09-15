@@ -3,6 +3,7 @@
 import { machineOutput } from "../../output.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
 import { computePnl, type PaperPnlReport } from "../../paper-pnl.js";
+import { withStatePath } from "../../paper-result.js";
 import { defaultStatePath, loadState } from "../../paper-state.js";
 import type { Format, Result } from "../../types.js";
 import { ticker } from "../public/ticker.js";
@@ -60,7 +61,10 @@ export async function paperPnl(args: PaperPnlArgs = {}): Promise<Result<PaperPnl
     }
     tickerByPair[pair] = r.data;
   }
-  return computePnl({ history: jpyHistory, tickerByPair, pairFilter: args.pair });
+  return withStatePath(
+    computePnl({ history: jpyHistory, tickerByPair, pairFilter: args.pair }),
+    path,
+  );
 }
 
 async function defaultFetchTicker(pair: string): Promise<Result<number>> {

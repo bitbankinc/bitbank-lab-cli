@@ -24,10 +24,12 @@ CLI は分析ロジックを一切持たない。bitbank API への薄いアク�
 - CLI 単体では「今買い時？」に答えられない（Skills またはモデルの推論が必要）
 - MCP との役割分担が明確になる（MCP = 結論を渡す / CLI = 生データを渡す）
 
-**本 ADR には例外がある。** 「生データを渡せばモデルが再現できる」が成立しない領域は
+**本 ADR には例外がある。** 「生データを渡せばモデルが再現できる」が成立しない領域、
+または再現の費用（トークン・検算・プロセス資源）が用途そのものを壊す領域は
 CLI 側で計算する。現時点の例外は以下:
 
 - [ADR-004](004-tax-logic-in-cli-exception.md): 税務・会計データの整形（`tax` サブコマンド）
 - [ADR-007](007-balance-history-reconstruction-in-cli.md): 残高推移の再構築（`balance-history`）
+- [ADR-008](008-periodical-brief-indicators-in-cli.md): 複数銘柄の商い状況ダイジェスト（`periodical-brief`）
 
 いずれも「判断は出さない（数値と前提だけを返す）」点で本 ADR の線を保っている。

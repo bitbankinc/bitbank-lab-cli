@@ -1,6 +1,7 @@
 import { makerRateResolver } from "../../fees.js";
 import { getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
+import { withStatePath } from "../../paper-result.js";
 import { computeLocked, defaultStatePath, loadState } from "../../paper-state.js";
 import type { Result } from "../../types.js";
 
@@ -59,5 +60,5 @@ export async function paperAssets(args: PaperAssetsArgs = {}): Promise<Result<Pa
     const lockedAmt = locked[asset] ?? 0;
     return { asset, total, locked: lockedAmt, available: total - lockedAmt };
   });
-  return { success: true, data: rows };
+  return withStatePath({ success: true, data: rows }, path);
 }

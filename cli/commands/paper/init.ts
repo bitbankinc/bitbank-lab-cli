@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
+import { withStatePath } from "../../paper-result.js";
 import { defaultStatePath, nowIso, type PaperState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
 import type { Result } from "../../types.js";
@@ -26,7 +27,7 @@ export async function paperInit(args: PaperInitArgs): Promise<Result<PaperState>
     };
   }
   const path = args.statePath ?? defaultStatePath();
-  return updateState<PaperState>(
+  const r = await updateState<PaperState>(
     (existing) => {
       if (existing && !parsed.data.force) {
         return {
@@ -50,4 +51,5 @@ export async function paperInit(args: PaperInitArgs): Promise<Result<PaperState>
     },
     { path },
   );
+  return withStatePath(r, path);
 }
