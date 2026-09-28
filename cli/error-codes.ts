@@ -17,14 +17,32 @@ export const ERROR_CODES: Record<number, string> = {
   50003: "現在取引不可",
   50004: "注文不可（板寄せ中）",
   50009: "注文が見つかりません",
+  40164: "position_side が不正（long / short のみ）",
+  40167: "信用取引に対応していないペア（対応ペアは margin-status の available_balances を参照）",
+  50058: "信用取引の審査が未完了（bitbank で信用取引の申込・審査が必要）",
+  50059: "信用の新規注文を一時制限中（時間を置いて再試行）",
+  50060: "信用の新規注文を一時制限中（時間を置いて再試行）",
+  50061: "新規建て可能額を超過（margin-status の available_balances を確認）",
+  50062:
+    "建玉を超過（返済数量が返済可能数量 open_amount - locked_amount を超えている。margin-positions を確認）",
+  50081: "信用の売り新規注文が停止中",
+  50082: "信用の売り返済注文が停止中",
+  50083: "信用の買い新規注文が停止中",
+  50084: "信用の買い返済注文が停止中",
   60001: "残高不足",
+  60019: "TakeProfit / StopLoss の side は返済方向でなければならない",
   70001: "システムエラー",
 };
+
+// 信用注文で PARAM 相当のコードは範囲外（30001〜40001）なので個別に足す。
+// 範囲を 40xxx 全体に広げると出金系の 401xx（40116 等）を巻き込むため、範囲分岐は変えない。
+const MARGIN_PARAM_CODES: ReadonlySet<number> = new Set([40164, 40167]);
 
 export function apiErrorExitCode(code: number): (typeof EXIT)[keyof typeof EXIT] {
   if (code >= 20001 && code <= 20003) return EXIT.AUTH;
   if (code === 10009) return EXIT.RATE_LIMIT;
   if (code >= 30001 && code <= 40001) return EXIT.PARAM;
+  if (MARGIN_PARAM_CODES.has(code)) return EXIT.PARAM;
   return EXIT.GENERAL;
 }
 

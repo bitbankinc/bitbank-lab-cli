@@ -39,6 +39,22 @@ describe("apiErrorExitCode", () => {
     expect(apiErrorExitCode(10000)).toBe(EXIT.GENERAL);
     expect(apiErrorExitCode(70001)).toBe(EXIT.GENERAL);
   });
+
+  it("returns PARAM for margin 40164 / 40167 individually, not by widening the 40xxx range", () => {
+    expect(apiErrorExitCode(40164)).toBe(EXIT.PARAM);
+    expect(apiErrorExitCode(40167)).toBe(EXIT.PARAM);
+    // 出金系の 401xx（40116: Invalid withdrawal type）は巻き込まない
+    expect(apiErrorExitCode(40116)).toBe(EXIT.GENERAL);
+    expect(apiErrorExitCode(40165)).toBe(EXIT.GENERAL);
+  });
+
+  it("returns GENERAL (not AUTH) for margin 50058 and other 5xxxx / 60019", () => {
+    expect(apiErrorExitCode(50058)).toBe(EXIT.GENERAL);
+    expect(apiErrorExitCode(50059)).toBe(EXIT.GENERAL);
+    expect(apiErrorExitCode(50062)).toBe(EXIT.GENERAL);
+    expect(apiErrorExitCode(50084)).toBe(EXIT.GENERAL);
+    expect(apiErrorExitCode(60019)).toBe(EXIT.GENERAL);
+  });
 });
 
 describe("output exitCode propagation", () => {

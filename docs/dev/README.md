@@ -11,6 +11,7 @@ clone したユーザーは基本的に読む必要はない。
 - `repo-security.md` — GitHub / npm の管理者向け初期セットアップ
 - `nl-verification.md` — 自然言語 E2E 検証の手順（skill 経由の起動・規律・安全ガード）
 - `tax-*.md` — Phase 6（税務・会計データ整形）の計画・要求仕様・調査・設計メモ
+- `margin-order-plan.md` — Phase 7（信用の新規建て・返済注文）の開発計画
 
 配布側ユーザーが参照すべきドキュメントは `docs/customization-guide.md` /
 `docs/skill-workflow.md` / `docs/adr/` 側にある。

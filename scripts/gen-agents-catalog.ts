@@ -75,12 +75,43 @@ export function buildToolCatalog() {
 
 // ---- error-catalog ----------------------------------------------------------
 
+// GENERAL（exit 1）は apiErrorExitCode がサブ分類しない catch-all なので、コード単位の
+// retry 指針をここで補う。ラベルは skills/_shared/references/error-catalog.md の表記と揃える。
+// 信用（50058〜50084）は POST でしか出ないため post 視点で書く: 一時制限（50059 / 50060）だけ
+// 時間を置けば通り得る。方向別の停止（50081〜50084）や審査未完了・可能額超過は再送しても直らない。
+const GENERAL_RETRY: Record<number, { retry: string; hint: string }> = {
+  10000: { retry: "no_retry", hint: "Malformed URL; fix the request." },
+  50003: { retry: "retry_after_long", hint: "Trading halted (maintenance); wait 5-15 min." },
+  50004: { retry: "retry_after_long", hint: "Auction (itayose) in progress; wait 5-15 min." },
+  50009: { retry: "no_retry", hint: "Order not found; re-fetch active-orders before retrying." },
+  50058: { retry: "no_retry", hint: "Margin trading not approved; apply/review on bitbank first." },
+  50059: { retry: "retry_after_medium", hint: "Temporary restriction on new margin orders." },
+  50060: { retry: "retry_after_medium", hint: "Temporary restriction on new margin orders." },
+  50061: {
+    retry: "no_retry",
+    hint: "Exceeds open capacity; check margin-status available_balances.",
+  },
+  50062: {
+    retry: "no_retry",
+    hint: "Exceeds position (open_amount - locked_amount); check margin-positions.",
+  },
+  50081: { retry: "no_retry", hint: "Margin sell-to-open halted for this direction." },
+  50082: { retry: "no_retry", hint: "Margin sell-to-close halted for this direction." },
+  50083: { retry: "no_retry", hint: "Margin buy-to-open halted for this direction." },
+  50084: { retry: "no_retry", hint: "Margin buy-to-close halted for this direction." },
+  60001: { retry: "no_retry", hint: "Insufficient balance; check assets and reduce amount." },
+  60019: { retry: "no_retry", hint: "TakeProfit/StopLoss side must be the close direction." },
+  70001: { retry: "retry_after_short", hint: "System error; GET auto-retries, POST verify first." },
+};
+
 function buildApiCodes() {
   return Object.entries(ERROR_CODES)
     .map(([key, message]) => {
       const code = Number(key);
       const exit_code = apiErrorExitCode(code);
-      return { code, message, category: EXIT_NAME[exit_code], exit_code };
+      const category = EXIT_NAME[exit_code];
+      const sub = category === "GENERAL" ? GENERAL_RETRY[code] : undefined;
+      return { code, message, category, exit_code, ...(sub ?? {}) };
     })
     .sort((a, b) => a.code - b.code);
 }
@@ -134,7 +165,7 @@ function buildCategories(apiCodes: ReturnType<typeof buildApiCodes>) {
       get: "retry_after_short",
       post: "abort_and_verify",
       agent_action:
-        "Catch-all: balance 60001, trading halted 50003/50004, order-not-found 50009 (order lookup is a pair × order_id composite key — 50009 also fires when the order exists but the pair is wrong, and for executed/cancelled orders older than 3 months per official docs; verify both the pair and the order's age against that retention period before concluding the order is gone), system 70001, HTTP 5xx. apiErrorExitCode does not sub-classify these — branch on the leading code in the error string (see skills/_shared/references/error-catalog.md). 5xx GET auto-retries up to 2x in http-core; POST never does.",
+        "Catch-all: balance 60001, trading halted 50003/50004, order-not-found 50009 (order lookup is a pair × order_id composite key — 50009 also fires when the order exists but the pair is wrong, and for executed/cancelled orders older than 3 months per official docs; verify both the pair and the order's age against that retention period before concluding the order is gone), system 70001, HTTP 5xx, margin 50058-50062 / 50081-50084 / 60019 (POST only: 50059/50060 are temporary and may be retried after a wait; approval 50058, capacity 50061/50062 and per-direction halts 50081-50084 are not). apiErrorExitCode does not sub-classify these — branch on the leading code in the error string; each GENERAL api_codes entry carries a per-code `retry` label and `hint` (see skills/_shared/references/error-catalog.md). 5xx GET auto-retries up to 2x in http-core; POST never does.",
     },
     {
       category: "NETWORK",

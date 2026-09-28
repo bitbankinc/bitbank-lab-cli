@@ -59,13 +59,21 @@ bitbank CLI が返す `success: false` のエラーを skill が一貫して扱�
 
 ### 3. param — パラメータエラー
 
-- **API code**: 30001〜40001（quantity / order-id / price / asset 未指定 等）
+- **API code**: 30001〜40001（quantity / order-id / price / asset 未指定 等）、
+  信用の 40164（`position_side` 不正）/ 40167（信用非対応ペア）
 - **exit code**: `EXIT.PARAM (4)`
 - **GET / POST**: 共通
 - **戦略**: `no_retry`
 - **skill としての振る舞い**:
   - 引数を直さないと永久に失敗する。リトライ禁止
   - CLI に渡した値（pair, asset, order-id, quantity, price）を見直す
+  - **信用の 2 コードは `error` 先頭のコードで個別に案内する**（exit code だけでは
+    「引数の見直し」で止まってしまい、正しい復旧手順に届かない）:
+    - 40164（`position_side` 不正）: `long` / `short` 以外を渡している。CLI の Zod で
+      先に弾かれるので通常は到達しない
+    - 40167（信用非対応ペア）: `pairs` に信用フラグは無いので引数を眺めても分からない。
+      `bitbank margin-status` の `available_balances[].pair` に載るペアだけが対象。
+      そのペアが載っていなければ、ペアを変えるか skill を中止する
 
 ### 3b. state — 状態不一致（注文が見つからない 等）
 
@@ -121,6 +129,26 @@ bitbank CLI が返す `success: false` のエラーを skill が一貫して扱�
 - **skill としての振る舞い**:
   - 連発する場合は bitbank 側の障害。skill を中止してユーザーに通知
 
+### 6b. margin — 信用取引（`trade create-margin-order`）
+
+- **API code**: 50058 / 50059 / 50060 / 50061 / 50062 / 50081〜50084 / 60019
+  （40164 / 40167 は `EXIT.PARAM` なので `param`（§3）で個別判定する。下表にも併記）
+- **exit code**: `EXIT.GENERAL (1)`（`state` / `balance` と同じく `error` 先頭のコードで
+  個別判定する）
+- **GET / POST**: POST（`trade create-margin-order`）でのみ発生
+- **戦略**: コード別
+
+| code | 内容 | 戦略 | skill としての振る舞い |
+|---|---|---|---|
+| 40164 | `position_side` が不正 | `no_retry`（`EXIT.PARAM (4)`） | `long` / `short` 以外を渡している。CLI の Zod で先に弾かれるので通常は到達しない |
+| 40167 | 信用取引に対応していないペア | `no_retry`（`EXIT.PARAM (4)`） | `pairs` に信用フラグは無い。`bitbank margin-status` の `available_balances[].pair` に載るペアだけが対象 |
+| 50058 | 信用取引の審査が未完了 | `no_retry` | bitbank で信用取引の申込・審査が必要。skill を中止してユーザーに案内 |
+| 50059 / 50060 | 新規注文の一時制限 | `retry_after_medium` | 一時的な制限。時間を置いて **ユーザーの判断で** 再送（自動再送はしない） |
+| 50061 | 新規建て可能額を超過 | `no_retry` | `bitbank margin-status` の `available_balances[pair].long / short` を確認し、数量を縮小するか中止 |
+| 50062 | 建玉を超過 | `no_retry` | 返済数量が返済可能数量（`open_amount - locked_amount`）を超えている。`bitbank margin-positions` で確認。**建玉が無い状態で返済方向を出しても同じコードで拒否される**（逆方向の新規建てにはならない） |
+| 50081〜50084 | 売り新規 / 売り返済 / 買い新規 / 買い返済 が停止中 | `no_retry` | 方向別の停止。他の方向は通ることがある。skill を中止してユーザーに通知 |
+| 60019 | TakeProfit / StopLoss の side が返済方向でない | `no_retry` | CLI は `take_profit` / `stop_loss` を受け付けないので通常は到達しない |
+
 ### 7. network — タイムアウト・接続エラー
 
 - **API code**: なし（fetch 例外）
@@ -138,18 +166,24 @@ res = run_cli(...)
 if res.success: ...
 elif res.exitCode == AUTH: → auth
 elif res.exitCode == RATE_LIMIT: → rate_limit
-elif res.exitCode == PARAM: → param
+elif res.exitCode == PARAM:
+  code = leadingCode(res.error)
+  if code == 40167: → param（信用非対応ペア。margin-status の available_balances[].pair を確認）
+  elif code == 40164: → param（position_side 不正）
+  else: → param（引数の見直し）
 elif res.exitCode == NETWORK: → network
 else:                                   # ここから success: false かつ exitCode 未分類
   code = leadingCode(res.error)         # error 文字列先頭の数値（"60001: 残高不足" → 60001）
   if code == 60001: → balance
   elif code in (50003, 50004): → maintenance
   elif code == 50009: → state
+  elif code in (50058, 50059, 50060, 50061, 50062,
+                50081, 50082, 50083, 50084, 60019): → margin（コード別の戦略は 6b の表）
   elif code == 70001 or HTTP 5xx: → system
   else: → 未分類。GENERAL として扱い、skill を中止してユーザーに raw error を提示
 ```
 
-注: `param` は exit code、`state` / `balance` / `maintenance` / `system` は
+注: `param` は exit code、`state` / `balance` / `maintenance` / `margin` / `system` は
 `error` 文字列先頭のコードで判定する。`apiErrorExitCode` の範囲外コードは exit code
 が GENERAL に丸まるため、`error` 先頭の API code を直接見る必要がある。
 

@@ -26,7 +26,9 @@
       "code": 10000,
       "message": "URL不正",
       "category": "GENERAL",
-      "exit_code": 1
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Malformed URL; fix the request."
     },
     {
       "code": 10009,
@@ -89,34 +91,136 @@
       "exit_code": 4
     },
     {
+      "code": 40164,
+      "message": "position_side が不正（long / short のみ）",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
+      "code": 40167,
+      "message": "信用取引に対応していないペア（対応ペアは margin-status の available_balances を参照）",
+      "category": "PARAM",
+      "exit_code": 4
+    },
+    {
       "code": 50003,
       "message": "現在取引不可",
       "category": "GENERAL",
-      "exit_code": 1
+      "exit_code": 1,
+      "retry": "retry_after_long",
+      "hint": "Trading halted (maintenance); wait 5-15 min."
     },
     {
       "code": 50004,
       "message": "注文不可（板寄せ中）",
       "category": "GENERAL",
-      "exit_code": 1
+      "exit_code": 1,
+      "retry": "retry_after_long",
+      "hint": "Auction (itayose) in progress; wait 5-15 min."
     },
     {
       "code": 50009,
       "message": "注文が見つかりません",
       "category": "GENERAL",
-      "exit_code": 1
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Order not found; re-fetch active-orders before retrying."
+    },
+    {
+      "code": 50058,
+      "message": "信用取引の審査が未完了（bitbank で信用取引の申込・審査が必要）",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Margin trading not approved; apply/review on bitbank first."
+    },
+    {
+      "code": 50059,
+      "message": "信用の新規注文を一時制限中（時間を置いて再試行）",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "retry_after_medium",
+      "hint": "Temporary restriction on new margin orders."
+    },
+    {
+      "code": 50060,
+      "message": "信用の新規注文を一時制限中（時間を置いて再試行）",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "retry_after_medium",
+      "hint": "Temporary restriction on new margin orders."
+    },
+    {
+      "code": 50061,
+      "message": "新規建て可能額を超過（margin-status の available_balances を確認）",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Exceeds open capacity; check margin-status available_balances."
+    },
+    {
+      "code": 50062,
+      "message": "建玉を超過（返済数量が返済可能数量 open_amount - locked_amount を超えている。margin-positions を確認）",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Exceeds position (open_amount - locked_amount); check margin-positions."
+    },
+    {
+      "code": 50081,
+      "message": "信用の売り新規注文が停止中",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Margin sell-to-open halted for this direction."
+    },
+    {
+      "code": 50082,
+      "message": "信用の売り返済注文が停止中",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Margin sell-to-close halted for this direction."
+    },
+    {
+      "code": 50083,
+      "message": "信用の買い新規注文が停止中",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Margin buy-to-open halted for this direction."
+    },
+    {
+      "code": 50084,
+      "message": "信用の買い返済注文が停止中",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Margin buy-to-close halted for this direction."
     },
     {
       "code": 60001,
       "message": "残高不足",
       "category": "GENERAL",
-      "exit_code": 1
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "Insufficient balance; check assets and reduce amount."
+    },
+    {
+      "code": 60019,
+      "message": "TakeProfit / StopLoss の side は返済方向でなければならない",
+      "category": "GENERAL",
+      "exit_code": 1,
+      "retry": "no_retry",
+      "hint": "TakeProfit/StopLoss side must be the close direction."
     },
     {
       "code": 70001,
       "message": "システムエラー",
       "category": "GENERAL",
-      "exit_code": 1
+      "exit_code": 1,
+      "retry": "retry_after_short",
+      "hint": "System error; GET auto-retries, POST verify first."
     }
   ],
   "categories": [
@@ -161,7 +265,9 @@
         30007,
         30009,
         30012,
-        40001
+        40001,
+        40164,
+        40167
       ],
       "http_status": [],
       "get": "no_retry",
@@ -177,7 +283,17 @@
         50003,
         50004,
         50009,
+        50058,
+        50059,
+        50060,
+        50061,
+        50062,
+        50081,
+        50082,
+        50083,
+        50084,
         60001,
+        60019,
         70001
       ],
       "http_status": [
@@ -186,7 +302,7 @@
       ],
       "get": "retry_after_short",
       "post": "abort_and_verify",
-      "agent_action": "Catch-all: balance 60001, trading halted 50003/50004, order-not-found 50009 (order lookup is a pair × order_id composite key — 50009 also fires when the order exists but the pair is wrong, and for executed/cancelled orders older than 3 months per official docs; verify both the pair and the order's age against that retention period before concluding the order is gone), system 70001, HTTP 5xx. apiErrorExitCode does not sub-classify these — branch on the leading code in the error string (see skills/_shared/references/error-catalog.md). 5xx GET auto-retries up to 2x in http-core; POST never does."
+      "agent_action": "Catch-all: balance 60001, trading halted 50003/50004, order-not-found 50009 (order lookup is a pair × order_id composite key — 50009 also fires when the order exists but the pair is wrong, and for executed/cancelled orders older than 3 months per official docs; verify both the pair and the order's age against that retention period before concluding the order is gone), system 70001, HTTP 5xx, margin 50058-50062 / 50081-50084 / 60019 (POST only: 50059/50060 are temporary and may be retried after a wait; approval 50058, capacity 50061/50062 and per-direction halts 50081-50084 are not). apiErrorExitCode does not sub-classify these — branch on the leading code in the error string; each GENERAL api_codes entry carries a per-code `retry` label and `hint` (see skills/_shared/references/error-catalog.md). 5xx GET auto-retries up to 2x in http-core; POST never does."
     },
     {
       "category": "NETWORK",
