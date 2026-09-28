@@ -16,6 +16,17 @@ describe("ERROR_CODES", () => {
     expect(ERROR_CODES[60001]).toBe("残高不足");
     expect(ERROR_CODES[10009]).toBe("リクエスト頻度過多");
   });
+
+  it("registers the margin order codes (Phase 7)", () => {
+    for (const code of [
+      40164, 40167, 50058, 50059, 50060, 50061, 50062, 50081, 50082, 50083, 50084, 60019,
+    ]) {
+      expect(ERROR_CODES[code], `code ${code}`).toBeTruthy();
+    }
+    expect(ERROR_CODES[50058]).toContain("審査");
+    expect(ERROR_CODES[50062]).toContain("locked_amount");
+    expect(formatApiError(50058)).toMatch(/^50058: /);
+  });
 });
 
 describe("apiErrorExitCode", () => {
@@ -40,6 +51,12 @@ describe("apiErrorExitCode", () => {
 
   it("returns GENERAL for unknown codes", () => {
     expect(apiErrorExitCode(99999)).toBe(EXIT.GENERAL);
+  });
+
+  it("returns PARAM for margin 40164 / 40167 and GENERAL for 50058", () => {
+    expect(apiErrorExitCode(40164)).toBe(EXIT.PARAM);
+    expect(apiErrorExitCode(40167)).toBe(EXIT.PARAM);
+    expect(apiErrorExitCode(50058)).toBe(EXIT.GENERAL);
   });
 });
 

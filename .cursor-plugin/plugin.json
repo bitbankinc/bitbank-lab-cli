@@ -6,8 +6,8 @@
     "name": "tjackiet",
     "url": "https://github.com/tjackiet"
   },
-  "homepage": "https://github.com/tjackiet/bitbank-lab-cli",
-  "repository": "https://github.com/tjackiet/bitbank-lab-cli",
+  "homepage": "https://github.com/bitbankinc/bitbank-lab-cli",
+  "repository": "https://github.com/bitbankinc/bitbank-lab-cli",
   "license": "MIT",
   "keywords": [
     "bitbank",

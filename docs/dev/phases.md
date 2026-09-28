@@ -198,3 +198,43 @@
   報告書側の `unsupported`、年をまたぐ建玉は「決済数量が建玉残を超えています」の警告
   （前年の OPEN が年ウィンドウの外に落ちるため）。
   **実データでの検証は未了**（信用損益は表示ガードの対象外）
+
+---
+
+## Phase 7: 信用取引の新規建て・返済注文（計画）
+
+**リスクレベル:** 資金操作（損失が証拠金を超え得る）
+**成果物:** `cli/commands/trade/create-margin-order.ts`、共通化した `order-body.ts` / `margin-operation.ts`、ADR-009
+**計画書:** [`margin-order-plan.md`](margin-order-plan.md)（スコープ・設計判断・実機確認項目はそちらが単一ソース）
+**ドッグフーディング基準:** 「返済のつもりで新規建て」が構造的に起こらないこと（API 側は #M-6 で 50062 拒否を確認済み。CLI 側は dry-run の操作ラベルと `--intent` クロスチェックで承認前に可視化する）
+
+### 計画・意思決定
+
+- [x] 開発計画（`margin-order-plan.md`）
+- [x] ADR-009: 信用注文を `trade create-margin-order` として分離（フレーズも分ける）（[009-margin-order-separate-command.md](../adr/009-margin-order-separate-command.md)）
+
+### 実装
+
+- [x] エラーコード登録（40164 / 40167 / 50058〜50062 / 50081〜50084 / 60019）＋ `error-catalog.json` 再生成
+- [ ] `margin-positions` の前提修正（`locked_amount` を露出、`--pair` を CLI 側フィルタに）
+- [ ] `create-order.ts` から `order-body.ts` / `margin-operation.ts` を切り出し（既存テスト無変更で green）
+- [ ] `create-order` が `--position-side` を `PARAM` で拒否する
+- [ ] `trade create-margin-order`（`--position-side` 必須・`take_profit`/`stop_loss`/`losscut` 拒否・dry-run に操作ラベル・手数料見積りなし）
+- [ ] `CONFIRM_PHRASES` に `I-UNDERSTAND-CREATE-MARGIN-ORDER`、`x10` の件数を 6 に更新
+- [ ] `defs-trade.ts` / `trade-handlers.ts` 登録、`tool-catalog.json` 再生成
+
+### テスト
+
+- [ ] `--execute` なし / `--execute` 単独 / フレーズ不一致 / 現物フレーズ流用で fetch が呼ばれない
+- [ ] 4 組合せ（buy×long / sell×long / sell×short / buy×short）のラベルと `--intent` 不一致の拒否
+- [ ] body に `position_side` が入り、レスポンスの `position_side` をパースする
+
+### ドキュメント
+
+- [ ] `trading-safety.md` フレーズ表 / `commands.md` / README Trade 表 / `botter-runbook.md` / CHANGELOG
+
+### 実機確認（信用審査済みアカウント）
+
+- [x] `pairs` に信用対応フラグが無いことを確認（信用対応ペアは `margin-status` の `available_balances` が唯一の情報源）
+- [x] #M-6: 建玉なしの返済方向は 50062 で拒否される（逆方向の新規建てにならない）→ `--intent` は任意のまま
+- [ ] #M-1〜#M-5（計画書 §4 Step 6）。#M-4 は #M-1 で建てた注文で確認
