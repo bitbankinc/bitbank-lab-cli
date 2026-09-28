@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-28
+
 ### Added
 
 - 信用取引のエラーコードを `cli/error-codes.ts` に登録（Phase 7 Step 1）。40164 / 40167 /
