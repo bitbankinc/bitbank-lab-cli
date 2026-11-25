@@ -42,4 +42,19 @@ describe("Chaos X-09: paper uses only public ticker / candles (no private/trade 
       `paper helpers must not touch private API (see CLAUDE.md "paper" 例外節):\n${hits.join("\n")}`,
     ).toEqual([]);
   });
+
+  // paper の信用（ADR-010）の計算本体。上の 2 つの範囲（cli/commands/paper/ と
+  // cli/paper-*.ts）の外にあるので、ここを足さないと新しいコードに検査が効かない。
+  it("cli/paper-margin/ does not import http-private / http-private-post / auth", () => {
+    const files = execSync('find cli/paper-margin -name "*.ts"', { encoding: "utf-8" })
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+    expect(files.length, "expected to discover cli/paper-margin/*.ts").toBeGreaterThan(0);
+    const hits = grepForbidden(["cli/paper-margin/"]);
+    expect(
+      hits,
+      `paper margin must not touch private API (see ADR-010 決定 1):\n${hits.join("\n")}`,
+    ).toEqual([]);
+  });
 });

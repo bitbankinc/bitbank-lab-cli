@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
+import { emptyMarginState } from "../../paper-margin/state.js";
 import { withStatePath } from "../../paper-result.js";
 import { defaultStatePath, nowIso, type PaperState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
@@ -38,7 +39,7 @@ export async function paperInit(args: PaperInitArgs): Promise<Result<PaperState>
       const initialJpy = Number(parsed.data.jpy);
       const now = nowIso();
       const state: PaperState = {
-        version: 3,
+        version: 4,
         createdAt: now,
         updatedAt: now,
         initialJpy,
@@ -46,6 +47,7 @@ export async function paperInit(args: PaperInitArgs): Promise<Result<PaperState>
         history: [],
         lastTickAt: now,
         openOrders: [],
+        margin: emptyMarginState(now),
       };
       return { success: true, data: { state, result: state } };
     },

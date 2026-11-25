@@ -14,7 +14,7 @@ export const MaxRetriesSchema = z.string().transform((s, ctx) => {
   if (s === "infinite") return Number.POSITIVE_INFINITY;
   if (!/^\d+$/.test(s)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: `max-retries must be a non-negative integer or "infinite"`,
     });
     return z.NEVER;
@@ -22,7 +22,7 @@ export const MaxRetriesSchema = z.string().transform((s, ctx) => {
   const n = Number(s);
   if (!Number.isSafeInteger(n)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: `max-retries must be a safe integer (≤ 2^53 - 1) or "infinite"`,
     });
     return z.NEVER;

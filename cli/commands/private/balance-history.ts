@@ -33,7 +33,7 @@ const RequestSchema = z
   .superRefine((val, ctx) => {
     if (val.since !== undefined && val.days !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "--since cannot be combined with --days",
         path: ["since"],
       });

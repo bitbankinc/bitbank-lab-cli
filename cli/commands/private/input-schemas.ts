@@ -27,7 +27,7 @@ export function refineSinceEnd(val: { since?: string; end?: string }, ctx: z.Ref
   if (val.since !== undefined && val.end !== undefined) {
     if (Number(val.since) > Number(val.end)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "since must be ≤ end",
         path: ["since"],
       });
@@ -44,7 +44,7 @@ const MaxPagesSchema = z
     const n = Number(s);
     if (!Number.isSafeInteger(n)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "max-pages must be a safe integer (≤ 2^53 - 1)",
       });
       return z.NEVER;

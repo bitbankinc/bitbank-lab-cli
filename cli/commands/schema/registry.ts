@@ -1,4 +1,5 @@
 import { paperSchemas } from "./defs-paper.js";
+import { paperMarginSchemas } from "./defs-paper-margin.js";
 import { privateAccountSchemas } from "./defs-private-account.js";
 import { privateBalanceSchemas } from "./defs-private-balance.js";
 import { privateMarginSchemas } from "./defs-private-margin.js";
@@ -24,6 +25,7 @@ const DEFS: Record<string, SchemaDef>[] = [
   streamSchemas,
   taxSchemas,
   paperSchemas,
+  paperMarginSchemas,
   profileSchemas,
 ];
 

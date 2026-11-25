@@ -1,12 +1,15 @@
 // 100行超: paper の成行/指値発注を 1 ファイルで処理。市場 fill は ticker
 // fetch + 即時 fill、指値は openOrders へ積むだけ + 残高ロック検証 + lazy
 // tick で過去ギャップを解消 + pairs キャッシュからの unit_amount/最大量検証。
+// 信用（ADR-010）の追証が発生中なら、JPY 建ての成行の売りの直後に解消を判定する（差入方法の「現物の売却」。
+// 取得は spot-sale-margin.ts、判定は paper-margin/spot-sale.ts）。
 import { z } from "zod";
 import { EXIT } from "../../exit-codes.js";
 import { computeFill, makerRateResolver, resolveFeeRate } from "../../fees.js";
 import type { HttpOptions } from "../../http.js";
 import { type CachedPair, getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
+import { resolveCallAfterSpotSale } from "../../paper-margin/spot-sale.js";
 import { BALANCE_EPS, hasEnough } from "../../paper-precision.js";
 import { withStatePath } from "../../paper-result.js";
 import {
@@ -23,6 +26,7 @@ import type { Result } from "../../types.js";
 import { formatZodError, PairSchema, PositiveDecimalSchema } from "../../validators.js";
 import { ticker } from "../public/ticker.js";
 import { validateOrderSize } from "./order-validate.js";
+import { prepareSpotSaleMargin, type SpotSaleMarginContext } from "./spot-sale-margin.js";
 
 const InputSchema = z
   .object({
@@ -33,7 +37,7 @@ const InputSchema = z
     price: PositiveDecimalSchema.optional(),
   })
   .refine((v) => v.type !== "limit" || v.price !== undefined, {
-    message: "--price is required for limit orders",
+    error: "--price is required for limit orders",
   });
 
 export type PaperCreateOrderArgs = {
@@ -60,6 +64,8 @@ export type PaperFill = {
   feeQuote: number;
   filledAt: string;
   balances: Record<string, number>;
+  /** 信用の追証が発生中だったときだけ。この売りの直後に解消したか（ADR-010） */
+  marginCallResolved?: boolean;
 };
 
 export type PaperLimitPlaced = { placed: OpenOrder };
@@ -95,11 +101,12 @@ export async function paperCreateOrder(
   );
   if (!v.success) return { ...v, exitCode: EXIT.PARAM };
   const path = args.statePath ?? defaultStatePath();
+  const nowMs = args.nowMs ?? Date.now();
   const tick = await runTick({
     statePath: path,
     fetchCandles: args.fetchCandles,
     getPairs: args.getPairs,
-    nowMs: args.nowMs,
+    nowMs,
     feeRate: args.feeRate,
   });
   if (!tick.success) return tick;
@@ -109,7 +116,15 @@ export async function paperCreateOrder(
   // 成行は必ず taker。サイズ検証で使った pairs から該当ペアを引き、
   // ライブ taker_fee_rate_quote を fillMarket に渡す（campaign 追従）。
   const pair = pairsR.data.find((p) => p.name === parsed.data.pair);
-  return withStatePath(await fillMarket(parsed.data, pair, args.feeRate, path, opts), path);
+  const margin = await prepareSpotSaleMargin(path, parsed.data, {
+    nowMs,
+    getPairs: args.getPairs,
+    httpOptions: opts,
+  });
+  return withStatePath(
+    await fillMarket(parsed.data, { pair, feeRateArg: args.feeRate, margin }, path, opts),
+    path,
+  );
 }
 
 async function placeLimit(
@@ -158,11 +173,15 @@ async function placeLimit(
 
 async function fillMarket(
   input: { pair: string; side: "buy" | "sell"; amount: string },
-  pair: CachedPair | undefined,
-  feeRateArg: number | undefined,
+  ctx: {
+    pair: CachedPair | undefined;
+    feeRateArg: number | undefined;
+    margin: SpotSaleMarginContext | null;
+  },
   path: string,
   opts?: HttpOptions,
 ): Promise<Result<PaperFill>> {
+  const { pair, feeRateArg } = ctx;
   const t = await ticker({ pair: input.pair }, opts);
   if (!t.success) return t;
   if (!t.data.last) return { success: false, error: "ticker has no last price" };
@@ -215,7 +234,7 @@ async function fillMarket(
         filledAt,
         balances,
       };
-      const newState: PaperState = {
+      const sold: PaperState = {
         ...state,
         updatedAt: filledAt,
         balances,
@@ -233,7 +252,12 @@ async function fillMarket(
           },
         ],
       };
-      return { success: true, data: { state: newState, result: fill } };
+      // 追証が発生中なら、この売りの直後の口座で解消を判定する（取得できなかったときは解消しない）
+      const { state: newState, resolved } = ctx.margin
+        ? resolveCallAfterSpotSale(sold, input, ctx.margin)
+        : { state: sold, resolved: false };
+      const result = state.margin.call ? { ...fill, marginCallResolved: resolved } : fill;
+      return { success: true, data: { state: newState, result } };
     },
     { path },
   );

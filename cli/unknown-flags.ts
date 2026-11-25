@@ -25,3 +25,22 @@ export function unknownLongFlags(
   );
   return [...new Set(hits)];
 }
+
+/** 未知 flag のうち、別のコマンドで使うべきものへの案内（コマンドの呼び出しパス → flag → 案内）。
+ *  現物の paper create-order に --position-side が来たら、信用の paper create-margin-order へ案内する
+ *  （本番 trade create-order について ADR-009 が決めたのと同じ考え方。ADR-010）。
+ *  オプションとして登録して中で拒否すると、補完・help・agents カタログに使えない flag が載るので、
+ *  未知 flag のエラー（PARAM）に案内を添える形にする。 */
+const MISPLACED_FLAG_HINTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  "paper create-order": {
+    "--position-side":
+      "paper create-order は現物専用です。信用の注文は paper create-margin-order を使ってください",
+  },
+};
+
+export function misplacedFlagHints(commandPath: string, unknown: readonly string[]): string[] {
+  const hints = Object.hasOwn(MISPLACED_FLAG_HINTS, commandPath)
+    ? MISPLACED_FLAG_HINTS[commandPath]
+    : {};
+  return unknown.flatMap((f) => (Object.hasOwn(hints, f) ? [hints[f]] : []));
+}

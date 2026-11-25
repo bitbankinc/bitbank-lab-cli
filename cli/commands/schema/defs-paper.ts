@@ -1,5 +1,6 @@
 // 100行超: paper 9 コマンドの params / output（agents カタログの単一ソース）を宣言的に集約。
 // state（残高・約定履歴・指値）のフィールドを 1 つずつ列挙するため出力項目数に比例して伸びる。
+import { marginHistoryEntry, marginPnl, marginTickReport } from "./defs-paper-margin.js";
 import { p, type SchemaDef } from "./types.js";
 
 const s = { type: "string" };
@@ -22,9 +23,19 @@ const historyEntry = {
   },
 };
 
+// positionSide は信用の注文（ADR-010）だけに付く。現物の注文には無い
 const openOrder = {
   type: "object",
-  properties: { id: s, pair: s, side: s, type: s, price: n, amount: n, createdAt: s },
+  properties: {
+    id: s,
+    pair: s,
+    side: s,
+    positionSide: s,
+    type: s,
+    price: n,
+    amount: n,
+    createdAt: s,
+  },
 };
 
 const pnlRow = {
@@ -82,8 +93,20 @@ export const paperSchemas: Record<string, SchemaDef> = {
     // market は ticker で即時 fill、limit は openOrders に積むだけなので出力形が分かれる。
     output: {
       oneOf: [
-        { type: "object", properties: { ...historyEntry.properties, balances: numbersByKey } },
-        { type: "object", properties: { placed: openOrder } },
+        {
+          type: "object",
+          required: ["id", "fillPrice"],
+          properties: {
+            ...historyEntry.properties,
+            balances: numbersByKey,
+            marginCallResolved: {
+              type: "boolean",
+              description:
+                "Present only while a paper margin call is active: whether this JPY sale resolved it (ADR-010)",
+            },
+          },
+        },
+        { type: "object", required: ["placed"], properties: { placed: openOrder } },
       ],
     },
   },
@@ -108,13 +131,15 @@ export const paperSchemas: Record<string, SchemaDef> = {
         filled: { type: "array", items: historyEntry },
         warnings: strings,
         lastTickAt: s,
+        margin: marginTickReport,
       },
     },
   },
   "trade-history": {
     category: "paper",
     params: {},
-    output: { type: "array", items: historyEntry },
+    // 現物と信用（ADR-010）の約定を時刻順に。信用の行は positionSide と本番 trade-history の信用行と同じ手数料・損益の欄を持つ
+    output: { type: "array", items: { anyOf: [historyEntry, marginHistoryEntry] } },
   },
   reset: {
     category: "paper",
@@ -134,6 +159,7 @@ export const paperSchemas: Record<string, SchemaDef> = {
       properties: {
         perPair: { type: "object", additionalProperties: pnlRow },
         total: { type: "object", properties: { realizedPnl: n, unrealizedPnl: n, totalPnl: n } },
+        margin: marginPnl,
       },
     },
   },

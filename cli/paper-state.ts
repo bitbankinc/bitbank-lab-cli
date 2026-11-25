@@ -1,14 +1,15 @@
 // 100行超: paper サブコマンド専用のローカル状態管理。
 // CLI 全体は API データの取得・整形のみを責務とするが、
 // paper はライブ価格 × 仮想資金のシミュレーションを行うため例外的に
-// state を持つ（CLAUDE.md 参照）。スキーマ・I/O・v1→v3 マイグレーション・
-// 残高ロック集計をまとめて集約。
+// state を持つ（CLAUDE.md 参照）。スキーマ・I/O・v1→v4 マイグレーション・
+// 残高ロック集計をまとめて集約。v4 の `margin`（信用）のスキーマは cli/paper-margin/state.ts。
 import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import { sanitizeErrorMessage } from "./error-sanitize.js";
 import { DEFAULT_TAKER_FEE_RATE } from "./fees.js";
+import { emptyMarginState, MarginStateSchema } from "./paper-margin/state.js";
 import { snapAmount } from "./paper-precision.js";
 import type { Result } from "./types.js";
 
@@ -65,7 +66,7 @@ const PaperStateSchemaV2 = z.object({
   openOrders: z.array(OpenOrderSchema),
 });
 
-export const PaperStateSchema = z.object({
+const PaperStateSchemaV3 = z.object({
   version: z.literal(3),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -76,9 +77,17 @@ export const PaperStateSchema = z.object({
   openOrders: z.array(OpenOrderSchema),
 });
 
+// v4: 信用（ADR-010）の `margin` を足した。現物の各フィールドは v3 と同じ。
+// v4 を書いた後に v3 までしか知らない古い CLI で読むと "Invalid paper state" になる（ダウングレード不可）。
+export const PaperStateSchema = PaperStateSchemaV3.extend({
+  version: z.literal(4),
+  margin: MarginStateSchema,
+});
+
 const PaperStateAnySchema = z.discriminatedUnion("version", [
   PaperStateSchemaV1,
   PaperStateSchemaV2,
+  PaperStateSchemaV3,
   PaperStateSchema,
 ]);
 
@@ -110,7 +119,18 @@ function upgradeHistory(
   return history.map(({ feeJpy, ...rest }) => ({ ...rest, feeQuote: feeJpy }));
 }
 
-function migrateToV3(parsed: z.infer<typeof PaperStateAnySchema>): PaperState {
+type PaperStateAny = z.infer<typeof PaperStateAnySchema>;
+type PaperStateV3 = z.infer<typeof PaperStateSchemaV3>;
+
+// v3 → v4 は信用を空で足す。仮定値の fixedAt には state の updatedAt を使う（読むだけのコマンドは
+// 書き戻さないので、移行時刻を使うと読むたびに値が変わってしまう）。
+function migrateToV4(parsed: PaperStateAny): PaperState {
+  if (parsed.version === 4) return parsed;
+  const v3 = migrateToV3(parsed);
+  return { ...v3, version: 4, margin: emptyMarginState(v3.updatedAt) };
+}
+
+function migrateToV3(parsed: Exclude<PaperStateAny, { version: 4 }>): PaperStateV3 {
   if (parsed.version === 3) return parsed;
   if (parsed.version === 2) {
     return { ...parsed, version: 3, history: upgradeHistory(parsed.history) };
@@ -195,7 +215,7 @@ export async function loadState(path = defaultStatePath()): Promise<Result<Paper
         error: sanitizeErrorMessage(`Invalid paper state: ${parsed.error.message}`),
       };
     }
-    return { success: true, data: migrateToV3(parsed.data) };
+    return { success: true, data: migrateToV4(parsed.data) };
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") {
       return { success: true, data: null };

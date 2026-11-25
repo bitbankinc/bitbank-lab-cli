@@ -159,7 +159,7 @@ bitbank assets --format=json --machine
 ## paper コマンド
 
 - ペーパートレード（仮想資金）。`bitbank paper <cmd>` で呼び出す
-- 実 API は public ticker のみを叩く（private/trade は触らない）。`.env` 不要
+- 実 API は public の ticker・candlestick・pairs のみを叩く（private/trade は触らない）。`.env` 不要
 - 状態は `~/.bitbank/paper-state.json`（または `$XDG_DATA_HOME/bitbank/paper-state.json`）
   に保存される。`BITBANK_PAPER_STATE_PATH=<path>` で上書き可（複数口座の切替用）
 - 全 paper コマンドは `--machine` の envelope に `meta.statePath`（実際に読み書きした
@@ -186,6 +186,9 @@ bitbank assets --format=json --machine
 - 成行は ticker last 価格で即時 fill。指値は `openOrders` に積み、`paper tick` または lazy tick（assets / trade-history / active-orders / create-order 呼出時に裏で実行）で 1m 足を遡って fill を解決する
 - `paper reset` は state の誤削除を防ぐため `--confirm` 必須
 - 指値は部分約定・ストップ・OCO 未対応（GTC のみ）
+- 信用は `paper create-margin-order`（`--position-side` 必須、`--intent=open|close` を付ける）・`paper margin-status`・
+  `paper margin-positions`。`active-orders` / `cancel-order` / `trade-history` / `pnl` は信用も扱う。
+  手順と再現するルールは `paper-trade/SKILL.md` の「信用取引（ペーパー）」
 
 ## shell 補完
 

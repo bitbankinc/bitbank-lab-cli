@@ -12,6 +12,63 @@
 
 ## [Unreleased]
 
+### Added
+
+- `bitbank paper create-margin-order` を追加（ペーパートレードの信用 Phase 8）。仮想資金で信用の新規建て・返済を出せる。
+  語彙は本番の `trade create-margin-order`（ADR-009）と同じで、`--position-side` 必須・`--intent` は任意のクロスチェック、
+  結果に操作ラベル（例: `ロング返済（sell × long）`）を載せる。成行は ticker の last で即時約定、指値は lazy tick で約定。
+  保証金率・追証・強制決済・利息は bitbank の公表ルールどおりに paper の lazy tick が処理する
+  （[ADR-010](docs/adr/010-paper-margin-simulation.md)）。public の API だけを叩く。追証が発生中に JPY 建ての現物を
+  `paper create-order` で成行売りすると、その直後に解消を判定し、結果に `marginCallResolved` を載せる
+- `bitbank paper margin-status` / `paper margin-positions` を追加。本番の `margin-status` / `margin-positions` と同じ名前の欄
+  （保証金率・維持必要保証金・新規建て可能額・建玉の locked_amount など）を本番の docs と同じ丸めで出し、paper の判定しきい値
+  （`thresholds`）・仮定（`assumptions`）・信用の走査済み時刻（`last_scan_at`）と状態が古いかどうか（`stale`）を添える
+- `bitbank paper trade-history` が信用の約定も時刻順にまとめて出し、`paper pnl` に信用の `margin` 欄（ペア × ロング / ショート
+  ごとの実現・未実現損益）を足した。どちらも信用の取引が無い口座では出力は変わらない。`paper create-order` に `--position-side`
+  を付けたときのエラーに `paper create-margin-order` への案内を添えた
+- `bitbank paper active-orders` / `paper cancel-order` が信用の指値も扱うようにした。一覧では信用の注文だけに
+  `positionSide` が付く（現物の注文の出力は変わらない）
+
+- `bitbank pairs` が信用取引のフィールドを返すようにした（ペーパートレードの信用 Phase 8
+  Step 1）。新規建て / 決済の maker・taker 手数料率（`margin_open_*` / `margin_close_*`）、
+  ロング / ショートの利息率 /日（`margin_long_interest` / `margin_short_interest`）、
+  個人 / 法人のリスク想定比率とその適用終了日時（`margin_current_*` / `margin_next_*`）、
+  新規建て停止ステータス（`stop_margin_long_order` / `stop_margin_short_order`）。
+  公開 API はこれまでも返していたが、CLI の Zod スキーマが落としていた。信用非対応ペアでは
+  率・日時が `null`。設計判断は [ADR-010](docs/adr/010-paper-margin-simulation.md)（Proposed）
+
+### Changed
+
+- ペーパートレードの state（`~/.bitbank/paper-state.json`）を version 4 にした。信用取引（Phase 8）の
+  建玉・注文・追証・約定履歴・仮定値・信用の走査済み時刻（`lastScanAt`）・最後に読めた信用パラメータ（`lastParams`）を
+  入れる `margin` を追加（現物の各フィールドは変わらない）。
+  v1〜v3 の state は読み込み時に自動で移行する。**v4 を書いた後に古いバージョンの CLI に戻すと
+  `Invalid paper state` で読めなくなる**（ダウングレード不可）。戻す場合は `paper reset --confirm` で作り直す
+- pairs キャッシュ（`~/.bitbank/pairs-cache.json`）の形式を version 2 にした（信用フィールドを保存）。
+  version 1 のキャッシュは次回利用時に 1 度だけ自動で取り直す
+### Security
+
+- `npm audit --audit-level=high`（`security.yml` の merge gate）で落ちていた high 3 件を
+  同一メジャー内の更新で解消した。runtime 側は `undici` 7.29.0 → 7.30.2（`pubnub` 経由。
+  WebSocket / decompress / retry 周りの DoS・TLS 検証バイパス等。`pubnub` 自体は 12.0.0 の
+  まま）。dev 側は `vitest` / `@vitest/coverage-v8` 4.1.9 → 4.1.12 と、それに伴う
+  `vite` 8.1.0 → 8.3.8・`source-map-js` 1.2.1 → 1.2.4。あわせて moderate の
+  `@vitest/mocker`（vitest に追従）と `fflate` 0.8.2 → 0.8.3（`pubnub` 経由）も解消。
+  CLI の挙動は変わらない
+- 残る high の `zod`（GHSA-mrhx-c7xc-m3w5。3.x に修正版が無く 3.25.76 が最終）を
+  **4.6.7 へ移行**して解消した（`zod/v3` の互換 import では旧実装のままなので使わない）。
+  引数エラーの文言は Zod 4 で既定文言が変わる（例: `Invalid enum value. Expected 'day' |
+  'month', received 'week'` → `Invalid option: expected one of "day"|"month"`）ため、
+  v3 の既定文言を再現する global error map（`cli/zod-messages.ts`）を足して**従来と同じ
+  文言・終了コードを保った**（v3 と同一入力で突き合わせ済み）。`required_error` は
+  `requiredString()`（`cli/validators.ts`）に置き換え。変わるのは内部の診断出力だけで、
+  スキーマ不一致時に `Invalid response: ...` / `Invalid paper state: ...` /
+  `Invalid carryover: ...` / stream の `Schema mismatch ...` 警告などへ埋め込む issue の
+  JSON が Zod 4 の形（`invalid_enum_value` → `invalid_value`、`received` 欄なし等）になる。
+  あわせて API レスポンス・state の検証で `z.number()` が ±Infinity を、`.int()` が
+  2^53 以上を拒否するようになった（JSON は Infinity を表せず、`.int()` の対象は時刻・件数・
+  桁数なので実データには影響しない）
+
 ## [0.5.1] - 2026-09-28
 
 ### Added

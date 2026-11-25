@@ -7,7 +7,7 @@
 | public | `cli/commands/public/` | `bitbank <cmd>` | 不要 | 公開マーケットデータ（ticker, candles 等）。WebSocket 経由のライブ購読 `bitbank stream` / `bitbank watch <channel> <pair>` も同カテゴリ。`periodical-brief` だけは指標計算を伴う（[ADR-008](../../docs/adr/008-periodical-brief-indicators-in-cli.md) の例外。計算本体は `cli/brief/`、登録は `public-brief-handler.ts`） |
 | private | `cli/commands/private/` | `bitbank <cmd>` | 必要 | アカウント情報の読み取り（assets, orders 等）。`balance-history` だけは復元計算を伴う（[ADR-007](../../docs/adr/007-balance-history-reconstruction-in-cli.md) の例外。計算本体は `cli/portfolio/`） |
 | trade | `cli/commands/trade/` | `bitbank trade <cmd>` | 必要 | 資金に影響する操作（create-order, cancel-order 等） |
-| paper | `cli/commands/paper/` | `bitbank paper <cmd>` | 不要 | 仮想資金での練習用（ライブ価格 × ローカル state、実 API は public ticker のみ） |
+| paper | `cli/commands/paper/` | `bitbank paper <cmd>` | 不要 | 仮想資金での練習用（ライブ価格 × ローカル state、実 API は public の ticker・candlestick・pairs のみ）。信用のシミュレーションも含む（[ADR-010](../../docs/adr/010-paper-margin-simulation.md)。計算本体は `cli/paper-margin/`） |
 | profile | `cli/commands/profile/` | `bitbank profile <cmd>` | 不要 | API キー切替用プロファイル管理（`profiles.json` 0600 / atomic write、API は叩かない） |
 | tax | `cli/commands/tax/` | `bitbank tax <cmd>` | 必要 | 税務・会計データ整形（[ADR-004](../../docs/adr/004-tax-logic-in-cli-exception.md) の例外。**private GET のみ・POST は絶対に叩かない**）。計算本体は `cli/tax/` |
 | meta | （登録なし、`router.ts` の `handleSpecialCommand` で振り分け） | `bitbank <cmd>` | 不要 | API を叩かないユーティリティ（`schema`, `profiles`, `completion`） |
@@ -24,6 +24,9 @@ trade / paper / profile / tax だけサブコマンド形式にしているの�
 グループ名の一覧は `router.ts` の `GROUP_REGISTRY` が単一ソース（`resolveCommand` が返す `group`）。
 trade の安全ガード自体は `--execute` / `--confirm` フラグ側にある（`trading-safety.md`）。
 paper は実 API を叩かないため `--execute` は存在しないが、`reset` のみ `--confirm` を必須にして state の誤削除を防ぐ。
+paper の信用（ADR-010）は `paper create-margin-order`（`--position-side` 必須）。現物の `paper create-order` は `--position-side` を
+オプションとして持たず、渡されると未知 flag のエラー（PARAM）に `create-margin-order` への案内が付く（`cli/unknown-flags.ts` の
+`misplacedFlagHints`。オプションとして登録して中で拒否すると補完・help・カタログに使えない flag が載るため）。
 profile は実 API を叩かないが、`remove` のみ `--confirm` を必須にして profile の誤削除を防ぐ。secret は flag 受け禁止（shell 履歴に残るため）、env か対話 hidden 入力のみ。
 tax は読み取り専用（private GET のみ）なので `--execute` / `--confirm` は無い。代わりに**参考損益の表示ガード**を持ち、
 アテステーション（`--attest`）・未解決入庫の不在・前年繰越の確定・残高突合の一致がすべて揃った銘柄でのみ数値を出す。
@@ -82,3 +85,11 @@ UTC 2026-01-01 00:00〜23:00、`/candlestick/1day/2026` が UTC 月初起点な�
 CLI 内では `cli/date-utils.ts` の `ymdUtc` / `yearUtc` / `todayDate` / `nextBoundaryMs`
 （および `cache.ts` の `isCompletePeriod`）が UTC 基準で動く。JST は表示・説明用に
 のみ使い、API キー組み立てや境界判定には持ち込まない。
+
+例外は「取引所や税法、読み手の暦」で区切るもので、どれも JST の計算を決まったファイルに閉じ
+（税務と paper の信用は `cli/date-utils.ts`、periodical-brief は `cli/brief/jst.ts`）、ホスト TZ に依存させない:
+
+- 税務の年分判定（JST の 1/1〜12/31。[ADR-004](../../docs/adr/004-tax-logic-in-cli-exception.md)）
+- paper の信用の利息の境界（JST 0 時）と追証の基準時（毎日 JST 15 時）
+  （[ADR-010](../../docs/adr/010-paper-margin-simulation.md) 決定 7）
+- periodical-brief の「本日」と曜日（`cli/brief/jst.ts`。[ADR-008](../../docs/adr/008-periodical-brief-indicators-in-cli.md)）

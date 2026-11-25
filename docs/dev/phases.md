@@ -204,7 +204,7 @@
 ## Phase 7: 信用取引の新規建て・返済注文（計画）
 
 **リスクレベル:** 資金操作（損失が証拠金を超え得る）
-**成果物:** `cli/commands/trade/create-margin-order.ts`、共通化した `order-body.ts` / `margin-operation.ts`、ADR-009
+**成果物:** `cli/commands/trade/create-margin-order.ts`、共通化した `order-body.ts`、`cli/margin-operation.ts`（Phase 8 と共有・作成済み）、ADR-009
 **計画書:** [`margin-order-plan.md`](margin-order-plan.md)（スコープ・設計判断・実機確認項目はそちらが単一ソース）
 **ドッグフーディング基準:** 「返済のつもりで新規建て」が構造的に起こらないこと（API 側は #M-6 で 50062 拒否を確認済み。CLI 側は dry-run の操作ラベルと `--intent` クロスチェックで承認前に可視化する）
 
@@ -217,7 +217,8 @@
 
 - [x] エラーコード登録（40164 / 40167 / 50058〜50062 / 50081〜50084 / 60019）＋ `error-catalog.json` 再生成
 - [ ] `margin-positions` の前提修正（`locked_amount` を露出、`--pair` を CLI 側フィルタに）
-- [ ] `create-order.ts` から `order-body.ts` / `margin-operation.ts` を切り出し（既存テスト無変更で green）
+- [ ] `create-order.ts` から `order-body.ts` を切り出し（既存テスト無変更で green）
+- [x] `cli/margin-operation.ts`（side × position_side → ラベル / intent。Phase 8 Step 2 で作成済み）
 - [ ] `create-order` が `--position-side` を `PARAM` で拒否する
 - [ ] `trade create-margin-order`（`--position-side` 必須・`take_profit`/`stop_loss`/`losscut` 拒否・dry-run に操作ラベル・手数料見積りなし）
 - [ ] `CONFIRM_PHRASES` に `I-UNDERSTAND-CREATE-MARGIN-ORDER`、`x10` の件数を 6 に更新
@@ -238,3 +239,55 @@
 - [x] `pairs` に信用対応フラグが無いことを確認（信用対応ペアは `margin-status` の `available_balances` が唯一の情報源）
 - [x] #M-6: 建玉なしの返済方向は 50062 で拒否される（逆方向の新規建てにならない）→ `--intent` は任意のまま
 - [ ] #M-1〜#M-5（計画書 §4 Step 6）。#M-4 は #M-1 で建てた注文で確認
+
+---
+
+## Phase 8: ペーパートレードの信用取引（計画）
+
+**リスクレベル:** なし（仮想資金。public GET のみ）
+**成果物:** `cli/paper-margin/`、`cli/commands/paper/create-margin-order.ts` / `margin-status.ts` / `margin-positions.ts`、ADR-010
+**計画書:** [`paper-margin-plan.md`](paper-margin-plan.md)（スコープ・前提となる事実・設計判断・仕様確認項目はそちらが単一ソース）
+**ドッグフーディング基準:** paper で書いた信用のコマンドが、`paper` → `trade` の差し替えだけで本番の dry-run に通ること。仮定値が全出力に `assumptions` として出て、本番より緩い向きにずれないこと
+
+### 計画・意思決定
+
+- [x] 開発計画（`paper-margin-plan.md`）
+- [x] ADR-010: paper に信用取引を public のみの近似シミュレーションとして足す（2026-11-24 Accepted。CLAUDE.md / `commands.md` に追記済み）（[010-paper-margin-simulation.md](../adr/010-paper-margin-simulation.md)）
+
+### 仕様確認（メンテナ）
+
+- [x] #PM-0: 最新の `/spot/pairs` 生レスポンスで `margin_*` / `stop_margin_*` を確認（2026-11-24。信用対応 5 ペアだけ比率が非 null。Phase 7 計画 §2 に注記）
+- [x] #PM-1・#PM-2: 追証・強制決済の判定、保証金率・必要保証金の算式（信用取引ルールと契約締結前交付書面の原文。計画書 §2.3）
+- [ ] #PM-4: 評価価格（公表資料に定義なし。v1 は ticker の last を仮定として申告）
+- [x] #PM-3: 利息（JST 0 時をまたぐたびに `product × 0.0004`）。税務調査の実測で確定（計画書 §2.4）
+- [x] 姉妹リポ bitbank-lab-mcp への問い合わせ（計画書 §2.5。しきい値・算式の材料は無し、docs の丸め規則を取得）
+- [ ] #PM-5: 実口座の `margin-status` と paper の算式の突合（任意。公表ルールの検算と #PM-4 の手がかり）
+
+### 実装
+
+- [x] `pairs` / pairs キャッシュが `margin_*` / `stop_margin_*` を通す（キャッシュ version 2）＋ `tool-catalog.json` 再生成
+- [x] `cli/paper-margin/params.ts`（pairs → ペアごとの信用パラメータ。比率の週次切替・fail-closed）
+- [x] `cli/margin-operation.ts`（Phase 7 と共有）
+- [x] state v4（`margin`: 建玉・信用の注文・追証・信用の約定履歴・仮定値）と v1〜v3 からの移行。信用の注文・約定は現物の `openOrders` / `history` と別の配列
+- [x] `cli/paper-margin/` の建玉計算（`state.ts` の建玉スキーマ / `positions.ts` 加算・評価 / `close.ts` 返済・精算 / `closable.ts` 返済可能数量）
+- [x] `cli/paper-margin/interest.ts`（JST 0 時ごとの利息。`cli/date-utils.ts` の `jstDailyInstants`、積み残しのまま建玉を変える操作の拒否）
+- [x] `cli/paper-margin/` の口座評価（`account.ts` 保証金率・必要保証金 / `conditions.ts` 追証・強制決済の判定基準 / `new-open.ts` 新規建ての可否）
+- [x] `cli/paper-margin/` の強制決済と追証（`losscut.ts` 判定価格・全建玉の決済 / `margin-call.ts` 15 時の判定・期限・解消 / `fills.ts` 信用の指値の約定 / `scan*.ts` 時系列の処理）
+- [x] `paper create-margin-order`（成行・指値、新規建て・返済。PARAM / 40167 / 停止 / 50061 / 50062 / 追証 / 不足金 / 状態が古い、を拒否）
+- [x] `paper active-orders` / `cancel-order` が信用の指値も扱う
+- [x] `paper margin-status` / `margin-positions`（本番と同名の欄・同じ丸め、`thresholds` / `assumptions` / `stale`）
+- [x] `paper create-order` の `--position-side` 拒否（未知 flag のエラーに `create-margin-order` への案内を添える）
+- [x] lazy tick への組み込み（`paper-fill.ts` の `runTick` から信用の走査。取得は `paper-margin-tick.ts`、反映は `paper-margin/tick.ts`。24h 超は 4hour 足で approximate）
+- [x] `paper pnl` の `margin` 欄、`paper trade-history` の信用の約定（`paper assets` は変えない。計画書 Step 5）
+- [ ] `defs-paper.ts` / `paper-handlers.ts` 登録、`agents/` 再生成
+
+### テスト
+
+- [ ] 新規建て → 返済の精算（手数料・利息の按分）、4 組合せのラベルと `--intent` 不一致
+- [ ] ロスカット（単一ペア / 複数ペア / 両建て / 24h 超ギャップの `approximate`）
+- [x] chaos `x09` の検査範囲に `cli/paper-margin/` を追加、`package.json` の `files`（`x22`）
+
+### ドキュメント（ADR-010 Accepted 後）
+
+- [x] CLAUDE.md paper 例外節 / `commands.md`（ADR-010 Accepted 時）
+- [x] `skills/paper-trade/SKILL.md`（信用の実行フロー・トリガー・Gotchas）/ `botter-runbook.md` 段階 2 / README（Paper 表・信用の注記・Skill 節）/ `llms.txt` / `cli-conventions.md` / CHANGELOG

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sanitizeErrorMessage } from "../error-sanitize.js";
 import { fetchWithRetry } from "../http-core.js";
+import { emptyMarginState } from "../paper-margin/state.js";
 import { loadState, saveState } from "../paper-state.js";
 import { loadProfiles, saveProfiles } from "../profiles-store.js";
 
@@ -259,7 +260,7 @@ describe("regression: paper-state errors are sanitized", () => {
     writeFileSync(blocker, "x");
     const r = await saveState(
       {
-        version: 3,
+        version: 4,
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
         initialJpy: 0,
@@ -267,6 +268,7 @@ describe("regression: paper-state errors are sanitized", () => {
         history: [],
         lastTickAt: "2026-01-01T00:00:00.000Z",
         openOrders: [],
+        margin: emptyMarginState("2026-01-01T00:00:00.000Z"),
       },
       join(blocker, "sub", "x.json"),
     );

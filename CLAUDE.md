@@ -20,7 +20,12 @@ npx tsx cli/index.ts    # CLI 実行
   のため、ローカル状態（`~/.bitbank/paper-state.json`）を読み書きする。
   これは **public エンドポイントのみ**を叩く読み取り専用の sim であり、
   private/trade エンドポイントは絶対に叩かない。実際に使うのは ticker・
-  candlestick（指値約定の判定）・pairs（発注量の検証）の 3 つ
+  candlestick（指値約定の判定）・pairs（発注量の検証）の 3 つ。
+  信用（新規建て・返済・保証金率・利息・追証・強制決済）のシミュレーションも含む
+  （[ADR-010](docs/adr/010-paper-margin-simulation.md)）。計算本体は `cli/paper-margin/`。
+  public のみの境界は不変で、信用のパラメータ（手数料率・利息率・リスク想定比率）も pairs から取る。
+  本番と一致させられない値は出力の `assumptions` で申告し、ずれは強制決済が早く起きる側にだけ許す。
+  利息の境界（JST 0 時）と追証の基準時（JST 15 時）は「JST は表示用のみ」規約の例外（`cli/date-utils.ts`）
 - **例外: `tax` サブコマンド**（[ADR-004](docs/adr/004-tax-logic-in-cli-exception.md)）は
   税務・会計データ整形のため CLI 内で損益計算を行う。税務は「間違えられない」領域で、
   LLM に計算させられないための例外。**private GET のみで POST は絶対に叩かない**。

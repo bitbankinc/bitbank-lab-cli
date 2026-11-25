@@ -1,12 +1,16 @@
-// 100行超: paper の損益集計コマンド本体。ticker 並列 fetch、JPY 以外の
-// ペア除外、computePnl 呼び出し、format 別出力を 1 ファイルに集約。
-import { machineOutput } from "../../output.js";
+// paper の損益集計コマンド本体。ticker 並列 fetch、JPY 以外のペア除外、computePnl 呼び出し。
+// 信用（ADR-010）の建玉・約定があれば margin 欄を足す（計算は paper-margin/pnl.ts。現物の perPair / total は変えない）。
+// format 別の出力は pnl-format.ts。
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";
-import { computePnl, type PaperPnlReport } from "../../paper-pnl.js";
+import { computeMarginPnl } from "../../paper-margin/pnl.js";
+import { computePnl } from "../../paper-pnl.js";
 import { withStatePath } from "../../paper-result.js";
 import { defaultStatePath, loadState } from "../../paper-state.js";
-import type { Format, Result } from "../../types.js";
+import type { Result } from "../../types.js";
 import { ticker } from "../public/ticker.js";
+import type { PaperPnlOutput } from "./pnl-format.js";
+
+export { formatPnl, type PaperPnlOutput } from "./pnl-format.js";
 
 export type FetchTicker = (pair: string) => Promise<Result<number>>;
 
@@ -20,7 +24,7 @@ export type PaperPnlArgs = {
   feeRate?: number;
 };
 
-export async function paperPnl(args: PaperPnlArgs = {}): Promise<Result<PaperPnlReport>> {
+export async function paperPnl(args: PaperPnlArgs = {}): Promise<Result<PaperPnlOutput>> {
   const path = args.statePath ?? defaultStatePath();
   const tick = await runTick({
     statePath: path,
@@ -49,7 +53,11 @@ export async function paperPnl(args: PaperPnlArgs = {}): Promise<Result<PaperPnl
   }
   const jpyHistory = sr.data.history.filter((h) => h.pair.endsWith("_jpy"));
   const jpyPairs = [...allPairs].filter((p) => p.endsWith("_jpy"));
-  const targetPairs = args.pair ? jpyPairs.filter((p) => p === args.pair) : jpyPairs;
+  // 信用の行は全量返済済みのペアにも currentPrice を出す（現物の行が売り切ったペアにも出すのと同じ）
+  const marginPairs = [...sr.data.margin.positions, ...sr.data.margin.history].map((x) => x.pair);
+  const targetPairs = [...new Set([...jpyPairs, ...marginPairs])].filter(
+    (p) => !args.pair || p === args.pair,
+  );
   const fetchFn = args.fetchTicker ?? defaultFetchTicker;
   const results = await Promise.all(
     targetPairs.map(async (p) => ({ pair: p, r: await fetchFn(p) })),
@@ -61,10 +69,12 @@ export async function paperPnl(args: PaperPnlArgs = {}): Promise<Result<PaperPnl
     }
     tickerByPair[pair] = r.data;
   }
-  return withStatePath(
-    computePnl({ history: jpyHistory, tickerByPair, pairFilter: args.pair }),
-    path,
-  );
+  const spot = computePnl({ history: jpyHistory, tickerByPair, pairFilter: args.pair });
+  if (!spot.success) return spot;
+  const margin = computeMarginPnl(sr.data.margin, new Map(Object.entries(tickerByPair)), args.pair);
+  if (!margin.success) return margin;
+  const data: PaperPnlOutput = margin.data ? { ...spot.data, margin: margin.data } : spot.data;
+  return withStatePath({ success: true, data }, path);
 }
 
 async function defaultFetchTicker(pair: string): Promise<Result<number>> {
@@ -76,65 +86,4 @@ async function defaultFetchTicker(pair: string): Promise<Result<number>> {
     return { success: false, error: `invalid ticker last: ${r.data.last}` };
   }
   return { success: true, data: n };
-}
-
-const COLS = [
-  "pair",
-  "position",
-  "avgCost",
-  "currentPrice",
-  "realizedPnl",
-  "unrealizedPnl",
-  "totalPnl",
-] as const;
-
-export function formatPnl(
-  result: Result<PaperPnlReport>,
-  format: Format,
-  raw = false,
-  machine = false,
-): void {
-  if (machine) {
-    machineOutput(result);
-    return;
-  }
-  if (!result.success) {
-    process.stderr.write(`Error: ${result.error}\n`);
-    process.exitCode = result.exitCode ?? 1;
-    return;
-  }
-  const data = result.data;
-  if (format === "json") {
-    process.stdout.write(`${JSON.stringify(data, raw ? undefined : null, raw ? undefined : 2)}\n`);
-    return;
-  }
-  const pairRows = Object.values(data.perPair).map((r) => COLS.map((c) => String(r[c])));
-  if (format === "csv") {
-    process.stdout.write(`${[COLS.join(","), ...pairRows.map((r) => r.join(","))].join("\n")}\n`);
-    return;
-  }
-  const totalRow = [
-    "TOTAL",
-    "",
-    "",
-    "",
-    String(data.total.realizedPnl),
-    String(data.total.unrealizedPnl),
-    String(data.total.totalPnl),
-  ];
-  const widths = COLS.map((c) => c.length);
-  for (const row of [...pairRows, totalRow]) {
-    for (let i = 0; i < COLS.length; i++) {
-      if (row[i].length > widths[i]) widths[i] = row[i].length;
-    }
-  }
-  const sep = widths.map((w) => "-".repeat(w)).join("  ");
-  const parts = [
-    COLS.map((c, i) => c.padEnd(widths[i])).join("  "),
-    sep,
-    ...pairRows.map((row) => row.map((s, i) => s.padEnd(widths[i])).join("  ")),
-    sep,
-    totalRow.map((s, i) => s.padEnd(widths[i])).join("  "),
-  ];
-  process.stdout.write(`${parts.join("\n")}\n`);
 }

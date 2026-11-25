@@ -281,7 +281,8 @@ Trade コマンドは `bitbank trade <subcommand>` の形で呼び出します�
 ### Paper（ペーパートレード — 仮想資金）
 
 `bitbank paper <subcommand>` でライブ価格 × 仮想資金のシミュレーションを行います。  
-実 API は public ticker のみ叩き、private / trade エンドポイントには一切触れません。  
+実 API は public の ticker・candlestick・pairs のみ叩き、private / trade エンドポイントには一切触れません。  
+現物に加えて、信用（新規建て・返済、レバレッジ 2 倍）の練習もできます（下の「信用」）。  
 状態は `~/.bitbank/paper-state.json`（または `$XDG_DATA_HOME/bitbank/paper-state.json`）に保存されます。
 `BITBANK_PAPER_STATE_PATH=<path>` で保存先を上書きでき、複数の仮想口座を切り替えて使えます。
 全 paper コマンドは実際に読み書きした state file を `meta.statePath` で返す（`--machine` /
@@ -298,7 +299,11 @@ Trade コマンドは `bitbank trade <subcommand>` の形で呼び出します�
 | `paper cancel-order` | 指値を ID 指定でキャンセル（ロック解除） | `paper cancel-order --id=<id>` |
 | `paper tick` | 直前 tick 以降の 1m 足で指値 fill を解決 | `paper tick` |
 | `paper trade-history` | 仮想約定履歴 | `paper trade-history` |
-| `paper pnl` | 損益サマリ（realized + unrealized、ペア別 + 合計） | `paper pnl --pair=btc_jpy` |
+| `paper pnl` | 損益サマリ（realized + unrealized、ペア別 + 合計。信用があれば `margin` 欄） | `paper pnl --pair=btc_jpy` |
+| `paper create-margin-order` (market) | 信用の新規建て / 返済を last で即時約定 | `paper create-margin-order --pair=btc_jpy --side=buy --position-side=long --intent=open --type=market --amount=0.01` |
+| `paper create-margin-order` (limit) | 信用の指値を積む（約定は lazy tick） | `paper create-margin-order --pair=btc_jpy --side=sell --position-side=long --intent=close --type=limit --price=11000000 --amount=0.01` |
+| `paper margin-status` | 信用の口座状態（保証金率・維持必要保証金・新規建て可能額、`thresholds` / `assumptions`） | `paper margin-status` |
+| `paper margin-positions` | 信用の建玉（`locked_amount`・未精算の手数料と利息・評価損益）と追証・不足金の通知 | `paper margin-positions --pair=btc_jpy` |
 | `paper reset` | 仮想口座をリセット（`--confirm` 必須） | `paper reset --confirm` |
 
 > **paper state の参照先。** `bitbank paper assets --machine` の `meta.statePath` が想定したファイルを
@@ -308,6 +313,15 @@ Trade コマンドは `bitbank trade <subcommand>` の形で呼び出します�
 > 指値は GTC のみ（部分約定なし）。fill 判定は前回 tick 以降の 1m 足を時系列で走査し、`buy: candle.low <= price` / `sell: candle.high >= price` で全量約定します。約定価格は指値ぴったり（スリッページなし）。`paper assets` / `paper trade-history` / `paper active-orders` / `paper create-order` を呼ぶと裏で lazy tick が走り、未解決の fill を解消してから結果を返します。明示的に解決したい場合は `paper tick` を直接実行してください。`lastTickAt` から 24h 以上空くと対象期間を直近 24h に制限し、stderr に警告を出します。
 >
 > 指値発注時は `price * amount + fee` 相当を JPY（買い）または `amount` を base 通貨（売り）で「ロック扱い」にします。`paper assets` の `available` は `total - locked` で、`available` 不足の指値発注は Err になります。手数料は対象ペアのライブ maker/taker レート（`/spot/pairs` 由来・24h キャッシュ。取得できないときのみ既定 0.12% にフォールバック）。スリッページは入っていません。
+
+> **信用。** 新規建て / 返済は `--side` × `--position-side` で決まります（buy × long = ロング新規建て、sell × long = ロング返済、
+> sell × short = ショート新規建て、buy × short = ショート返済）。`--intent=open|close` を付けると食い違いを PARAM で止められます。
+> 信用対応ペア・リスク想定比率（個人。2026-11 時点で 50%）・信用の手数料率・利息率は `/spot/pairs` から取り、保証金率・追証（毎日 JST 15 時、期限 24 時間）・
+> 強制決済（随時、維持必要保証金 × 0.5 > 受入保証金合計額）・利息（JST 0 時ごとに pairs の日率。2026-11 時点で 0.04%/日）は bitbank の公表ルールどおりに再現します。
+> 保証金は仮想口座の JPY だけで、評価価格は ticker の last です。本番と一致させられない値は `paper margin-status` の `assumptions` に出ます。
+> 判定と強制決済の約定は 1 分足の不利な極値で行うため、本番より早く・不利に強制決済されることがあります。前回の信用の走査から
+> 24 時間を超えて空くと、その区間は 4 時間足で判定し、`warnings` と `margin.approximate: true` で近似であることを申告します
+> （現物の指値のように直近 24 時間に打ち切らない。設計判断は [ADR-010](docs/adr/010-paper-margin-simulation.md)）。
 
 ### Profile（API キー切替）
 
@@ -620,12 +634,14 @@ Skill はモデルへの指示書であり、CLI コマンドを組み合わせ�
 
 #### paper-trade
 
-仮想資金でのペーパートレード。ライブ価格 × ローカル state で売買を練習・検証する。実 API は public ticker のみ叩き、private/trade エンドポイントには一切触れない。
+仮想資金でのペーパートレード。ライブ価格 × ローカル state で売買を練習・検証する。現物に加えて信用（新規建て・返済、レバレッジ 2 倍）も練習でき、追証・強制決済・利息を bitbank の公表ルールどおりに再現する。実 API は public の ticker・candlestick・pairs のみ叩き、private/trade エンドポイントには一切触れない。
 
 ```
 「BTC を仮想で 0.01 買って」
 「ペーパー口座の残高見て」
 「指値で BTC を 1000 万円で買い注文」
+「仮想で ETH をショートして」
+「ペーパーの保証金率見せて」
 ```
 
 ### ユーティリティ（3本）

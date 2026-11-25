@@ -1,18 +1,26 @@
-// 100行超: paper の指値 fill 解決を 1 ファイルで完結。
+// 100行超: paper の指値 fill 解決と、信用の走査を lock の内外のどこで回すか（取得は外・反映は内・
+// lastTickAt を進める条件）を 1 ファイルで完結させる。計算本体は fees.ts / paper-margin/ に委譲。
 // async な candles fetch と /spot/pairs（手数料）fetch は updateState の lock
 // 外で済ませ、fresh state に対する fill の reconcile（sync）だけを lock 内で
 // 実行する。指値は必ず maker なので約定手数料はペアのライブ maker_fee_rate_quote
 // （負ならリベート）を resolveFeeRate で引く。
 // テスト時は fetchCandles / getPairs / nowMs を注入し、本番用デフォルトは
 // public candles / pairs API を叩く。
+// 信用（ADR-010）の建玉・注文があれば、現物の約定を反映した後に信用の走査も回す。取得は lock の外
+// （paper-margin-tick.ts）、state の更新は lock 内（paper-margin/tick.ts）。
 import { type Candle, fetchOne } from "./commands/public/candles-fetch.js";
-import { ymdUtc } from "./date-utils.js";
+import { ymdUtcRange } from "./date-utils.js";
 import { computeFill, resolveFeeRate } from "./fees.js";
 import type { HttpOptions } from "./http.js";
 import { type CachedPair, getPairsWithCache } from "./pairs-cache.js";
+import { hasMarginBook } from "./paper-margin/book.js";
+import { jpySaleTimes } from "./paper-margin/spot-sale.js";
+import { applyMarginTick, type MarginTickReport } from "./paper-margin/tick.js";
+import { prepareMarginTick } from "./paper-margin-tick.js";
 import {
   applyFillToBalances,
   defaultStatePath,
+  genId,
   loadState,
   type OpenOrder,
   type PaperHistoryEntry,
@@ -40,12 +48,16 @@ export type TickOptions = {
   nowMs?: number;
   feeRate?: number;
   httpOptions?: HttpOptions;
+  /** 信用の走査で 24h を超える区間を見るときの 4hour 足の取得（テスト用の注入口） */
+  fetchCoarseCandles?: FetchCandles;
 };
 
 export type TickResult = {
   filled: PaperHistoryEntry[];
   warnings: string[];
   lastTickAt: string;
+  /** 信用の走査を回したときだけ（約定・強制決済の決済、追証・強制決済の出来事） */
+  margin?: MarginTickReport;
 };
 
 export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult>> {
@@ -64,13 +76,13 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
   const candlesByPair = new Map<string, Candle[]>();
   const pairsByName = new Map<string, CachedPair>();
   let anyFetchFailed = false;
+  const fetchFn = opts.fetchCandles ?? defaultFetchCandles(opts.httpOptions);
   if (peek.data.openOrders.length > 0) {
     let fromMs = Math.min(Date.parse(peek.data.lastTickAt), nowMs);
     if (nowMs - fromMs > MAX_LOOKBACK_MS) {
       warnings.push(`gap > 24h; limiting to last 24h (lastTickAt=${peek.data.lastTickAt})`);
       fromMs = nowMs - MAX_LOOKBACK_MS;
     }
-    const fetchFn = opts.fetchCandles ?? defaultFetchCandles(opts.httpOptions);
     const pairs = uniquePairs(peek.data.openOrders, opts.pair);
     for (const p of pairs) {
       const cr = await fetchFn(p, fromMs, nowMs);
@@ -102,6 +114,17 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
       }
     }
   }
+  const margin = await prepareMarginTick(peek.data, {
+    nowMs,
+    pair: opts.pair,
+    fetchCandles: fetchFn,
+    fetchCoarseCandles: opts.fetchCoarseCandles,
+    getPairs: opts.getPairs,
+    httpOptions: opts.httpOptions,
+  });
+  // 準備に失敗しても anyFetchFailed は立てない（現物の lastTickAt とは関係ない）。lock 内で、fresh な state に
+  // 信用の建玉・注文がある限り margin.lastScanAt を止める（peek の後に全部閉じられていれば止める理由が無い）。
+  warnings.push(...margin.warnings);
   const res = await updateState<TickResult>(
     (state) => {
       if (!state) {
@@ -113,7 +136,7 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
       // fresh state から fromMs を再導出（他の tick が進めている可能性がある）。
       let fromMs = Math.min(Date.parse(state.lastTickAt), nowMs);
       if (nowMs - fromMs > MAX_LOOKBACK_MS) fromMs = nowMs - MAX_LOOKBACK_MS;
-      const { state: working, filled } = fillAgainstCandles(
+      const { state: spotDone, filled } = fillAgainstCandles(
         state,
         candlesByPair,
         pairsByName,
@@ -121,20 +144,66 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
         nowMs,
         opts.feeRate,
       );
+      let working = spotDone;
+      let marginReport: MarginTickReport | undefined;
+      // 信用の走査は口座全体で 1 回。現物の lastTickAt とは別の走査済み時刻（margin.lastScanAt）を持ち、走査できたとき
+      // （または信用の建玉・注文が無く、走査するものが無いとき）だけ now へ進める。peek の後に信用の建玉・注文が増えて
+      // 準備が無いときや、走査が失敗したときは進めない（次の tick でやり直す）。現物の足の取得失敗とは独立させる
+      // （巻き込むと、走査済みの区間をもう一度走査して、後から建った建玉を前の足で評価してしまう）。
+      let marginScanned = !hasMarginBook(working);
+      // この tick で約定した現物の売りは、走査に渡すまで未処理として持つ（走査の窓より前に約定した分も、窓の頭で判定）
+      let pendingSales = [
+        ...new Set([...(working.margin.pendingSpotSales ?? []), ...jpySaleTimes(filled)]),
+      ];
+      // lock の外で準備した後に、別の tick が now 以降まで走査を済ませていれば回さない（その区間は済んでいる。
+      // 回すと、その tick の後に建った建玉を、now を含む足で評価し直してしまう）
+      const scannedAt = working.margin.lastScanAt;
+      const coveredByOther = scannedAt !== undefined && Date.parse(scannedAt) >= nowMs;
+      if (margin.kind === "ready" && coveredByOther) marginScanned = true;
+      else if (margin.kind === "ready") {
+        const m = applyMarginTick(working, margin.input, nowMs, {
+          newId: genId,
+          pendingSpotSales: pendingSales,
+        });
+        marginScanned = m.success;
+        if (m.success) {
+          working = m.data.state;
+          marginReport = m.data.report;
+          pendingSales = [];
+        } else warnings.push(`margin scan failed: ${m.error}`);
+      }
+      if (!hasMarginBook(working)) pendingSales = [];
       // 部分 tick（pair 限定 or fetch 失敗）では lastTickAt を進めない。
       // 進めると未処理 pair / 未処理区間が永久に評価されなくなる。
       const advanceTick = !anyFetchFailed && opts.pair === undefined;
       const persistedLastTickAt = advanceTick ? newLastTickAt : working.lastTickAt;
+      // 信用の走査済み時刻は、一度書いたら戻さない（後の now で走査した別の tick を巻き戻すと、その区間を
+      // もう一度走査してしまう）。未設定のとき（init 直後・この欄が入る前の state）は lastTickAt から始める。
+      const lastScanAt = !marginScanned
+        ? (scannedAt ?? working.lastTickAt)
+        : scannedAt === undefined
+          ? newLastTickAt
+          : laterIso(scannedAt, nowMs);
       const newState: PaperState = {
         ...working,
         lastTickAt: persistedLastTickAt,
         updatedAt: newLastTickAt,
+        margin: {
+          ...working.margin,
+          lastScanAt,
+          pendingSpotSales: pendingSales.length > 0 ? pendingSales : undefined,
+        },
       };
       return {
         success: true,
         data: {
           state: newState,
-          result: { filled, warnings, lastTickAt: persistedLastTickAt },
+          result: {
+            filled,
+            warnings,
+            lastTickAt: persistedLastTickAt,
+            ...(marginReport ? { margin: marginReport } : {}),
+          },
         },
       };
     },
@@ -144,6 +213,11 @@ export async function runTick(opts: TickOptions = {}): Promise<Result<TickResult
     for (const msg of res.data.warnings) process.stderr.write(`Warning: ${msg}\n`);
   }
   return res;
+}
+
+/** iso と ms の遅い方（ISO 8601） */
+function laterIso(iso: string, ms: number): string {
+  return Date.parse(iso) >= ms ? iso : new Date(ms).toISOString();
 }
 
 function uniquePairs(orders: OpenOrder[], filter?: string): string[] {
@@ -223,11 +297,10 @@ function defaultFetchCandles(httpOpts?: HttpOptions): FetchCandles {
   return async (pair, fromMs, toMs) => {
     // bitbank の 1min candle は UTC 基準の YYYYMMDD で配信されるため
     // ホスト TZ ではなく UTC で日付セグメントを組み立てる。
-    // fromMs〜toMs は呼び出し側で 24h 以内に cap されているので
-    // UTC 日付は最大 2 つ（同日 or 隣接日）にしかならない。
-    const dates = new Set<string>([ymdUtc(fromMs), ymdUtc(toMs)]);
+    // 窓にかかる UTC 日付をすべて取る。現物の指値は 24h で cap されるが、信用の走査は前回から 24h 以内の窓を
+    // 足の区切り + 1 時間前から取るので 25h 近くになり、UTC 日付を 3 つまたぐことがある（中日を飛ばさない）。
     const all: Candle[] = [];
-    for (const d of [...dates].sort()) {
+    for (const d of ymdUtcRange(fromMs, toMs)) {
       const r = await fetchOne(pair, "1min", d, httpOpts, true);
       if (!r.success) return r;
       for (const c of r.data) {

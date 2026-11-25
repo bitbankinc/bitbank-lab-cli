@@ -1,3 +1,7 @@
+// paper assets は現物の残高（total / locked / available）を出す。信用（ADR-010）の必要保証金はここで locked に含めない:
+// available は現物の注文が実際に使える額（現物の発注チェックと同じ computeLocked）で、本番も現物の取引を信用の必要保証金で
+// 止めない（約定で受入保証金合計額が下がれば追証・強制決済の対象になるだけ。契約締結前交付書面）。ここで差し引くと、
+// 表示と現物の注文の可否が食い違う。信用の必要保証金と新規建て可能額は paper margin-status で見る。
 import { makerRateResolver } from "../../fees.js";
 import { getPairsWithCache } from "../../pairs-cache.js";
 import { type FetchCandles, type GetPairs, runTick } from "../../paper-fill.js";

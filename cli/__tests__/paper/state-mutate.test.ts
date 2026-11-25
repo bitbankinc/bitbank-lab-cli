@@ -3,10 +3,12 @@
 // - mutator が例外を投げても lock が解放される
 // - stale lock の境界テスト（TTL 超過時のテイクオーバー）
 // - mutator が Result.error を返したときの lock 解放
+
 import { closeSync, mkdtempSync, openSync, rmSync, statSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { emptyMarginState } from "../../paper-margin/state.js";
 import { loadState, type PaperState, saveState } from "../../paper-state.js";
 import { updateState } from "../../paper-state-mutate.js";
 
@@ -16,7 +18,7 @@ let lockPath: string;
 
 function makeState(overrides: Partial<PaperState> = {}): PaperState {
   return {
-    version: 3,
+    version: 4,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     initialJpy: 1_000_000,
@@ -24,6 +26,7 @@ function makeState(overrides: Partial<PaperState> = {}): PaperState {
     history: [],
     lastTickAt: "2026-01-01T00:00:00.000Z",
     openOrders: [],
+    margin: emptyMarginState("2026-01-01T00:00:00.000Z"),
     ...overrides,
   };
 }

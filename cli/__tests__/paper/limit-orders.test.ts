@@ -45,8 +45,8 @@ const tickerFetch = (last: string) =>
     timestamp: 0,
   });
 
-describe("paper state v1 → v3 migration", () => {
-  it("loads a v1 state file and returns v3 in memory", async () => {
+describe("paper state v1 → v4 migration", () => {
+  it("loads a v1 state file and returns v4 in memory", async () => {
     const v1 = {
       version: 1,
       createdAt: "2024-01-01T00:00:00.000Z",
@@ -59,9 +59,11 @@ describe("paper state v1 → v3 migration", () => {
     const r = await loadState(statePath);
     expect(r.success).toBe(true);
     if (!r.success || !r.data) return;
-    expect(r.data.version).toBe(3);
+    expect(r.data.version).toBe(4);
     expect(r.data.lastTickAt).toBe("2024-01-02T00:00:00.000Z");
     expect(r.data.openOrders).toEqual([]);
+    expect(r.data.margin.positions).toEqual([]);
+    expect(r.data.margin.assumptions.fixedAt).toBe("2024-01-02T00:00:00.000Z");
   });
 });
 

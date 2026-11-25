@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiPublicGet, type HttpOptions } from "../../http.js";
+import { marginPairFieldsApi } from "../../pair-margin-fields.js";
 import { parseResponse } from "../../parse-response.js";
 import { numStr } from "../../schema-helpers.js";
 import type { Result } from "../../types.js";
@@ -20,6 +21,8 @@ const PairSchema = z.object({
   is_enabled: z.boolean(),
   stop_order: z.boolean(),
   stop_order_and_cancel: z.boolean(),
+  // 信用取引の手数料率・利息率・リスク想定比率・新規建て停止（信用非対応ペアは null）
+  ...marginPairFieldsApi,
 });
 
 const PairsSchema = z.object({

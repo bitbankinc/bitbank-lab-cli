@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { unknownLongFlags } from "../unknown-flags.js";
+import { misplacedFlagHints, unknownLongFlags } from "../unknown-flags.js";
 
 // merged を模した「既知 flag 集合」。値は実際は option config だが in 判定のみ使う。
 const known = { machine: {}, format: {}, "log-file": {} };
@@ -48,5 +48,19 @@ describe("unknownLongFlags", () => {
   // ヘルパーも inline value 付き typo を bare な rawName で報告する。
   it("reports the bare rawName for an inline-value typo (--machien=foo → --machien)", () => {
     expect(unknownLongFlags([opt("machien")], known)).toEqual(["--machien"]);
+  });
+});
+
+describe("misplacedFlagHints", () => {
+  it("points paper create-order --position-side to paper create-margin-order (ADR-010)", () => {
+    expect(misplacedFlagHints("paper create-order", ["--position-side"])).toEqual([
+      "paper create-order は現物専用です。信用の注文は paper create-margin-order を使ってください",
+    ]);
+  });
+
+  it("gives no hint for other commands or flags (and ignores prototype keys)", () => {
+    expect(misplacedFlagHints("paper create-margin-order", ["--position-side"])).toEqual([]);
+    expect(misplacedFlagHints("paper create-order", ["--foo"])).toEqual([]);
+    expect(misplacedFlagHints("toString", ["--constructor"])).toEqual([]);
   });
 });

@@ -1,8 +1,10 @@
 // 100行超: paper state 永続化の互換/移行を網羅（v1/v2/v3）
+
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { emptyMarginState } from "../../paper-margin/state.js";
 import { loadState, type PaperState, saveState } from "../../paper-state.js";
 
 const mockFlags = { renameThrows: false, writeThrows: false };
@@ -32,7 +34,7 @@ let statePath: string;
 
 function makeState(overrides: Partial<PaperState> = {}): PaperState {
   return {
-    version: 3,
+    version: 4,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     initialJpy: 1_000_000,
@@ -40,6 +42,7 @@ function makeState(overrides: Partial<PaperState> = {}): PaperState {
     history: [],
     lastTickAt: "2026-01-01T00:00:00.000Z",
     openOrders: [],
+    margin: emptyMarginState("2026-01-01T00:00:00.000Z"),
     ...overrides,
   };
 }
@@ -71,7 +74,7 @@ describe("paper saveState atomic write", () => {
     expect(w.success).toBe(true);
     const r = await loadState(statePath);
     expect(r.success).toBe(true);
-    if (r.success && r.data) expect(r.data.version).toBe(3);
+    if (r.success && r.data) expect(r.data.version).toBe(4);
   });
 
   it("leaves target untouched when rename fails mid-write", async () => {
@@ -106,7 +109,7 @@ describe("paper saveState atomic write", () => {
     expect(leftovers).toEqual([]);
   });
 
-  it("migrates a v2 state file (feeJpy → feeQuote) to v3 in memory", async () => {
+  it("migrates a v2 state file (feeJpy → feeQuote) to v4 in memory", async () => {
     const v2 = {
       version: 2,
       createdAt: "2025-01-01T00:00:00.000Z",
@@ -132,7 +135,7 @@ describe("paper saveState atomic write", () => {
     const r = await loadState(statePath);
     expect(r.success).toBe(true);
     if (!r.success || !r.data) return;
-    expect(r.data.version).toBe(3);
+    expect(r.data.version).toBe(4);
     expect(r.data.history).toHaveLength(1);
     expect(r.data.history[0].feeQuote).toBe(5);
     expect("feeJpy" in r.data.history[0]).toBe(false);
@@ -146,7 +149,7 @@ describe("paper saveState atomic write", () => {
 
     const raw = readFileSync(statePath, "utf-8");
     const parsed = JSON.parse(raw);
-    expect(parsed.version).toBe(3);
+    expect(parsed.version).toBe(4);
     expect([111, 222]).toContain(parsed.initialJpy);
 
     const r = await loadState(statePath);

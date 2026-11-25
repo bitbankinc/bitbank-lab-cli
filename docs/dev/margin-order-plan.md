@@ -97,6 +97,12 @@
 - `GET /spot/pairs` に信用対応フラグは**無い**（`is_enabled` / `stop_order` /
   `stop_order_and_cancel` のみ）。信用対応ペアの唯一の情報源は `margin-status` の
   `available_balances[].pair`（確認時点で btc / eth / xrp / doge / sol の 5 ペア）
+- > **注記（2026-11-24、Phase 8 の調査）:** 上の 3 フラグは CLI の `PairSchema` が持つ boolean と同じで、
+  > 未知キーを Zod が落とした後の出力だった可能性が高い。生レスポンスには `stop_margin_long_order` /
+  > `stop_margin_short_order` と `margin_*`（手数料率・利息率・リスク想定比率）があり、
+  > `margin_current_individual_ratio` が非 null なのは信用対応の 5 ペアだけ（2026-07-25・2026-11-24 の 2 回で確認）。
+  > CLI も Phase 8 Step 1 でこれらを通すようにした。非対応ペアを dry-run で事前に弾けるかは別途判断する
+  > （[`paper-margin-plan.md`](paper-margin-plan.md) §2.2）
 - したがって非対応ペアは CLI 側で事前に弾けず、API の 40167 に任せる。dry-run は
   private を叩かない方針（3.4）なので、runbook で「`margin-status` で対象ペアを確認
   してから」と案内する
@@ -183,8 +189,13 @@ cli/commands/trade/
   create-order.ts          # 現物。position-side を受けたら PARAM
   create-margin-order.ts   # 信用。position-side 必須・intent クロスチェック
   order-body.ts            # 共通: 入力 Zod ベース + body 組立 + type 別 refine
-  margin-operation.ts      # side × position_side → ラベル/intent の純関数
+cli/
+  margin-operation.ts      # side × position_side → ラベル/intent の純関数（paper と共有）
 ```
+
+`margin-operation.ts` は paper の信用（Phase 8）と共有するため、`cli/commands/trade/` ではなく
+`cli/` 直下に置く。Phase 8 Step 2 で作成済み（`marginOperation` / `checkMarginIntent`。
+テストは `cli/__tests__/margin-operation.test.ts`）。trade 側はこれを import して使う。
 
 `order-body.ts` の Zod ベースを両コマンドが `.extend()` して使う。
 `refineExecuteConfirm("<command>")` の呼び出しは各コマンドファイルに残す
@@ -218,8 +229,8 @@ cli/commands/trade/
 
 ### Step 2: 共通部の切り出し（挙動変更なし）
 
-- `order-body.ts` / `margin-operation.ts` を新設し、`create-order.ts` を
-  それに乗せ換える。**既存テスト（`create-order.test.ts`）を一切変えずに green** が完了条件
+- `order-body.ts` を新設し、`create-order.ts` をそれに乗せ換える
+  （`margin-operation.ts` は Phase 8 で `cli/` 直下に作成済み。§3.5）。**既存テスト（`create-order.test.ts`）を一切変えずに green** が完了条件
 - `create-order.ts` に `positionSide` を受けたら `PARAM` で拒否する分岐を足す
   （「信用は `trade create-margin-order` を使ってください」）
 
@@ -251,7 +262,8 @@ cli/commands/trade/
   - body に `position_side` が入り、レスポンスの `position_side` がパースされる
   - 監査ログ（`trade-log`）に `params.positionSide` が残る
 - `cli/__tests__/trade/create-order.test.ts` に「`positionSide` を渡すと `PARAM`」を追加
-- `cli/__tests__/trade/margin-operation.test.ts`（純関数）
+- ~~`cli/__tests__/trade/margin-operation.test.ts`（純関数）~~ → Phase 8 で
+  `cli/__tests__/margin-operation.test.ts` として作成済み
 - chaos の更新:
   - `x10-confirm-guards.test.ts` の「`CONFIRM_PHRASES` covers exactly the 5 trade commands」を 6 に更新
   - `x06` / `x10b` は新ファイルを自動検出するので、`.execute` 参照と

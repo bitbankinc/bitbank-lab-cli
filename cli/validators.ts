@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { EXIT } from "./exit-codes.js";
 import type { Result } from "./types.js";
+// formatZodError が返す既定文言を Zod 3 と同じに保つ（global error map を登録する副作用 import）
+import "./zod-messages.js";
 
 function msg(field: string, example: string): string {
   return `${field} is required. Example: ${example}`;
@@ -31,29 +33,32 @@ export function formatZodError(error: z.ZodError): string {
   return error.issues.map((i) => i.message).join("; ");
 }
 
+/** 未指定（undefined）のときだけ `message` を出す string スキーマ。Zod 3 の
+ *  `z.string({ required_error })` 相当（Zod 4 で廃止され、`error` 関数で出し分ける形に
+ *  なった）。型違いなど未指定以外の失敗は Zod の既定メッセージのまま。 */
+export function requiredString(message: string): z.ZodString {
+  return z.string({ error: (iss) => (iss.input === undefined ? message : undefined) });
+}
+
 export const UUID_RE =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
-export const PairSchema = z
-  .string({ required_error: MSG_PAIR })
+export const PairSchema = requiredString(MSG_PAIR)
   .trim()
   .min(1, MSG_PAIR)
   .regex(/^[a-z0-9]+_[a-z0-9]+$/, "pair must be like btc_jpy");
 
-export const AssetSchema = z
-  .string({ required_error: MSG_ASSET })
+export const AssetSchema = requiredString(MSG_ASSET)
   .trim()
   .min(1, MSG_ASSET)
   .regex(/^[a-z0-9]+$/, "asset must be alphanumeric (lowercase)");
 
-export const UuidSchema = z
-  .string({ required_error: MSG_UUID })
+export const UuidSchema = requiredString(MSG_UUID)
   .trim()
   .min(1, MSG_UUID)
   .regex(UUID_RE, "uuid must be a valid UUID");
 
-export const PositiveDecimalSchema = z
-  .string({ required_error: MSG_AMOUNT })
+export const PositiveDecimalSchema = requiredString(MSG_AMOUNT)
   .trim()
   .min(1, MSG_AMOUNT)
   .regex(/^\d+(\.\d+)?$/, "amount must be a positive decimal (no exponent/sign)")
@@ -62,8 +67,7 @@ export const PositiveDecimalSchema = z
     return Number.isFinite(n) && n > 0;
   }, "amount must be > 0 and finite");
 
-export const IntegerStringSchema = z
-  .string({ required_error: MSG_ID })
+export const IntegerStringSchema = requiredString(MSG_ID)
   .trim()
   .min(1, MSG_ID)
   .regex(/^[1-9]\d*$/, "id must be a positive integer");

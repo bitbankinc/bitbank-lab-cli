@@ -37,7 +37,7 @@ export const LedgerEntry = LedgerEntryBase.superRefine((e, ctx) => {
   const required = REQUIRED_AMOUNT[e.kind];
   if (e[required] === undefined) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: [required],
       message: `${e.kind} は ${required} が必須`,
     });
@@ -46,7 +46,7 @@ export const LedgerEntry = LedgerEntryBase.superRefine((e, ctx) => {
   for (const field of ALL_AMOUNTS) {
     if (field !== required && e[field] !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: [field],
         message: `${e.kind} に ${field} は付かない（${required} を使う）`,
       });

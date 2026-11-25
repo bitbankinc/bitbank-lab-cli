@@ -8,9 +8,15 @@ import { dirname, join } from "node:path";
 import { z } from "zod";
 import { pairs as fetchPairsApi } from "./commands/public/pairs.js";
 import type { HttpOptions } from "./http.js";
+import { marginPairFieldsCached } from "./pair-margin-fields.js";
 import type { Result } from "./types.js";
 
 export const PAIRS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+// v2: 信用取引フィールド（margin_* / stop_margin_*）を保存するようにした。v1 のキャッシュは
+// 信用フィールドを持たず、読むと全ペアが「信用情報なし」に見えるので、version 不一致で
+// cache miss にして取り直させる（loadPairsCache の Zod parse 失敗経路）。
+export const PAIRS_CACHE_VERSION = 2;
 
 // 保存済みキャッシュは parse 後（数値）形式。API 経由の Pair 型と structural に
 // 一致するので相互代入可能。
@@ -30,10 +36,11 @@ const CachedPairSchema = z.object({
   is_enabled: z.boolean(),
   stop_order: z.boolean(),
   stop_order_and_cancel: z.boolean(),
+  ...marginPairFieldsCached,
 });
 
 const PairsCacheSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(PAIRS_CACHE_VERSION),
   fetchedAt: z.string(),
   pairs: z.array(CachedPairSchema),
 });
@@ -116,7 +123,7 @@ export async function getPairsWithCache(opts: GetPairsOptions = {}): Promise<Res
   const fetched = await fetchFn();
   if (!fetched.success) return fetched;
   const entry: PairsCacheEntry = {
-    version: 1,
+    version: PAIRS_CACHE_VERSION,
     fetchedAt: new Date(nowMs).toISOString(),
     pairs: fetched.data,
   };
