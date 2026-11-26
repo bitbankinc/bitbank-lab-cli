@@ -50,7 +50,7 @@ const RequestSchema = z
   })
   .superRefine((val, ctx) => {
     if (val.pair === undefined) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MSG_PAIR, path: ["pair"] });
+      ctx.addIssue({ code: "custom", message: MSG_PAIR, path: ["pair"] });
     }
     refineSinceEnd(val, ctx);
   });

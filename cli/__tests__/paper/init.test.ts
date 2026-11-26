@@ -26,9 +26,17 @@ describe("paper init", () => {
     expect(r.data.balances.jpy).toBe(1000000);
     expect(r.data.history).toEqual([]);
     const raw = JSON.parse(readFileSync(statePath, "utf-8"));
-    expect(raw.version).toBe(3);
+    expect(raw.version).toBe(4);
     expect(raw.balances.jpy).toBe(1000000);
     expect(raw.openOrders).toEqual([]);
+    // 信用（ADR-010）は空で、公表ルール由来の値を init 時点で固定する
+    expect(raw.margin).toMatchObject({ positions: [], orders: [], call: null, history: [] });
+    expect(raw.margin.assumptions.rules).toEqual({
+      losscutMultiplier: 0.5,
+      marginCallHourJst: 15,
+      marginCallGraceMs: 86_400_000,
+    });
+    expect(raw.margin.assumptions.fixedAt).toBe(raw.createdAt);
     expect(typeof raw.lastTickAt).toBe("string");
   });
 

@@ -3,21 +3,20 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { DryRunData, Result } from "../../types.js";
-import { formatZodError, UUID_RE } from "../../validators.js";
+import { formatZodError, requiredString, UUID_RE } from "../../validators.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
 
 // 実 bitbank API `POST /user/confirm_deposits_all` は成功時 data を空 {} で返す
-// （rest-api.md "Confirm all deposits"）。空 data を成功として扱うため passthrough。
-const ConfirmDepositsAllResponseSchema = z.object({}).passthrough();
+// （rest-api.md "Confirm all deposits"）。空 data を成功として扱うため loose。
+const ConfirmDepositsAllResponseSchema = z.object({}).loose();
 
 export type ConfirmDepositsAllResponse = z.infer<typeof ConfirmDepositsAllResponseSchema>;
 
 // 汎用 UuidSchema は `--uuid` を案内するメッセージなので、本コマンド専用の
 // `--originator-uuid` 向けメッセージで検証する（形式は共通の UUID_RE を再利用）。
 const MSG_ORIGINATOR_UUID = "originator-uuid is required. Example: --originator-uuid=xxx-yyy";
-const OriginatorUuidSchema = z
-  .string({ required_error: MSG_ORIGINATOR_UUID })
+const OriginatorUuidSchema = requiredString(MSG_ORIGINATOR_UUID)
   .trim()
   .min(1, MSG_ORIGINATOR_UUID)
   .regex(UUID_RE, "originator-uuid must be a valid UUID");

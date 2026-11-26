@@ -1,6 +1,7 @@
 import type { CommandEntry } from "./handler-types.js";
 import { bool, str, valStr } from "./handler-types.js";
 import { handler } from "./make-handler.js";
+import { paperMarginCommands } from "./paper-margin-handlers.js";
 
 const pnlHandler: CommandEntry["handler"] = async (_a, values, format) => {
   const { paperPnl, formatPnl } = await import("./paper/pnl.js");
@@ -41,11 +42,11 @@ export const paperCommands: Record<string, CommandEntry> = {
     })),
   },
   "active-orders": {
-    description: "Show paper open (limit) orders",
+    description: "Show paper open (limit) orders, spot and margin",
     handler: handler("./paper/active-orders.js", "paperActiveOrders", () => ({})),
   },
   "cancel-order": {
-    description: "Cancel a paper limit order by id",
+    description: "Cancel a paper limit order by id (spot or margin)",
     options: { id: str },
     handler: handler("./paper/cancel-order.js", "paperCancelOrder", (_a, v) => ({
       id: valStr(v, "id"),
@@ -74,4 +75,5 @@ export const paperCommands: Record<string, CommandEntry> = {
     options: { pair: str },
     handler: pnlHandler,
   },
+  ...paperMarginCommands,
 };

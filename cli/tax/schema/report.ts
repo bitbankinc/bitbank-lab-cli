@@ -49,7 +49,7 @@ export const CurrencyReport = z
   .superRefine((v, ctx) => {
     if ((v.reference === undefined) !== (v.nta_compat === undefined)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "reference と nta_compat は同時に出すか、同時に出さないかのどちらか",
       });
     }

@@ -1,5 +1,5 @@
-// 100行超: UTC 基準の日付演算・足周期・次境界判定に加え、税務用の JST 年境界
-// （ADR-004 の例外）を 1 ファイルに集約
+// 100行超: UTC 基準の日付演算・足周期・次境界判定に加え、JST の暦で区切る例外
+// （税務の年境界 = ADR-004、paper の信用の利息・追証の基準時 = ADR-010）を 1 ファイルに集約
 export const YEARLY_TYPES = new Set(["4hour", "8hour", "12hour", "1day", "1week", "1month"]);
 
 // 非うるう年での 1 セグメント（短期足は 1 日分、年タイプは 1 年分）あたりのローソク本数
@@ -60,6 +60,14 @@ export function ymdUtc(ms: number): string {
   const m = d.getUTCMonth() + 1;
   const day = d.getUTCDate();
   return `${y}${String(m).padStart(2, "0")}${String(day).padStart(2, "0")}`;
+}
+
+/** fromMs〜toMs にかかる UTC の日付（YYYYMMDD）を古い順にすべて返す。区間が空なら [] */
+export function ymdUtcRange(fromMs: number, toMs: number): string[] {
+  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || toMs < fromMs) return [];
+  const out: string[] = [];
+  for (let d = ymdUtc(fromMs); d <= ymdUtc(toMs); d = shiftDate(d, 1, "1min")) out.push(d);
+  return out;
 }
 
 /** ms（UNIX epoch）を UTC の YYYY 文字列で返す */
@@ -166,4 +174,27 @@ export function jstIso(ms: number): string {
   const d = new Date(ms + JST_OFFSET_MS);
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}+09:00`;
+}
+
+// --- paper の信用の日次処理（ADR-010 決定 7 の例外）---
+// 利息は JST 0 時、追証は毎日 JST 15 時の時点の建玉・口座に対して処理される（取引所の暦）。
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 毎日 JST `hourJst` 時ちょうどの時刻のうち、半開区間 (fromMs, toMs] に入るものを古い順に返す。
+ * 始点を含めないのは「建てた直後は 0、0 時をまたいで 1 日分」という利息の数え方に合わせるため。
+ * 例: jstDailyInstants(Date.parse("2026-11-01T14:59:59.999Z"), Date.parse("2026-11-01T15:00:00Z"), 0)
+ *   = [Date.parse("2026-11-01T15:00:00Z")]（2026-11-02 00:00 JST）。
+ * hourJst が 0〜23 の整数でない、または区間が空なら []。ホスト TZ に依存しない（epoch の算術だけ）。
+ */
+export function jstDailyInstants(fromMs: number, toMs: number, hourJst: number): number[] {
+  if (!Number.isInteger(hourJst) || hourJst < 0 || hourJst > 23) return [];
+  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || toMs <= fromMs) return [];
+  // JST の hourJst 時は、UTC の日界から (hourJst − 9) 時間ずれた時刻 k × DAY_MS + base に並ぶ
+  const base = hourJst * 60 * 60 * 1000 - JST_OFFSET_MS;
+  const out: number[] = [];
+  for (let t = (Math.floor((fromMs - base) / DAY_MS) + 1) * DAY_MS + base; t <= toMs; t += DAY_MS) {
+    out.push(t);
+  }
+  return out;
 }

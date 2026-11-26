@@ -11,6 +11,7 @@ import { paperCancelOrder } from "../../commands/paper/cancel-order.js";
 import { paperCreateOrder } from "../../commands/paper/create-order.js";
 import { paperInit } from "../../commands/paper/init.js";
 import { paperTick } from "../../commands/paper/tick.js";
+import { PAIRS_CACHE_VERSION } from "../../pairs-cache.js";
 import type { FetchCandles } from "../../paper-fill.js";
 import { loadState } from "../../paper-state.js";
 import { MOCK_PAIRS, mockGetPairs } from "../test-helpers.js";
@@ -164,7 +165,7 @@ describe("paper updateState in-process concurrency", () => {
 
 function seedPairsCache(path: string): void {
   const content = JSON.stringify({
-    version: 1,
+    version: PAIRS_CACHE_VERSION,
     fetchedAt: new Date(Date.now()).toISOString(),
     pairs: MOCK_PAIRS,
   });

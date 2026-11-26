@@ -12,7 +12,10 @@ import { machineOutput } from "./output.js";
 import { handleSpecialCommand, resolveCommand, runCommandHelp } from "./router.js";
 import { resolveStartupCredentials } from "./startup-credentials.js";
 import type { Format, Result } from "./types.js";
-import { unknownLongFlags } from "./unknown-flags.js";
+import { misplacedFlagHints, unknownLongFlags } from "./unknown-flags.js";
+// Zod の既定エラー文言を v3 互換にする global error map。コマンドの遅延 import より前に
+// 登録し、どの経路の parse でも同じ文言になるようにする
+import "./zod-messages.js";
 
 function fail(machine: boolean, msg: string, code: ExitCode): void {
   if (machine) machineOutput({ success: false, error: msg, exitCode: code });
@@ -60,7 +63,11 @@ async function main(): Promise<void> {
     return helpDone(await runCommandHelp(command, entry.description, group), machine);
   const unknown = unknownLongFlags(tokens, merged);
   if (unknown.length > 0) {
-    const msg = `Unknown option(s): ${unknown.join(", ")}. Run with --help for usage.`;
+    const hints = misplacedFlagHints(group ? `${group} ${command}` : (command ?? ""), unknown);
+    const msg = [
+      `Unknown option(s): ${unknown.join(", ")}. Run with --help for usage.`,
+      ...hints,
+    ].join(" ");
     fail(machine, msg, EXIT.PARAM);
     return;
   }

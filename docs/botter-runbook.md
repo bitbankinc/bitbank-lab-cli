@@ -60,7 +60,7 @@ CLI 側の保証（詳細は [README セットアップ](../README.md#セット�
 
 ## 段階 2: paper で戦略を練習する
 
-仮想資金 × ライブ価格のシミュレーションで戦略を回す。**実 API は public ticker と 1m candles
+仮想資金 × ライブ価格のシミュレーションで戦略を回す。**実 API は public の ticker・candlestick・pairs
 のみ**を叩き、private / trade エンドポイントには一切触れない。状態は
 `~/.bitbank/paper-state.json`（または `$XDG_DATA_HOME/bitbank/paper-state.json`）にローカル保存される。
 `BITBANK_PAPER_STATE_PATH=<path>` で保存先を切り替えられ（戦略ごとに口座を分ける等）、
@@ -75,6 +75,21 @@ bitbank paper assets                # 仮想残高（available / locked / total�
 bitbank paper pnl --pair=btc_jpy    # 損益サマリ（realized + unrealized）
 ```
 
+信用（新規建て・返済）の戦略も paper で練習できる。建てる前に `paper margin-status` で保証金率と
+`assumptions`（本番と一致させられない値）を確認し、新規建てと返済の取り違えを防ぐため `--intent` を付ける。
+
+```bash
+bitbank paper margin-status                    # 保証金率・維持必要保証金・新規建て可能額・assumptions
+bitbank paper create-margin-order --pair=btc_jpy --side=buy --position-side=long --intent=open --type=market --amount=0.01
+bitbank paper margin-positions                 # 建玉（locked_amount・未精算の手数料と利息・評価損益）
+bitbank paper create-margin-order --pair=btc_jpy --side=sell --position-side=long --intent=close --type=market --amount=0.01
+bitbank paper pnl                              # margin 欄に信用の実現・未実現損益
+```
+
+paper の信用は追証（毎日 JST 15 時）・強制決済・利息（JST 0 時）を公表ルールどおりに再現するが、判定は 1 分足の不利な
+極値で行うので本番より厳しめに出る。前回の信用の走査から 24 時間を超えて空いた区間は 4 時間足で判定し、`warnings` と
+`margin.approximate: true` で申告する（bot を止めていた後の最初の tick は近似になる）。本番の信用の発注はこの CLI では未対応（計画中）。
+
 詳細は [README Paper セクション](../README.md#paperペーパートレード--仮想資金) を参照。
 
 > [!TIP]
@@ -82,6 +97,7 @@ bitbank paper pnl --pair=btc_jpy    # 損益サマリ（realized + unrealized）
 > - 戦略の発注ロジックが paper 上で一通り回り、`paper pnl` が想定どおりに動く
 > - 1 回あたりの発注サイズ（`--amount`）と価格（`--price`）の決め方が固まっている
 > - 指値・成行・キャンセルの挙動を理解した（指値は GTC・部分約定なし・スリッページなし）
+> - 信用を使う戦略なら、paper で追証・強制決済が起きる値動きを一度は体験し、`assumptions` の前提を理解した
 
 ---
 

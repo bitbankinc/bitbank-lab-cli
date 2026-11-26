@@ -1,3 +1,4 @@
+import { marginPairJsonProps } from "../../pair-margin-fields.js";
 import { p, type SchemaDef } from "./types.js";
 
 const pair = p("string", "Trading pair (e.g. btc_jpy)");
@@ -86,6 +87,7 @@ export const publicDataSchemas: Record<string, SchemaDef> = {
           market_max_amount: n,
           price_digits: n,
           amount_digits: n,
+          ...marginPairJsonProps,
         },
       },
     },

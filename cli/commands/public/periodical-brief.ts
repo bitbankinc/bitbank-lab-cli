@@ -36,7 +36,7 @@ const RequestSchema = z
     const modes = [val.top !== undefined, val.all === true, (val.pairs?.length ?? 0) > 0];
     if (modes.filter(Boolean).length > 1) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "--top, --all and explicit pairs are mutually exclusive",
         path: ["pairs"],
       });

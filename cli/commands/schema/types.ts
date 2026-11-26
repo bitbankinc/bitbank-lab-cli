@@ -11,8 +11,8 @@ const ParamPropSchema = z.object({
 
 export const SchemaDefSchema = z.object({
   category: z.enum(["public", "private", "trade", "stream", "tax", "paper", "profile"]),
-  params: z.record(ParamPropSchema),
-  output: z.record(z.unknown()),
+  params: z.record(z.string(), ParamPropSchema),
+  output: z.record(z.string(), z.unknown()),
 });
 
 export type ParamProp = z.infer<typeof ParamPropSchema>;

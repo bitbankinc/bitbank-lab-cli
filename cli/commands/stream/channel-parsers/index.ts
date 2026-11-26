@@ -5,7 +5,7 @@ import { TickerStreamSchema } from "./ticker.js";
 import { TransactionsStreamSchema } from "./transactions.js";
 
 // channel prefix → schema のレジストリ。`startsWith` で room name の suffix を許容する。
-const PARSERS: Array<{ prefix: string; schema: z.ZodType<unknown, z.ZodTypeDef, unknown> }> = [
+const PARSERS: Array<{ prefix: string; schema: z.ZodType<unknown, unknown> }> = [
   { prefix: "ticker_", schema: TickerStreamSchema },
   { prefix: "transactions_", schema: TransactionsStreamSchema },
   { prefix: "depth_diff_", schema: DepthStreamSchema },

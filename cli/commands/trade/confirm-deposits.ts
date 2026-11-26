@@ -3,15 +3,15 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { DryRunData, Result } from "../../types.js";
-import { formatZodError, UuidSchema } from "../../validators.js";
+import { formatZodError, requiredString, UuidSchema } from "../../validators.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
 
 // 実 bitbank API `POST /user/confirm_deposits` は成功時 data を空 {} で返す
 // （rest-api.md "Confirm deposits"）。必須フィールド付き schema では空 data を
-// パースできず CLI が「失敗」を返し silent success を生むため、passthrough で
+// パースできず CLI が「失敗」を返し silent success を生むため、loose で
 // 空 data を成功として受ける（将来フィールド追加にも耐性）。
-const ConfirmDepositsResponseSchema = z.object({}).passthrough();
+const ConfirmDepositsResponseSchema = z.object({}).loose();
 
 export type ConfirmDepositsResponse = z.infer<typeof ConfirmDepositsResponseSchema>;
 
@@ -22,7 +22,7 @@ const MSG_DEPOSITS =
 
 const ConfirmDepositsInputSchema = z
   .object({
-    deposits: z.string({ required_error: MSG_DEPOSITS }).trim().min(1, MSG_DEPOSITS),
+    deposits: requiredString(MSG_DEPOSITS).trim().min(1, MSG_DEPOSITS),
     execute: z.boolean().optional(),
     confirm: z.string().optional(),
   })

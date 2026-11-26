@@ -25,7 +25,8 @@
 - `bitbank tickers-jpy` — 全 JPY ペア一括ティッカー
 - `bitbank candles btc_jpy --type=1day --format=table` — ローソク足 OHLCV
 - `bitbank depth btc_jpy` — 板情報（asks / bids）
-- `bitbank paper create-order --pair=btc_jpy --side=buy --type=market --amount=0.001` — ペーパートレード（実 API は public ticker のみ）
+- `bitbank paper create-order --pair=btc_jpy --side=buy --type=market --amount=0.001` — ペーパートレード（実 API は public の ticker・candlestick・pairs のみ）
+- `bitbank paper create-margin-order --pair=btc_jpy --side=buy --position-side=long --intent=open --type=market --amount=0.01` — ペーパーの信用（新規建て / 返済。状態は `paper margin-status`）
 
 参照:
 

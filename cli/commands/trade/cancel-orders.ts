@@ -3,7 +3,7 @@ import { EXIT } from "../../exit-codes.js";
 import { type PrivatePostOptions, privatePost } from "../../http-private-post.js";
 import { parseResponse } from "../../parse-response.js";
 import type { DryRunData, Result } from "../../types.js";
-import { formatZodError, MSG_ORDER_IDS, PairSchema } from "../../validators.js";
+import { formatZodError, MSG_ORDER_IDS, PairSchema, requiredString } from "../../validators.js";
 import { CancelOrderSchema } from "../shared-schemas.js";
 import { refineExecuteConfirm } from "./confirm-guard.js";
 import { dryRunResult } from "./dry-run.js";
@@ -20,8 +20,7 @@ const MAX_ORDER_IDS = 30;
 const CancelOrdersInputSchema = z
   .object({
     pair: PairSchema,
-    orderIds: z
-      .string({ required_error: MSG_ORDER_IDS })
+    orderIds: requiredString(MSG_ORDER_IDS)
       .trim()
       .min(1, MSG_ORDER_IDS)
       .transform((s, ctx) => {

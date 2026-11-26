@@ -241,6 +241,22 @@ describe("CLI E2E", () => {
     expect(stderr).toContain("Unknown option");
   });
 
+  // 現物の paper create-order に信用の flag が来たら、未知 flag のエラーに信用コマンドへの案内を添える（ADR-010）
+  it("paper create-order --position-side is rejected with a pointer to create-margin-order", async () => {
+    const { stderr, exitCode } = await run(
+      "paper",
+      "create-order",
+      "--pair=btc_jpy",
+      "--side=buy",
+      "--type=market",
+      "--amount=0.001",
+      "--position-side=long",
+    );
+    expect(exitCode).toBe(4);
+    expect(stderr).toContain("Unknown option(s): --position-side");
+    expect(stderr).toContain("paper create-margin-order");
+  });
+
   // 正常系の非回帰: 正規 flag は従来どおり受理する（schema は network 不要で exit 0）。
   it("still accepts --format=table on a valid command (exit 0)", async () => {
     const { stderr, exitCode } = await run("schema", "--format=table");

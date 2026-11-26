@@ -1,18 +1,15 @@
 import type { z } from "zod";
 import type { Result } from "./types.js";
 
-export function parseResponse<T>(
-  result: Result<unknown>,
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
-): Result<T>;
+export function parseResponse<T>(result: Result<unknown>, schema: z.ZodType<T, unknown>): Result<T>;
 export function parseResponse<T, K extends keyof T>(
   result: Result<unknown>,
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+  schema: z.ZodType<T, unknown>,
   key: K,
 ): Result<T[K]>;
 export function parseResponse<T, K extends keyof T>(
   result: Result<unknown>,
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+  schema: z.ZodType<T, unknown>,
   key?: K,
 ): Result<T> | Result<T[K]> {
   if (!result.success) return result;

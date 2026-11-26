@@ -2,7 +2,7 @@ import { z } from "zod";
 import { numStr, safeId } from "../../../schema-helpers.js";
 
 // WS transactions_<pair> は REST /transactions と同じく { transactions: [...] } を返す。
-// REST の TransactionSchema をベースに、ストリーム特有の追加フィールドは passthrough。
+// REST の TransactionSchema をベースに、ストリーム特有の追加フィールドは loose。
 const TransactionStreamItemSchema = z
   .object({
     transaction_id: safeId,
@@ -11,10 +11,10 @@ const TransactionStreamItemSchema = z
     amount: numStr,
     executed_at: z.number(),
   })
-  .passthrough();
+  .loose();
 
 export const TransactionsStreamSchema = z
   .object({
     transactions: z.array(TransactionStreamItemSchema),
   })
-  .passthrough();
+  .loose();

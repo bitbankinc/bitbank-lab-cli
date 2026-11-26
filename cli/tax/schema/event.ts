@@ -47,7 +47,7 @@ const TaxEventBase = z.object({
 
 export const TaxEvent = TaxEventBase.superRefine((e, ctx) => {
   const need = (ok: boolean, path: string, message: string) => {
-    if (!ok) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+    if (!ok) ctx.addIssue({ code: "custom", path: [path], message });
   };
   need(
     !ACQUIRE_KINDS.includes(e.kind) || e.costbasis_provenance !== undefined,

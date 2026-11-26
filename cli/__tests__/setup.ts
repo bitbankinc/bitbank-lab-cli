@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach } from "vitest";
+import { PAIRS_CACHE_VERSION } from "../pairs-cache.js";
 import { resetThrottle } from "../throttle.js";
 import { MOCK_PAIRS } from "./test-helpers.js";
 
@@ -24,7 +25,11 @@ const pairsCachePath = join(tmp, "pairs-cache.json");
 process.env.BITBANK_PAIRS_CACHE_PATH = pairsCachePath;
 writeFileSync(
   pairsCachePath,
-  JSON.stringify({ version: 1, fetchedAt: new Date(Date.now()).toISOString(), pairs: MOCK_PAIRS }),
+  JSON.stringify({
+    version: PAIRS_CACHE_VERSION,
+    fetchedAt: new Date(Date.now()).toISOString(),
+    pairs: MOCK_PAIRS,
+  }),
   { mode: 0o600 },
 );
 
